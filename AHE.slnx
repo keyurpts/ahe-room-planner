@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="AHE.BLL/AHE.BLL.csproj" />
-  <Project Path="AHE.DAL/AHE.DAL.csproj" />
-  <Project Path="AHE.PL/AHE.PL.csproj" />
-</Solution>

@@ -1,0 +1,2077 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\modelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\modelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\modelscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\modelscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\createmodelrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\createmodelrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\textureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\textureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\storagecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\storagecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\storageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\storageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\storage\\texturedownloadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\storage\\texturedownloadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\istorageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\istorageservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\texture.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\texture.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\textureconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\textureconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\itextureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\itextureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\texturescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\texturescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\textures\\createtexturerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\textures\\createtexturerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\modelrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\modelrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\iblobstoragerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\iblobstoragerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\azureblobstoragerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\azureblobstoragerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\storage\\gettexturedownloadurlrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\storage\\gettexturedownloadurlrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\textures\\textureresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\textures\\textureresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\storage\\thumbnaildownloadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\storage\\thumbnaildownloadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\storage\\uploadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\storage\\uploadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\textures\\updatetexturerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\textures\\updatetexturerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\imodelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\imodelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\modelvariantresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\modelvariantresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\modelvariantregionresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\modelvariantregionresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\modelresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\modelresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\createmodelvariantregionrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\createmodelvariantregionrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\createmodelvariantrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\createmodelvariantrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\modelvariantregionconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\modelvariantregionconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\modelvariantregion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\modelvariantregion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\modelvariant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\modelvariant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\modelvariantconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\modelvariantconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\modelconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\modelconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\regionconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\regionconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\model.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\model.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\region.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\region.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\createmodeltexturerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\createmodeltexturerequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\createmodelregionrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\createmodelregionrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\role.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\refreshtoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\refreshtoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\project.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\project.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\material.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\material.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\materialscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\materialscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\materialservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\materialservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\imaterialservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\imaterialservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\categoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\categoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\materialrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\materialrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\imaterialrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\imaterialrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\materialconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\materialconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\materials\\updatematerialrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\materials\\updatematerialrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\materials\\materialresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\materials\\materialresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\materials\\creatematerialrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\materials\\creatematerialrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\categories\\updatecategoryrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\categories\\updatecategoryrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\categories\\createcategoryrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\categories\\createcategoryrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\categories\\categoryresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\categories\\categoryresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\icategoryrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\icategoryrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\categoryrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\categoryrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\categoryconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\categoryconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\dotnet\\sdk\\10.0.401\\Sdks\\Microsoft.NET.Sdk.Razor\\targets\\Microsoft.NET.Sdk.Razor.MvcApplicationPartsDiscovery.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\texturerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\texturerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\itexturerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\itexturerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\imodelrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\imodelrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\projectconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\projectconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\storage\\modeldownloadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\storage\\modeldownloadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\storage\\modeluploadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\storage\\modeluploadurlresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\updatemodelrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\updatemodelrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\models\\modelregionresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\models\\modelregionresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\projectservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\projectservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\iprojectservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\iprojectservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\projectscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\projectscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\projects\\updateproject3djsonrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\projects\\updateproject3djsonrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\projects\\updateproject2djsonrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\projects\\updateproject2djsonrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\projects\\projectdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\projects\\projectdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\projects\\createprojectrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\projects\\createprojectrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\projectrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\projectrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\migrations\\appdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\migrations\\appdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\ahe.bll.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\ahe.bll.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\categoriescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\categoriescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\regionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\regionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\regionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\regionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\regions\\regionresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\regions\\regionresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\iregionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\iregionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\regionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\regionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\iregionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\iregionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\iuserservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\iuserservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\irefreshtokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\irefreshtokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\projects\\projectresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\projects\\projectresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\iprojectrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\iprojectrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\userconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\userconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\icategoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\icategoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.pl\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{8AE930F0-EA12-F9E8-40DD-123515FF2868}|AHE.PL\\AHE.PL.csproj|solutionrelative:ahe.pl\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\users\\userdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\users\\userdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\users\\createuserdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\users\\createuserdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\initialadminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\initialadminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\irefreshtokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\irefreshtokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\refreshtokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\refreshtokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\refreshtokenconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\refreshtokenconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\rolerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\rolerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\repositories\\refreshtokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\repositories\\refreshtokenrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\passwordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\passwordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\iinitialadminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\iinitialadminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\interfaces\\repositories\\irolerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\interfaces\\repositories\\irolerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\configurations\\roleconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\configurations\\roleconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\ijwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\ijwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\services\\jwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\services\\jwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\authentication\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\authentication\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\interfaces\\ipasswordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\interfaces\\ipasswordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\authentication\\refreshtokenrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\authentication\\refreshtokenrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\dtos\\authentication\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\dtos\\authentication\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.bll\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F233887F-F464-B4BD-61EE-3094C9CDCDE4}|AHE.BLL\\AHE.BLL.csproj|solutionrelative:ahe.bll\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|c:\\users\\pts-pc-278_usr02\\source\\repos\\ahe\\ahe.dal\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3277E3C1-2B82-895A-8D5E-1C60E1D83303}|AHE.DAL\\AHE.DAL.csproj|solutionrelative:ahe.dal\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "StorageController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\StorageController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\StorageController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\StorageController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\StorageController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T06:32:36.447Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "TextureService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\TextureService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\TextureService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\TextureService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\TextureService.cs",
+              "ViewState": "AgIAAKgAAAAAAAAAAAApwLcAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:05:20.892Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Texture.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Texture.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Texture.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Texture.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Texture.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwA0AAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:20:22.015Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "IStorageService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IStorageService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IStorageService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IStorageService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IStorageService.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAADgvzsAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T06:26:52.793Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "StorageService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\StorageService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\StorageService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\StorageService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\StorageService.cs",
+              "ViewState": "AgIAAO4AAAAAAAAAAAApwPcAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T06:27:53.285Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CreateModelRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\CreateModelRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\CreateModelRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:09:07.126Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ModelsController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\ModelsController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\ModelsController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\ModelsController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\ModelsController.cs",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAiwFIAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:14:40.541Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ModelService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\ModelService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\ModelService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\ModelService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\ModelService.cs",
+              "ViewState": "AgIAAHwBAAAAAAAAAAApwI8BAABQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:12:20.053Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "TextureConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\TextureConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\TextureConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\TextureConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\TextureConfiguration.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABsAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:52:10.999Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ITextureService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\ITextureService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\ITextureService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\ITextureService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\ITextureService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAkAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:03:02.636Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "TextureDownloadUrlResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\TextureDownloadUrlResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Storage\\TextureDownloadUrlResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\TextureDownloadUrlResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Storage\\TextureDownloadUrlResponse.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAqwA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T11:20:56.009Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "TexturesController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\TexturesController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\TexturesController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\TexturesController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\TexturesController.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAArwBcAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:09:22.796Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "CreateTextureRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Textures\\CreateTextureRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Textures\\CreateTextureRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Textures\\CreateTextureRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Textures\\CreateTextureRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwA4AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T10:37:17.713Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\appsettings.json",
+              "RelativeDocumentMoniker": "AHE.PL\\appsettings.json",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\appsettings.json",
+              "RelativeToolTip": "AHE.PL\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-08-26T13:36:54.739Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Program.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Program.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Program.cs",
+              "RelativeToolTip": "AHE.PL\\Program.cs",
+              "ViewState": "AgIAAIEAAAAAAAAAAAAAAHgAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T13:37:50.469Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "AzureBlobStorageRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\AzureBlobStorageRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\AzureBlobStorageRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\AzureBlobStorageRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\AzureBlobStorageRepository.cs",
+              "ViewState": "AgIAAHkAAAAAAAAAAAAiwH0AAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T06:25:14.792Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ModelRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\ModelRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\ModelRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\ModelRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\ModelRepository.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAgwDcAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:06:54.176Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "GetTextureDownloadUrlRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\GetTextureDownloadUrlRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Storage\\GetTextureDownloadUrlRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\GetTextureDownloadUrlRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Storage\\GetTextureDownloadUrlRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T11:20:31.117Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "IBlobStorageRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IBlobStorageRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IBlobStorageRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IBlobStorageRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IBlobStorageRepository.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAswB4AAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T06:24:33.276Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "ThumbnailDownloadUrlResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\ThumbnailDownloadUrlResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Storage\\ThumbnailDownloadUrlResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\ThumbnailDownloadUrlResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Storage\\ThumbnailDownloadUrlResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T09:58:02.851Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "UploadUrlResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\UploadUrlResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Storage\\UploadUrlResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\UploadUrlResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Storage\\UploadUrlResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAoAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T09:53:54.454Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "TextureResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Textures\\TextureResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Textures\\TextureResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Textures\\TextureResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Textures\\TextureResponse.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAqwBQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T05:59:29.072Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\User.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\User.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\User.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\User.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAAAAwCgAAABRAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:10:41.323Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "UpdateTextureRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Textures\\UpdateTextureRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Textures\\UpdateTextureRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Textures\\UpdateTextureRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Textures\\UpdateTextureRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T05:58:37.184Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "ModelVariantConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ModelVariantConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\ModelVariantConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ModelVariantConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\ModelVariantConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-11T11:17:39.567Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "UserRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\UserRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\UserRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\UserRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\UserRepository.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAewBEAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:06:19.352Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "IModelService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IModelService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IModelService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IModelService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IModelService.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAkwBAAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:11:37.591Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "ModelConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ModelConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\ModelConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ModelConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\ModelConfiguration.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAgwCEAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:49:20.221Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "Model.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Model.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Model.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Model.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Model.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAkAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:18:03.664Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "ModelVariant.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\ModelVariant.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\ModelVariant.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\ModelVariant.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\ModelVariant.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwBcAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-11T10:37:13.846Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "ModelVariantResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelVariantResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\ModelVariantResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelVariantResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\ModelVariantResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T14:24:15.288Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "CreateModelVariantRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelVariantRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\CreateModelVariantRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelVariantRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\CreateModelVariantRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T14:22:44.776Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "CreateModelVariantRegionRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelVariantRegionRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\CreateModelVariantRegionRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelVariantRegionRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\CreateModelVariantRegionRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T14:23:07.315Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "ModelVariantRegionResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelVariantRegionResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\ModelVariantRegionResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelVariantRegionResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\ModelVariantRegionResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T14:24:37.871Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "RegionConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\RegionConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\RegionConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\RegionConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\RegionConfiguration.cs",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAqwF4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:44:35.837Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "ModelResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\ModelResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\ModelResponse.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAowB0AAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:10:59.39Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "Region.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Region.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Region.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Region.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Region.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAgwBsAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:08:36.032Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "ModelVariantRegionConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ModelVariantRegionConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\ModelVariantRegionConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ModelVariantRegionConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\ModelVariantRegionConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T02:23:02.508Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "ModelVariantRegion.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\ModelVariantRegion.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\ModelVariantRegion.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\ModelVariantRegion.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\ModelVariantRegion.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAswB4AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T02:21:15.855Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "CreateModelTextureRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelTextureRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\CreateModelTextureRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelTextureRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\CreateModelTextureRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T12:35:43.752Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "CreateModelRegionRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelRegionRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\CreateModelRegionRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\CreateModelRegionRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\CreateModelRegionRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAoAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T02:38:09.369Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "Role.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Role.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Role.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Role.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Role.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:07:22.93Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "RefreshToken.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\RefreshToken.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\RefreshToken.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\RefreshToken.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\RefreshToken.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwBEAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:16:27.173Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "Project.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Project.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Project.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Project.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Project.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAwwBEAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:14:23.169Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "Material.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Material.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Material.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Material.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Material.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAkAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:19:21.865Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 45,
+              "Title": "Category.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Category.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Entities\\Category.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Entities\\Category.cs",
+              "RelativeToolTip": "AHE.DAL\\Entities\\Category.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:17:11.7Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "MaterialsController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\MaterialsController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\MaterialsController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\MaterialsController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\MaterialsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:32:23.257Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 47,
+              "Title": "MaterialService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\MaterialService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\MaterialService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\MaterialService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\MaterialService.cs",
+              "ViewState": "AgIAAK0AAAAAAAAAAAAYwLsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:29:57.638Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "IMaterialService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IMaterialService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IMaterialService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IMaterialService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IMaterialService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:28:19.345Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 49,
+              "Title": "CategoryService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\CategoryService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\CategoryService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\CategoryService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\CategoryService.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAuwDAAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:40:14.763Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 50,
+              "Title": "MaterialRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\MaterialRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\MaterialRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\MaterialRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\MaterialRepository.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAIwA0AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:26:25.93Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 51,
+              "Title": "IMaterialRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IMaterialRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IMaterialRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IMaterialRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IMaterialRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:25:17.88Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 52,
+              "Title": "MaterialConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\MaterialConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\MaterialConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\MaterialConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\MaterialConfiguration.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABsAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:51:07.059Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 53,
+              "Title": "UpdateMaterialRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Materials\\UpdateMaterialRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Materials\\UpdateMaterialRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Materials\\UpdateMaterialRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Materials\\UpdateMaterialRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:22:46.254Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 54,
+              "Title": "MaterialResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Materials\\MaterialResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Materials\\MaterialResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Materials\\MaterialResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Materials\\MaterialResponse.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAkAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:23:00.014Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 55,
+              "Title": "CreateMaterialRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Materials\\CreateMaterialRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Materials\\CreateMaterialRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Materials\\CreateMaterialRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Materials\\CreateMaterialRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:22:32.125Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 56,
+              "Title": "UpdateCategoryRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Categories\\UpdateCategoryRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Categories\\UpdateCategoryRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Categories\\UpdateCategoryRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Categories\\UpdateCategoryRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:38:21.456Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 57,
+              "Title": "CreateCategoryRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Categories\\CreateCategoryRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Categories\\CreateCategoryRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Categories\\CreateCategoryRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Categories\\CreateCategoryRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:37:37.056Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 58,
+              "Title": "CategoryResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Categories\\CategoryResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Categories\\CategoryResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Categories\\CategoryResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Categories\\CategoryResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:38:59.93Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 59,
+              "Title": "ICategoryRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\ICategoryRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\ICategoryRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\ICategoryRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\ICategoryRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:33:31.329Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 60,
+              "Title": "CategoryRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\CategoryRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\CategoryRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\CategoryRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\CategoryRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAkAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:34:21.028Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 61,
+              "Title": "CategoryConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\CategoryConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\CategoryConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\CategoryConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\CategoryConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:48:27.972Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 62,
+              "Title": "Microsoft.NET.Sdk.Razor.MvcApplicationPartsDiscovery.targets",
+              "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\10.0.401\\Sdks\\Microsoft.NET.Sdk.Razor\\targets\\Microsoft.NET.Sdk.Razor.MvcApplicationPartsDiscovery.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\dotnet\\sdk\\10.0.401\\Sdks\\Microsoft.NET.Sdk.Razor\\targets\\Microsoft.NET.Sdk.Razor.MvcApplicationPartsDiscovery.targets",
+              "ToolTip": "C:\\Program Files\\dotnet\\sdk\\10.0.401\\Sdks\\Microsoft.NET.Sdk.Razor\\targets\\Microsoft.NET.Sdk.Razor.MvcApplicationPartsDiscovery.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\dotnet\\sdk\\10.0.401\\Sdks\\Microsoft.NET.Sdk.Razor\\targets\\Microsoft.NET.Sdk.Razor.MvcApplicationPartsDiscovery.targets",
+              "ViewState": "AgIAACQAAAAAAAAAAAAmwD0AAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2026-09-16T11:26:07.496Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 63,
+              "Title": "TextureRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\TextureRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\TextureRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\TextureRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\TextureRepository.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAqwAYAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:01:47.274Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 64,
+              "Title": "ITextureRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\ITextureRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\ITextureRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\ITextureRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\ITextureRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwBQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-04T06:00:26.452Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 65,
+              "Title": "IModelRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IModelRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IModelRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IModelRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IModelRepository.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAqwA0AAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:05:07.566Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 66,
+              "Title": "ProjectConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ProjectConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\ProjectConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\ProjectConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\ProjectConfiguration.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAgwBcAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:45:34.909Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 68,
+              "Title": "ModelUploadUrlResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\ModelUploadUrlResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Storage\\ModelUploadUrlResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\ModelUploadUrlResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Storage\\ModelUploadUrlResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T07:35:54.943Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 67,
+              "Title": "ModelDownloadUrlResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\ModelDownloadUrlResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Storage\\ModelDownloadUrlResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Storage\\ModelDownloadUrlResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Storage\\ModelDownloadUrlResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-16T07:36:12.437Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 69,
+              "Title": "DependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DependencyInjection.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DependencyInjection.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DependencyInjection.cs",
+              "RelativeToolTip": "AHE.BLL\\DependencyInjection.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAxwCAAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T14:47:54.66Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 70,
+              "Title": "DependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\DependencyInjection.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\DependencyInjection.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\DependencyInjection.cs",
+              "RelativeToolTip": "AHE.DAL\\DependencyInjection.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAxwBsAAABRAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T14:47:23.595Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 71,
+              "Title": "UpdateModelRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\UpdateModelRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\UpdateModelRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\UpdateModelRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\UpdateModelRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T14:10:07.073Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 72,
+              "Title": "ModelRegionResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelRegionResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Models\\ModelRegionResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Models\\ModelRegionResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Models\\ModelRegionResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T02:43:53.359Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 75,
+              "Title": "ProjectsController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\ProjectsController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\ProjectsController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\ProjectsController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\ProjectsController.cs",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAiwGEAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T07:04:30.541Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 77,
+              "Title": "UpdateProject2DJsonRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\UpdateProject2DJsonRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Projects\\UpdateProject2DJsonRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\UpdateProject2DJsonRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Projects\\UpdateProject2DJsonRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T09:06:15.811Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 73,
+              "Title": "ProjectService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\ProjectService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\ProjectService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\ProjectService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\ProjectService.cs",
+              "ViewState": "AgIAAKAAAAAAAAAAAAAiwNkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T13:43:19.429Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 74,
+              "Title": "IProjectService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IProjectService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IProjectService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IProjectService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IProjectService.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAwwBoAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T13:42:25.934Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 78,
+              "Title": "ProjectDto.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\ProjectDto.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Projects\\ProjectDto.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\ProjectDto.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Projects\\ProjectDto.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAA1wBYAAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T09:17:03.399Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 79,
+              "Title": "CreateProjectRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\CreateProjectRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Projects\\CreateProjectRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\CreateProjectRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Projects\\CreateProjectRequest.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAIwAsAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T13:37:06.124Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 76,
+              "Title": "UpdateProject3DJsonRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\UpdateProject3DJsonRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Projects\\UpdateProject3DJsonRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\UpdateProject3DJsonRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Projects\\UpdateProject3DJsonRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-08T06:17:14.187Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 80,
+              "Title": "ProjectRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\ProjectRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\ProjectRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\ProjectRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\ProjectRepository.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABUAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T13:40:23.699Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 83,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\AppDbContext.cs",
+              "RelativeToolTip": "AHE.DAL\\AppDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:33:06.681Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 81,
+              "Title": "AppDbContextModelSnapshot.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Migrations\\AppDbContextModelSnapshot.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Migrations\\AppDbContextModelSnapshot.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Migrations\\AppDbContextModelSnapshot.cs",
+              "RelativeToolTip": "AHE.DAL\\Migrations\\AppDbContextModelSnapshot.cs",
+              "ViewState": "AgIAAG4CAAAAAAAAAAAAwH0CAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-08T05:51:51.251Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 82,
+              "Title": "AHE.BLL.csproj",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\AHE.BLL.csproj",
+              "RelativeDocumentMoniker": "AHE.BLL\\AHE.BLL.csproj",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\AHE.BLL.csproj",
+              "RelativeToolTip": "AHE.BLL\\AHE.BLL.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-09-08T05:15:22.315Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 88,
+              "Title": "RegionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\RegionRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\RegionRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\RegionRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\RegionRepository.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAB4AAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T12:11:44.642Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 86,
+              "Title": "RegionsController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\RegionsController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\RegionsController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\RegionsController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\RegionsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T03:06:53.833Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 85,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T11:23:20.551Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 84,
+              "Title": "CategoriesController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\CategoriesController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\CategoriesController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\CategoriesController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\CategoriesController.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAowEgAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:42:43.165Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 87,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "AHE.PL\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "AHE.PL\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABEAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T07:16:44.662Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 89,
+              "Title": "RegionResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Regions\\RegionResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Regions\\RegionResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Regions\\RegionResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Regions\\RegionResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAYAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T03:03:27.236Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 90,
+              "Title": "IRegionService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IRegionService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IRegionService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IRegionService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IRegionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T03:05:02.408Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 91,
+              "Title": "RegionService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\RegionService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\RegionService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\RegionService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\RegionService.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAgwBkAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T03:05:49.379Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 92,
+              "Title": "IRegionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IRegionRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IRegionRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IRegionRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IRegionRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T12:11:16.203Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 93,
+              "Title": "IUserService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IUserService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IUserService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IUserService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IUserService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T11:15:29.551Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 94,
+              "Title": "IRefreshTokenService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IRefreshTokenService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IRefreshTokenService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IRefreshTokenService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IRefreshTokenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T06:44:05.477Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 95,
+              "Title": "ProjectResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\ProjectResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Projects\\ProjectResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Projects\\ProjectResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Projects\\ProjectResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T13:38:10.253Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 96,
+              "Title": "IProjectRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IProjectRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IProjectRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IProjectRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IProjectRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T13:39:29.98Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 98,
+              "Title": "ICategoryService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\ICategoryService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\ICategoryService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\ICategoryService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\ICategoryService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T13:39:35.518Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 97,
+              "Title": "UserConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\UserConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\UserConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\UserConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\UserConfiguration.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:43:34.619Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 99,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "AHE.PL\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.PL\\Properties\\launchSettings.json",
+              "RelativeToolTip": "AHE.PL\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-08-31T07:33:47.68Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 101,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\AuthService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\AuthService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\AuthService.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAADgAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T06:43:15.798Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 100,
+              "Title": "UserService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\UserService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\UserService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\UserService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\UserService.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABcAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T11:17:21.904Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 104,
+              "Title": "CreateUserDto.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Users\\CreateUserDto.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Users\\CreateUserDto.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Users\\CreateUserDto.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Users\\CreateUserDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T10:41:44.524Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 102,
+              "Title": "UserDto.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Users\\UserDto.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Users\\UserDto.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Users\\UserDto.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Users\\UserDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAgAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-01T11:09:08.254Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 103,
+              "Title": "IUserRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IUserRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IUserRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IUserRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IUserRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwA0AAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:15:03.235Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 105,
+              "Title": "InitialAdminService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\InitialAdminService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\InitialAdminService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\InitialAdminService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\InitialAdminService.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAA4wHEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T12:13:30.543Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 106,
+              "Title": "IRefreshTokenRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IRefreshTokenRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IRefreshTokenRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IRefreshTokenRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IRefreshTokenRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:14:15.259Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 107,
+              "Title": "RefreshTokenService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\RefreshTokenService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\RefreshTokenService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\RefreshTokenService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\RefreshTokenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T06:44:42.432Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 109,
+              "Title": "RoleRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\RoleRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\RoleRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\RoleRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\RoleRepository.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAgwBgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T12:05:15.954Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 110,
+              "Title": "RefreshTokenRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\RefreshTokenRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Repositories\\RefreshTokenRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Repositories\\RefreshTokenRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Repositories\\RefreshTokenRepository.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAtwBgAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:20:31.739Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 108,
+              "Title": "RefreshTokenConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\RefreshTokenConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\RefreshTokenConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\RefreshTokenConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\RefreshTokenConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:47:17.023Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 111,
+              "Title": "PasswordHasher.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\PasswordHasher.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\PasswordHasher.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\PasswordHasher.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\PasswordHasher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:28:06.606Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 112,
+              "Title": "IInitialAdminService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IInitialAdminService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IInitialAdminService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IInitialAdminService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IInitialAdminService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T12:08:46.361Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 113,
+              "Title": "IRoleRepository.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IRoleRepository.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Interfaces\\Repositories\\IRoleRepository.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Interfaces\\Repositories\\IRoleRepository.cs",
+              "RelativeToolTip": "AHE.DAL\\Interfaces\\Repositories\\IRoleRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T12:04:22.586Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 114,
+              "Title": "RoleConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\RoleConfiguration.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Configurations\\RoleConfiguration.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Configurations\\RoleConfiguration.cs",
+              "RelativeToolTip": "AHE.DAL\\Configurations\\RoleConfiguration.cs",
+              "ViewState": "AgIAACQAAAAAAAAAAAAYwEAAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T12:42:23.461Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 115,
+              "Title": "IJwtTokenService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IJwtTokenService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IJwtTokenService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IJwtTokenService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IJwtTokenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:50:11.322Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 116,
+              "Title": "JwtTokenService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\JwtTokenService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Services\\JwtTokenService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Services\\JwtTokenService.cs",
+              "RelativeToolTip": "AHE.BLL\\Services\\JwtTokenService.cs",
+              "ViewState": "AgIAABkAAAAAAAAAAAAjwDEAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:51:49.404Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 117,
+              "Title": "LoginRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Authentication\\LoginRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Authentication\\LoginRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Authentication\\LoginRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Authentication\\LoginRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAYAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T09:54:43.961Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 118,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IAuthService.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IAuthService.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IAuthService.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T06:41:58.792Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 119,
+              "Title": "IPasswordHasher.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IPasswordHasher.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Interfaces\\IPasswordHasher.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Interfaces\\IPasswordHasher.cs",
+              "RelativeToolTip": "AHE.BLL\\Interfaces\\IPasswordHasher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T10:26:24.851Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 120,
+              "Title": "RefreshTokenRequest.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Authentication\\RefreshTokenRequest.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Authentication\\RefreshTokenRequest.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Authentication\\RefreshTokenRequest.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Authentication\\RefreshTokenRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T09:56:33.416Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 121,
+              "Title": "LoginResponse.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Authentication\\LoginResponse.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\DTOs\\Authentication\\LoginResponse.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\DTOs\\Authentication\\LoginResponse.cs",
+              "RelativeToolTip": "AHE.BLL\\DTOs\\Authentication\\LoginResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-27T09:55:29.787Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 122,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Class1.cs",
+              "RelativeDocumentMoniker": "AHE.BLL\\Class1.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.BLL\\Class1.cs",
+              "RelativeToolTip": "AHE.BLL\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T10:31:35.037Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 123,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Class1.cs",
+              "RelativeDocumentMoniker": "AHE.DAL\\Class1.cs",
+              "ToolTip": "C:\\Users\\PTS-PC-278_USR02\\source\\repos\\AHE\\AHE.DAL\\Class1.cs",
+              "RelativeToolTip": "AHE.DAL\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-26T10:33:32.555Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

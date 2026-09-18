@@ -1,6 +1,0 @@
-@AHE.PL_HostAddress = http://localhost:5217
-
-GET {{AHE.PL_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

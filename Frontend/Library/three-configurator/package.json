@@ -1,0 +1,63 @@
+{
+  "name": "three-configurator",
+  "version": "0.1.0",
+  "description": "A modular framework for building 3D configurators with Three.js",
+  "type": "module",
+  "main": "./dist/three-configurator.cjs.js",
+  "module": "./dist/three-configurator.es.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "copy-types": "cpx \"dist/**/*.d.ts\" dist-obfuscated",
+    "copy-assets": "cpx \"dist/image/**/*\" dist-obfuscated/image",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "build:prod": "npm run build && npm run obfuscate && npm run copy-types && npm run copy-assets",
+    "obfuscate": "node scripts/obfuscate-dist.mjs",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build",
+    "watch": "vite build --watch",
+    "docs:api": "typedoc",
+    "docs:dev": "npm run docs:api && vitepress dev docs",
+    "docs:build": "npm run docs:api && vitepress build docs"
+  },
+  "keywords": [
+    "three.js",
+    "3d",
+    "configurator",
+    "webgl",
+    "gltf"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/three-configurator"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.12",
+    "@types/three": "^0.176.0",
+    "@types/uuid": "^10.0.0",
+    "cpx": "^1.5.0",
+    "javascript-obfuscator": "^4.1.1",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0",
+    "typedoc-vitepress-theme": "^1.1.3",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vitepress": "^1.6.4"
+  },
+  "dependencies": {
+    "@mlightcad/three-viewcube": "^0.0.10",
+    "@tweenjs/tween.js": "^25.0.0",
+    "eventemitter3": "^5.0.1",
+    "konva": "^10.0.12",
+    "three": "^0.176.0",
+    "three-bvh-csg": "^0.0.18",
+    "three-mesh-bvh": "^0.9.8",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.47"
+  }
+}

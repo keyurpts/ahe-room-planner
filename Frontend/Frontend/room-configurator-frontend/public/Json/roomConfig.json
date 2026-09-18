@@ -1,0 +1,628 @@
+{
+  "projectId": "room-config-001",
+  "name": "Customizable Room",
+  "version": "1.0",
+  "baseModel": {
+    "url": "/sample_room.glb",
+    "format": "glb",
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "position": [
+      0,
+      0,
+      0
+    ]
+  },
+  "configModels": [
+    {
+      "category": "chair",
+      "id": "chair",
+      "items": [
+        {
+          "name": "chair-1",
+          "id": "chair-1",
+          "price": "$249",
+          "uri": "RoomConfiguratorModels/chair/chair_1.glb",
+          "previewImage": "RoomConfiguratorModels/chair/chair_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "chair-2",
+          "id": "chair-2",
+          "price": "$139",
+          "uri": "RoomConfiguratorModels/chair/chair_2.glb",
+          "previewImage": "RoomConfiguratorModels/chair/chair_2_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "chair-3",
+          "id": "chair-3",
+          "price": "$145",
+          "uri": "RoomConfiguratorModels/chair/chair_3.glb",
+          "previewImage": "RoomConfiguratorModels/chair/chair_3_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "Coffee-table",
+      "id": "Coffee-table",
+      "items": [
+        {
+          "name": "Coffee-table-1",
+          "id": "Coffee-table-1",
+          "price": "$349",
+          "uri": "RoomConfiguratorModels/Coffee-table/coffee_table_1.glb",
+          "previewImage": "RoomConfiguratorModels/Coffee-table/coffee_table_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Coffee-table-2",
+          "id": "Coffee-table-2",
+          "price": "$299",
+          "uri": "RoomConfiguratorModels/Coffee-table/coffee_table_2.glb",
+          "previewImage": "RoomConfiguratorModels/Coffee-table/coffee_table_2_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Coffee-table-3",
+          "id": "Coffee-table-3",
+          "price": "$235",
+          "uri": "RoomConfiguratorModels/Coffee-table/coffee_table_3.glb",
+          "previewImage": "RoomConfiguratorModels/Coffee-table/coffee_table_3_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Coffee-table-4",
+          "id": "Coffee-table-4",
+          "price": "$342",
+          "uri": "RoomConfiguratorModels/Coffee-table/coffee_table_4.glb",
+          "previewImage": "RoomConfiguratorModels/Coffee-table/coffee_table_4_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "sofa",
+      "id": "sofa",
+      "items": [
+        {
+          "name": "sofa-1",
+          "id": "sofa-1",
+          "price": "$449",
+          "uri": "RoomConfiguratorModels/sofa/sofa_1.glb",
+          "previewImage": "RoomConfiguratorModels/sofa/sofa_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "sofa-2",
+          "id": "sofa-2",
+          "price": "$539",
+          "uri": "RoomConfiguratorModels/sofa/sofa_2.glb",
+          "previewImage": "RoomConfiguratorModels/sofa/sofa_2_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "sofa-3",
+          "id": "sofa-3",
+          "price": "$545",
+          "uri": "RoomConfiguratorModels/sofa/sofa_3.glb",
+          "previewImage": "RoomConfiguratorModels/sofa/sofa_3_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "sofa-4",
+          "id": "sofa-4",
+          "price": "$432",
+          "uri": "RoomConfiguratorModels/sofa/sofa_4.glb",
+          "previewImage": "RoomConfiguratorModels/sofa/sofa_4_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "dinning-set",
+      "id": "dinning-set",
+      "items": [
+        {
+          "name": "dining-set-1",
+          "id": "dining-set-1",
+          "price": "$649",
+          "uri": "RoomConfiguratorModels/dining-set/dining_table_1.glb",
+          "previewImage": "RoomConfiguratorModels/dining-set/dining_table_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "dining-set-2",
+          "id": "dining-set-2",
+          "price": "$639",
+          "uri": "RoomConfiguratorModels/dining-set/dining_table_2.glb",
+          "previewImage": "RoomConfiguratorModels/dining-set/dining_table_2_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "dining-set-3",
+          "id": "dining-set-3",
+          "price": "$745",
+          "uri": "RoomConfiguratorModels/dining-set/dining_table_3.glb",
+          "previewImage": "RoomConfiguratorModels/dining-set/dining_table_3_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "kitchen-cabinet",
+      "id": "kitchen-cabinet",
+      "items": [
+        {
+          "name": "kitchen-cabinet-1",
+          "id": "kitchen-cabinet-1",
+          "price": "$1049",
+          "uri": "RoomConfiguratorModels/kitchen-cabinet/kitchen_cabinet_1.glb",
+          "previewImage": "RoomConfiguratorModels/kitchen-cabinet/kitchen_cabinet_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "kitchen-cabinet-2",
+          "id": "kitchen-cabinet-2",
+          "price": "$999",
+          "uri": "RoomConfiguratorModels/kitchen-cabinet/kitchen_cabinet_2.glb",
+          "previewImage": "RoomConfiguratorModels/kitchen-cabinet/kitchen_cabinet_2_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "kitchen-cabinet-3",
+          "id": "kitchen-cabinet-3",
+          "price": "$800",
+          "uri": "RoomConfiguratorModels/kitchen-cabinet/kitchen_cabinet_3.glb",
+          "previewImage": "RoomConfiguratorModels/kitchen-cabinet/kitchen_cabinet_3_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "dish-washer",
+      "id": "dish-washer",
+      "items": [
+        {
+          "name": "dish-washer-1",
+          "id": "dish-washer-1",
+          "price": "$249",
+          "uri": "RoomConfiguratorModels/dishwasher/dishwasher_1.glb",
+          "previewImage": "RoomConfiguratorModels/dishwasher/dishwasher_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "dish-washer-2",
+          "id": "dish-washer-2",
+          "price": "$139",
+          "uri": "RoomConfiguratorModels/dishwasher/dishwasher_2.glb",
+          "previewImage": "RoomConfiguratorModels/dishwasher/dishwasher_2_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "dish-washer-3",
+          "id": "dish-washer-3",
+          "price": "$145",
+          "uri": "RoomConfiguratorModels/dishwasher/dishwasher_3.glb",
+          "previewImage": "RoomConfiguratorModels/dishwasher/dishwasher_3_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "bed",
+      "id": "bed",
+      "items": [
+        {
+          "name": "bed-1",
+          "id": "bed-1",
+          "price": "$249",
+          "uri": "RoomConfiguratorModels/bed/bed_1.glb",
+          "previewImage": "RoomConfiguratorModels/bed/bed_1_thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "bed-2",
+          "id": "bed-2",
+          "price": "$139",
+          "uri": "RoomConfiguratorModels/bed/bed_2.glb",
+          "previewImage": "RoomConfiguratorModels/bed/bed_2_thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "Cabinet",
+      "id": "Cabinet",
+      "items": [
+        {
+          "name": "Cabinet-RDL-GD",
+          "id": "BSC-RDL-GD",
+          "price": "$1,099",
+          "uri": "RoomConfiguratorModels/BSC (Cabinet)/BSC-RDL-GD.glb",
+          "previewImage": "RoomConfiguratorModels/BSC (Cabinet)/BSC-RDL-GD-thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Cabinet-RDL-PD",
+          "id": "BSC-RDL-PD",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/BSC (Cabinet)/BSC-RDL-PD.glb",
+          "previewImage": "RoomConfiguratorModels/BSC (Cabinet)/BSC-RDL-PD-thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Cabinet-ROLDH-GD",
+          "id": "BSC-ROLDH-GD",
+          "price": "$799",
+          "uri": "RoomConfiguratorModels/BSC (Cabinet)/BSC-ROLDH-GD.glb",
+          "previewImage": "RoomConfiguratorModels/BSC (Cabinet)/BSC-ROLDH-GD-thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "Desk",
+      "id": "Desk",
+      "items": [
+        {
+          "name": "Desk-BF",
+          "id": "DESK-BF",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/DESKS (Desk)/DESK-BF.glb",
+          "previewImage": "RoomConfiguratorModels/DESKS (Desk)/DESK-BF-thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Desk-ECUL24C24E",
+          "id": "DESK-ECUL24C24E",
+          "price": "$899",
+          "uri": "RoomConfiguratorModels/DESKS (Desk)/DESK-ECUL24C24E.glb",
+          "previewImage": "RoomConfiguratorModels/DESKS (Desk)/DESK-ECUL24C24E-thumbnail.png",
+          "format": "gltf"
+        },
+        {
+          "name": "Desk-RFF",
+          "id": "DESK-RFF",
+          "price": "$2,199",
+          "uri": "RoomConfiguratorModels/DESKS (Desk)/DESK-RFF.glb",
+          "previewImage": "RoomConfiguratorModels/DESKS (Desk)/DESK-RFF-thumbnail.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "FlatFileCabinet",
+      "id": "FlatFileCabinet",
+      "items": [
+        {
+          "name": "LBC-2DBF",
+          "id": "LBC-2DBF",
+          "price": "$899",
+          "uri": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-2DBF.glb",
+          "previewImage": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-2DBF.png",
+          "format": "gltf"
+        },
+        {
+          "name": "LBC-BFBF",
+          "id": "LBC-BFBF",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-BFBF.glb",
+          "previewImage": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-BFBF.png",
+          "format": "gltf"
+        },
+        {
+          "name": "LBC-BFO",
+          "id": "LBC-BFO",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-BFO.glb",
+          "previewImage": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-BFO.png",
+          "format": "gltf"
+        },
+        {
+          "name": "LBC-OP",
+          "id": "LBC-OP",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-OP.glb",
+          "previewImage": "RoomConfiguratorModels/LBC (Flat File Cabinet)/LBC-OP.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "CombinationStorageCabinate",
+      "id": "CombinationStorageCabinate",
+      "items": [
+        {
+          "name": "LST-2D-2D-PD",
+          "id": "LST-2D-2D-PD",
+          "price": "$899",
+          "uri": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-2D-PD.glb",
+          "previewImage": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-2D-PD.png",
+          "format": "gltf"
+        },
+        {
+          "name": "LST-2D-BBFL-GD",
+          "id": "LST-2D-BBFL-GD",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-BBFL-GD.glb",
+          "previewImage": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-BBFL-GD.png",
+          "format": "gltf"
+        },
+        {
+          "name": "LST-2D-FBBL-PD",
+          "id": "LST-2D-FBBL-PD",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-FBBL-PD.glb",
+          "previewImage": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-FBBL-PD.png",
+          "format": "gltf"
+        },
+        {
+          "name": "LST-2D-OP-GD",
+          "id": "LST-2D-OP-GD",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-OP-GD.glb",
+          "previewImage": "RoomConfiguratorModels/LST (Combination Storage Cabinet)/LST-2D-OP-GD.png",
+          "format": "gltf"
+        }
+      ]
+    },
+    {
+      "category": "PedestalDrawer",
+      "id": "PedestalDrawer",
+      "items": [
+        {
+          "name": "PED-SP-MBBF",
+          "id": "PED-SP-MBBF",
+          "price": "$899",
+          "uri": "RoomConfiguratorModels/PED (Pedestal Drawer)/PED-SP-MBBF.glb",
+          "previewImage": "RoomConfiguratorModels/PED (Pedestal Drawer)/PED-SP-MBBF.png",
+          "format": "gltf"
+        },
+        {
+          "name": "PED-SP-MFF",
+          "id": "PED-SP-MFF",
+          "price": "$1,299",
+          "uri": "RoomConfiguratorModels/PED (Pedestal Drawer)/PED-SP-MFF.glb",
+          "previewImage": "RoomConfiguratorModels/PED (Pedestal Drawer)/PED-SP-MFF.png",
+          "format": "gltf"
+        }
+      ]
+    }
+  ],
+  "configTextures": [
+    {
+      "name": "beige-cotton-color",
+      "id": "text_1",
+      "price": "$25",
+      "previewImage": "/models/images/textures/beige-cotton-color.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "cherry",
+      "id": "text_2",
+      "price": "$30",
+      "previewImage": "/models/images/textures/cherry.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "dark-mahogany",
+      "id": "text_3",
+      "price": "$35",
+      "previewImage": "/models/images/textures/dark-mahogany.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "hessian-color",
+      "id": "text_4",
+      "price": "$20",
+      "previewImage": "/models/images/textures/hessian-color.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "leather-black-color",
+      "id": "text_5",
+      "price": "$45",
+      "previewImage": "/models/images/textures/leather-black-color.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "leather-brown-color",
+      "id": "text_6",
+      "price": "$40",
+      "previewImage": "/models/images/textures/leather-brown-color.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "leather-green-color",
+      "id": "text_7",
+      "price": "$43",
+      "previewImage": "/models/images/textures/leather-green-color.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "old-school",
+      "id": "text_8",
+      "price": "$28",
+      "previewImage": "/models/images/textures/old-school.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "red-oak",
+      "id": "text_9",
+      "price": "$32",
+      "previewImage": "/models/images/textures/red-oak.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "red-upolstered",
+      "id": "text_10",
+      "price": "$40",
+      "previewImage": "/models/images/textures/red-upolstered.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "soft-maple",
+      "id": "text_11",
+      "price": "$30",
+      "previewImage": "/models/images/textures/soft-maple.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "walnut",
+      "id": "text_12",
+      "price": "$38",
+      "previewImage": "/models/images/textures/walnut.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "waterfall-mugul",
+      "id": "text_13",
+      "price": "$34",
+      "previewImage": "/models/images/textures/waterfall-mugul.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    },
+    {
+      "name": "white-satin",
+      "id": "text_14",
+      "price": "$26",
+      "previewImage": "/models/images/textures/white-satin.jpg",
+      "wrapS": "RepeatWrapping",
+      "wrapT": "RepeatWrapping",
+      "repeat": [
+        2,
+        2
+      ]
+    }
+  ],
+  "configMaterials": [
+    {
+      "name": "white",
+      "id": "white",
+      "price": "$35",
+      "color": "#ffffff",
+      "metalness": 0.5,
+      "roughness": 0.5,
+      "side": "front",
+      "texture": "text_1"
+    },
+    {
+      "name": "brown",
+      "id": "brown",
+      "price": "$40",
+      "color": "#8b6914",
+      "metalness": 0.5,
+      "roughness": 0.5,
+      "side": "back",
+      "texture": "text_1"
+    },
+    {
+      "name": "beige-brown",
+      "id": "beige-brown",
+      "price": "$42",
+      "color": "#BC9F8F",
+      "metalness": 0.5,
+      "roughness": 0.5,
+      "side": "both",
+      "texture": "text_1"
+    },
+    {
+      "name": "black brown",
+      "id": "black brown",
+      "price": "$45",
+      "color": "#4b1d02",
+      "metalness": 0.5,
+      "roughness": 0.5,
+      "side": "both",
+      "texture": "text_1"
+    },
+    {
+      "name": "mahogany",
+      "id": "mahogany",
+      "price": "$48",
+      "color": "#BC6A3C",
+      "metalness": 0.5,
+      "roughness": 0.5,
+      "side": "both",
+      "texture": "text_1"
+    }
+  ],
+  "meta": {
+    "createdBy": "Designer A",
+    "createdAt": "2025-09-30",
+    "tags": [
+      "room",
+      "furniture",
+      "configurator"
+    ]
+  }
+}
