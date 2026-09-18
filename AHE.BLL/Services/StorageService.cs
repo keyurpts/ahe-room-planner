@@ -440,8 +440,14 @@ namespace AHE.BLL.Services
 
             if (string.IsNullOrWhiteSpace(texture.TexturePath))
             {
-                throw new InvalidOperationException(
-                    "Texture storage path is not configured.");
+                return new TextureDownloadUrlResponse
+                {
+                    TextureId = texture.Id,
+
+                    TextureName = texture.TextureName,
+
+                    DownloadUrl = null,
+                };
             }
 
             var expiryMinutes = 60;
@@ -457,11 +463,7 @@ namespace AHE.BLL.Services
 
                 TextureName = texture.TextureName,
 
-                TexturePath = texture.TexturePath,
-
                 DownloadUrl = downloadUri.ToString(),
-
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
             };
         }
 

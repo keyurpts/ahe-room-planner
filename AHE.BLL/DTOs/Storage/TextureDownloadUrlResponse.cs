@@ -10,10 +10,6 @@ namespace AHE.BLL.DTOs.Storage
 
         public string TextureName { get; set; } = null!;
 
-        public string TexturePath { get; set; } = null!;
-
-        public string DownloadUrl { get; set; } = null!;
-
-        public DateTimeOffset ExpiresAt { get; set; }
+        public string? DownloadUrl { get; set; }
     }
 }

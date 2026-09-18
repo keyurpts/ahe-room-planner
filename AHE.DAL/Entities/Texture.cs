@@ -11,7 +11,7 @@ namespace AHE.DAL.Entities
 
         public string TextureName { get; set; } = null!;
 
-        public string TexturePath { get; set; } = null!;
+        public string? TexturePath { get; set; }
 
         public JsonDocument? TextureMetadata { get; set; }
 

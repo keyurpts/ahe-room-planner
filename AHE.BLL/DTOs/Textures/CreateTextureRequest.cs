@@ -9,6 +9,8 @@ namespace AHE.BLL.DTOs.Textures
     {
         public string TextureName { get; set; } = null!;
 
+        public bool HasTextureImage { get; set; }
+
         public JsonDocument? TextureMetadata { get; set; }
     }
 }

@@ -35,15 +35,15 @@ public class TextureService : ITextureService
 
         var textureName = request.TextureName.Trim();
 
-        var texturePath = $"textures/{textureName}/";
-
         var texture = new Texture
         {
             Id = Guid.NewGuid(),
 
             TextureName = textureName,
 
-            TexturePath = texturePath,
+            TexturePath = request.HasTextureImage
+                ? $"textures/{textureName}/"
+                : null,
 
             TextureMetadata = request.TextureMetadata,
 
@@ -60,31 +60,38 @@ public class TextureService : ITextureService
         var createdTexture =
             await _textureRepository.AddAsync(texture);
 
-        // 2. Generate the signed upload URL.
-        var uploadResponse =
-            await _storageService.GenerateTextureUploadUrlAsync(
-                createdTexture.Id,
-                createdTexture.TextureName);
+        // 2. Generate the signed upload URL only
+        //    if the texture requires an image.
+        if (request.HasTextureImage)
+        {
+            var uploadResponse =
+                await _storageService.GenerateTextureUploadUrlAsync(
+                    createdTexture.Id,
+                    createdTexture.TextureName);
 
-        // 3. Store the blob path in the database.
-        createdTexture.TexturePath =
-            uploadResponse.BlobPath;
+            // 3. Store the actual blob path.
+            createdTexture.TexturePath =
+                uploadResponse.BlobPath;
 
-        createdTexture.UpdatedAt = DateTime.UtcNow;
+            createdTexture.UpdatedAt = DateTime.UtcNow;
 
-        await _textureRepository.UpdateAsync(createdTexture);
+            await _textureRepository.UpdateAsync(createdTexture);
 
-        // 4. Return the texture and upload details.
-        var response = MapToResponse(createdTexture);
+            // 4. Return upload details.
+            var response = MapToResponse(createdTexture);
 
-        response.UploadUrl = uploadResponse.UploadUrl;
+            response.UploadUrl = uploadResponse.UploadUrl;
+            response.BlobPath = uploadResponse.BlobPath;
+            response.ExpiresAt = uploadResponse.ExpiresAt;
 
-        response.BlobPath = uploadResponse.BlobPath;
+            return response;
+        }
 
-        response.ExpiresAt = uploadResponse.ExpiresAt;
-
-        return response;
+        // Texture does not have an image.
+        return MapToResponse(createdTexture);
     }
+
+
     public async Task<List<TextureResponse>> GetAllAsync()
     {
         var textures =

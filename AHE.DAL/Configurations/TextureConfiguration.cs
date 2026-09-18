@@ -23,7 +23,7 @@ public class TextureConfiguration
             .IsRequired();
 
         builder.Property(x => x.TexturePath)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(x => x.TextureMetadata)
             .HasColumnType("jsonb");
