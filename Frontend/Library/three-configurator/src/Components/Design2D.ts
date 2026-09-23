@@ -849,8 +849,9 @@ export class Design2D {
 
   /**
    * Handles placing a point or creating a wall in DRAW mode.
+   * Automatically exits draw mode when a closed room is completed.
    */
-  private handleDrawMode(worldPos: { x: number; y: number }, isDoubleClick: boolean = false) {
+  private async handleDrawMode(worldPos: { x: number; y: number }, isDoubleClick: boolean = false) {
     if (!this.lastPoint && !this.isDrawModeExplicitlyEnabled && !isDoubleClick) {
       return;
     }
@@ -908,6 +909,10 @@ export class Design2D {
         return;
       }
 
+      // Capture room count before creating the new wall
+      const roomsBefore = await this.detectRooms();
+      const roomCountBefore = roomsBefore.length;
+
       const wallGroup = this.floorplan.newWall(
         this.lastPoint.x,
         this.lastPoint.y,
@@ -928,7 +933,16 @@ export class Design2D {
       }
 
       this.draw(); // Ensure walls are rendered before detection
-      this.detectRooms();
+      const roomsAfter = await this.detectRooms();
+      const roomCountAfter = roomsAfter.length;
+
+      // If a new closed room was formed, exit draw mode automatically
+      if (roomCountAfter > roomCountBefore) {
+        this.lastPoint = null;
+        this.setMode(RoomEditorMode.DRAW, false);
+        this.draw();
+        return;
+      }
     }
 
     this.lastPoint = { x: finalX, y: finalY };
@@ -1163,25 +1177,25 @@ export class Design2D {
         dy = y2 - y1;
       const length = Math.sqrt(dx * dx + dy * dy);
 
-          const t =
-            ((worldPos.x - x1) * dx + (worldPos.y - y1) * dy) /
-            (length * length);
-          const windowWidth = Config.DEFAULT_WINDOW_WIDTH as number;
-                    const windowCanvasWidth = this.getOpeningCanvasWidth(windowWidth);
+      const t =
+        ((worldPos.x - x1) * dx + (worldPos.y - y1) * dy) /
+        (length * length);
+      const windowWidth = Config.DEFAULT_WINDOW_WIDTH as number;
+      const windowCanvasWidth = this.getOpeningCanvasWidth(windowWidth);
 
-          // const halfWidth = windowWidth / 2;
-                    const halfWidth = windowCanvasWidth / 2;
-          const offset = Math.max(
-            halfWidth,
-            Math.min(length - halfWidth, t * length),
-          );
+      // const halfWidth = windowWidth / 2;
+      const halfWidth = windowCanvasWidth / 2;
+      const offset = Math.max(
+        halfWidth,
+        Math.min(length - halfWidth, t * length),
+      );
 
-          const isOverlapping = this.isItemOverlapping(
-            userData,
-            offset,
-            // windowWidth
-            windowCanvasWidth
-          );
+      const isOverlapping = this.isItemOverlapping(
+        userData,
+        offset,
+        // windowWidth
+        windowCanvasWidth
+      );
 
       if (!isOverlapping) {
         if (!userData.windows) userData.windows = [];

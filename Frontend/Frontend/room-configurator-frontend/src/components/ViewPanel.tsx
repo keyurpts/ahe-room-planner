@@ -152,6 +152,7 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
 
     // get core instance and load env map
     const instance = newManager.getConfiguratorCore();
+    instance!.setBackgroundColor(0xbad0d4);
 
     let loadEnvMap = async () => {
       await instance.loadEnvironmentMap(

@@ -380,6 +380,7 @@ const TopPanel = ({
                     }`}
                   startContent={<Icon icon={Icons.settings2Icon} className="w-4 h-4" />}
                   onPress={() => {
+                    // configuratorInstance!.exportToGLB();
                     if (isRoomPresent) {
                       setIsLeftPanelOpen(true);
                       setIsConfigUiOpen(true);

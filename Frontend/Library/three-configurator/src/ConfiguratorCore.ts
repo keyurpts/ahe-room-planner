@@ -40,7 +40,7 @@ import {
   PlaneGeometry,
   TextureLoader,
   RepeatWrapping,
-  SRGBColorSpace,
+  SRGBColorSpace
 } from "three";
 import {
   Tween,
@@ -6346,12 +6346,13 @@ export class ConfiguratorCore {
    * @internal
    */
   public load2DTo3DMesh(model: Object3D, groundPlane: Object3D): void {
+    console.log(groundPlane);
     model.name = RequiredStrings.ROOM_MODEL;
     this.mainModel = model;
     this.lightsManager.mainModel = model;
     this.modelRoot = model;
     this.scene.add(model);
-    this.scene.add(groundPlane);
+    // this.scene.add(groundPlane);
     this.enableShadowsOnObject(model);
 
     if (this.camera instanceof PerspectiveCamera) {

@@ -89,7 +89,7 @@ export declare enum Config {
     DEFAULT_WINDOW_WIDTH = 100,
     DEFAULT_DOOR_WIDTH = 90,
     WORLD_SCALE = 0.01,
-    KONVA_UNIT_TO_CM = 0.6
+    KONVA_UNIT_TO_CM = 1
 }
 /**
  * Enums for preset camera view names.

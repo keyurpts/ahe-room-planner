@@ -24,6 +24,11 @@ export const getThumbnailDownloadUrlApi = (
     ? `${AUTH_API_BASE}/api/storage/thumbnails/${categoryId}/${modelId}/${textureId}/download-url`
     : `/api/storage/thumbnails/${categoryId}/${modelId}/${textureId}/download-url`;
 
+export const getTextureDownloadUrlApi = (textureId: string) =>
+  AUTH_API_BASE
+    ? `${AUTH_API_BASE}/api/storage/${textureId}/texture/download-url`
+    : `/api/storage/${textureId}/texture/download-url`;
+
 export const update2DJSONApi = (projectId: string) =>
   AUTH_API_BASE
     ? `${AUTH_API_BASE}/api/Projects/${projectId}/2d-json`

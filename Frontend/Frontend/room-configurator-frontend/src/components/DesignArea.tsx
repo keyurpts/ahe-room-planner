@@ -1202,6 +1202,7 @@ export default function DesignArea({
                   // const glbData = await (configuratorInstance as any)?.exportSceneAsGLB();
                   const configData = await (configuratorInstance as any)?.export3DConfig();
                   
+
                   console.log("configData", configData);
                 } catch (err) {
                   console.error("Failed to export GLB:", err);

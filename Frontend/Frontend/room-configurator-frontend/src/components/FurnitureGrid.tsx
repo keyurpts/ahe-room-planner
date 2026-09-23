@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -11,12 +11,17 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Icons from "../icons";
-import { ConfiguratorCore } from "three-configurator";
+import {
+  ConfiguratorCore,
+  Events,
+  ConfiguratorEventType,
+} from "three-configurator";
 import { useTheme } from "../ThemeContext";
 import {
   getModelsByCategoryApi,
   getStorageDownloadUrlApi,
   getThumbnailDownloadUrlApi,
+  getTextureDownloadUrlApi,
   resolveStorageUrl,
   TEXTURES_API,
 } from "./Constants";
@@ -199,6 +204,44 @@ export default function FurnitureGrid({
   const [textures, setTextures] = useState<any[]>([]);
   const [selectedTexture, setSelectedTexture] = useState<string>("");
   const [isLoadingTextures, setIsLoadingTextures] = useState<boolean>(false);
+
+  const pendingTextureRef = useRef<{
+    downloadUrl: string;
+    textureId: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleModelPlaced = (metadata: any) => {
+      if (metadata && pendingTextureRef.current && configuratorInstance) {
+        const { downloadUrl, textureId } = pendingTextureRef.current;
+        pendingTextureRef.current = null;
+        console.log("Model placed (not in preview mode) - applying texture:", {
+          downloadUrl,
+          textureId,
+        });
+        // Small delay to ensure ConfiguratorCore has fully settled
+        // (transform controls attached, modelRoot set, switchControlMode completed)
+        setTimeout(() => {
+          configuratorInstance.applyTextureToModel(downloadUrl, textureId);
+        }, 100);
+      }
+    };
+
+    const handlePreviewCancelled = () => {
+      pendingTextureRef.current = null;
+    };
+
+    Events.on(ConfiguratorEventType.MODEL_SELECTED, handleModelPlaced);
+    Events.on(ConfiguratorEventType.PREVIEW_CANCELLED, handlePreviewCancelled);
+
+    return () => {
+      Events.off(ConfiguratorEventType.MODEL_SELECTED, handleModelPlaced);
+      Events.off(
+        ConfiguratorEventType.PREVIEW_CANCELLED,
+        handlePreviewCancelled
+      );
+    };
+  }, [configuratorInstance]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
@@ -470,6 +513,67 @@ export default function FurnitureGrid({
       },
     };
 
+    // Start texture download URL fetch early (concurrently with model load)
+    // so pendingTextureRef is set BEFORE MODEL_SELECTED fires during placement
+    const texturePromise = selectedTexture
+      ? (async () => {
+          try {
+            const token = getAccessToken();
+            const headers: Record<string, string> = { Accept: "*/*" };
+            if (token) {
+              headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            const textureRes = await fetch(
+              getTextureDownloadUrlApi(selectedTexture),
+              { method: "GET", headers }
+            );
+
+            if (textureRes.ok) {
+              const contentType = textureRes.headers.get("content-type");
+              if (contentType && contentType.includes("application/json")) {
+                const data = await textureRes.json();
+                console.log("texture response data", data);
+
+                const downloadUrl = resolveStorageUrl(data.downloadUrl);
+                const textureId = data.textureId;
+
+                // Always store as pending — model starts in preview mode,
+                // texture will be applied when MODEL_SELECTED fires after placement
+                pendingTextureRef.current = { downloadUrl, textureId };
+                console.log("Texture URL fetched and stored in pendingTextureRef:", {
+                  downloadUrl,
+                  textureId,
+                });
+              } else {
+                const textUrl = await textureRes.text();
+                if (
+                  textUrl &&
+                  (textUrl.startsWith("http://") ||
+                    textUrl.startsWith("https://") ||
+                    textUrl.startsWith("/"))
+                ) {
+                  const resolvedUrl = resolveStorageUrl(textUrl.trim());
+                  pendingTextureRef.current = {
+                    downloadUrl: resolvedUrl,
+                    textureId: selectedTexture,
+                  };
+                }
+              }
+            } else {
+              console.warn(
+                `Failed to get signed download URL for texture ${selectedTexture} (${textureRes.status})`
+              );
+            }
+          } catch (texErr) {
+            console.warn(
+              `Error fetching texture download URL for textureId ${selectedTexture}:`,
+              texErr
+            );
+          }
+        })()
+      : Promise.resolve();
+
     try {
       let modelUrlToLoad = item.path;
       const modelId = item.modelId || item.id;
@@ -527,6 +631,10 @@ export default function FurnitureGrid({
           );
         }
       }
+
+      // Wait for texture URL fetch to complete before loading model,
+      // so pendingTextureRef.current is guaranteed to be set
+      await texturePromise;
 
       modelUrlToLoad = resolveStorageUrl(modelUrlToLoad);
 
@@ -642,18 +750,17 @@ export default function FurnitureGrid({
                   >
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex flex-col items-center">
-                          <button
-                            onClick={() => configuratorInstance?.resetMaterial()}
-                            className={`group relative w-full aspect-square max-w-[64px] rounded border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95 ${
-                              theme === "dark"
-                                ? "border-zinc-600 hover:border-amber-400/70 hover:bg-zinc-800"
-                                : "border-zinc-300 hover:border-zinc-500 hover:bg-zinc-50"
-                              }`}
-                            aria-label="Reset"
-                          >
-                            <Icon icon={Icons.eraserIcon} width={18} height={18} className={theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"} />
-                            <span className={`text-[8px] font-semibold tracking-wider uppercase ${theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"}`}>Reset</span>
-                          </button>
+                        <button
+                          onClick={() => configuratorInstance?.resetMaterial()}
+                          className={`group relative w-full aspect-square max-w-[64px] rounded border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95 ${theme === "dark"
+                            ? "border-zinc-600 hover:border-amber-400/70 hover:bg-zinc-800"
+                            : "border-zinc-300 hover:border-zinc-500 hover:bg-zinc-50"
+                            }`}
+                          aria-label="Reset"
+                        >
+                          <Icon icon={Icons.eraserIcon} width={18} height={18} className={theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"} />
+                          <span className={`text-[8px] font-semibold tracking-wider uppercase ${theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"}`}>Reset</span>
+                        </button>
                         <span className="text-xs mt-1 opacity-0 pointer-events-none select-none">Reset</span>
                       </div>
                       {roomConfig?.configMaterials?.map(
@@ -687,28 +794,26 @@ export default function FurnitureGrid({
                   >
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex flex-col items-center">
-                          <button
-                            onClick={() => configuratorInstance?.resetTexture()}
-                            className={`group relative w-full aspect-square max-w-[64px] rounded border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95 ${
-                              theme === "dark"
-                                ? "border-zinc-600 hover:border-amber-400/70 hover:bg-zinc-800"
-                                : "border-zinc-300 hover:border-zinc-500 hover:bg-zinc-50"
-                              }`}
-                            aria-label="Reset"
-                          >
-                            <Icon icon={Icons.eraserIcon} width={18} height={18} className={theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"} />
-                            <span className={`text-[8px] font-semibold tracking-wider uppercase ${theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"}`}>Reset</span>
-                          </button>
+                        <button
+                          onClick={() => configuratorInstance?.resetTexture()}
+                          className={`group relative w-full aspect-square max-w-[64px] rounded border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95 ${theme === "dark"
+                            ? "border-zinc-600 hover:border-amber-400/70 hover:bg-zinc-800"
+                            : "border-zinc-300 hover:border-zinc-500 hover:bg-zinc-50"
+                            }`}
+                          aria-label="Reset"
+                        >
+                          <Icon icon={Icons.eraserIcon} width={18} height={18} className={theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"} />
+                          <span className={`text-[8px] font-semibold tracking-wider uppercase ${theme === "dark" ? "text-zinc-500 group-hover:text-amber-400" : "text-zinc-500 group-hover:text-zinc-900"}`}>Reset</span>
+                        </button>
                         <span className="text-xs mt-1 opacity-0 pointer-events-none select-none">Reset</span>
                       </div>
                       {textures.map((texture: any) => (
                         <div
                           key={texture.id}
-                          className={`flex flex-col items-center cursor-pointer p-1 rounded-lg transition-all ${
-                            selectedTexture === texture.id
-                              ? "ring-2 ring-amber-500 bg-amber-500/10"
-                              : ""
-                          }`}
+                          className={`flex flex-col items-center cursor-pointer p-1 rounded-lg transition-all ${selectedTexture === texture.id
+                            ? "ring-2 ring-amber-500 bg-amber-500/10"
+                            : ""
+                            }`}
                           onClick={() => handleTextureChange(texture.id)}
                         >
                           <img
@@ -737,17 +842,16 @@ export default function FurnitureGrid({
           </label>
           {isLoadingTextures && <Spinner size="sm" color="warning" className="scale-75" />}
         </div>
-        
+
         <div className="relative">
           <select
             value={selectedTexture}
             onChange={(e) => handleTextureChange(e.target.value)}
             disabled={isLoadingTextures || textures.length === 0}
-            className={`w-full text-xs font-medium rounded-xl px-3 py-2.5 pr-8 appearance-none border transition-all duration-200 outline-none cursor-pointer ${
-              theme === "dark"
-                ? "bg-zinc-900 border-zinc-700 text-zinc-200 focus:border-amber-400 hover:border-zinc-600"
-                : "bg-white border-zinc-300 text-zinc-800 focus:border-amber-500 hover:border-zinc-400 shadow-sm"
-            }`}
+            className={`w-full text-xs font-medium rounded-xl px-3 py-2.5 pr-8 appearance-none border transition-all duration-200 outline-none cursor-pointer ${theme === "dark"
+              ? "bg-zinc-900 border-zinc-700 text-zinc-200 focus:border-amber-400 hover:border-zinc-600"
+              : "bg-white border-zinc-300 text-zinc-800 focus:border-amber-500 hover:border-zinc-400 shadow-sm"
+              }`}
           >
             {textures.length === 0 ? (
               <option value="">{isLoadingTextures ? "Loading textures..." : "No textures available"}</option>
@@ -773,9 +877,8 @@ export default function FurnitureGrid({
           const selectedTextureObj = textures.find((t: any) => t.id === selectedTexture);
           if (!selectedTextureObj || !selectedTextureObj.previewImage) return null;
           return (
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${
-              theme === "dark" ? "bg-zinc-900/50 border-zinc-800/80 text-zinc-300" : "bg-zinc-100/70 border-zinc-200 text-zinc-700"
-            }`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${theme === "dark" ? "bg-zinc-900/50 border-zinc-800/80 text-zinc-300" : "bg-zinc-100/70 border-zinc-200 text-zinc-700"
+              }`}>
               <img
                 src={selectedTextureObj.previewImage}
                 alt={selectedTextureObj.name}

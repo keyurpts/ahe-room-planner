@@ -252,6 +252,7 @@ export declare class Design2D {
     private isPointOnOpening;
     /**
      * Handles placing a point or creating a wall in DRAW mode.
+     * Automatically exits draw mode when a closed room is completed.
      */
     private handleDrawMode;
     /**

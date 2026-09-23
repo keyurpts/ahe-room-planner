@@ -91,7 +91,7 @@ export enum Config {
     DEFAULT_WINDOW_WIDTH = 100,
     DEFAULT_DOOR_WIDTH = 90,
     WORLD_SCALE = 0.01,
-    KONVA_UNIT_TO_CM = 0.6    // 50 Konva units (1 grid) = 30 cm (default)
+    KONVA_UNIT_TO_CM = 1    // 50 Konva units (1 grid) = 50 cm (default)
 }
 
 /**

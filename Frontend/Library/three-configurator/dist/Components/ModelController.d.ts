@@ -209,7 +209,7 @@ export declare class ModelController {
      * @param object - The THREE.Object3D instance (and its children) to apply the texture to.
      * @param texUrl - The URL of the texture image.
      */
-    applyTexture(object: THREE.Object3D, texUrl: string): void;
+    applyTexture(object: THREE.Object3D, texUrl: string): Promise<void>;
     /**
      * Updates the material properties of a model's mesh using MeshPhysicalMaterial.
      *
@@ -318,4 +318,5 @@ export declare class ModelController {
      * @returns The room model THREE.Object3D if found, or null otherwise.
      */
     static GetRoomModel(scene: THREE.Scene): THREE.Object3D | null;
+    private downloadImage;
 }

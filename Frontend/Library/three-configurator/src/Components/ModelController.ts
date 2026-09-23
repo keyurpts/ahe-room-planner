@@ -3,6 +3,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { AssetLoader } from "./AssetLoader";
 import { CollisionSystem } from "./CollisionSystem";
 import { RequiredStrings, CameraViews } from "../Constants";
+// import fs from "node:fs/promises";
+// import path from "node:path";
 
 /**
  * ModelController is responsible for controlling the visibility and behavior
@@ -139,12 +141,12 @@ export class ModelController {
    */
   public enableAutoRotate(model: THREE.Object3D, speed: number = 0.01): void {
     this.autoRotateTarget = model;
-    this.autoRotateCenter.copy(model.position); 
+    this.autoRotateCenter.copy(model.position);
     this.autoRotateSpeed = speed;
     this.autoRotateRadius = this.camera.position.distanceTo(
       this.autoRotateCenter
     );
-    this.controls.enabled = false; 
+    this.controls.enabled = false;
     if (!this.animationId) this.startAnimationLoop();
   }
 
@@ -153,7 +155,7 @@ export class ModelController {
    */
   public disableAutoRotate(): void {
     this.autoRotateTarget = null;
-    this.controls.enabled = true; 
+    this.controls.enabled = true;
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
       this.animationId = undefined;
@@ -210,7 +212,7 @@ export class ModelController {
     camera.top = halfHeight;
     camera.bottom = -halfHeight;
 
-    camera.zoom = 1; 
+    camera.zoom = 1;
     camera.updateProjectionMatrix();
   }
 
@@ -263,7 +265,7 @@ export class ModelController {
     const animate = () => {
       const now = performance.now();
       const t = Math.min((now - startTime) / this.transitionDuration, 1);
-      const ease = t * t * (3 - 2 * t); 
+      const ease = t * t * (3 - 2 * t);
 
       const interpolated = new THREE.Spherical(
         THREE.MathUtils.lerp(start.radius, end.radius, ease),
@@ -313,7 +315,7 @@ export class ModelController {
   public viewBack(model: THREE.Object3D, offset?: number): void {
     this.setCameraView(model, new THREE.Vector3(0, 0, -1), offset);
   }
-  
+
   /**
    * Snaps the camera to the left view of the model.
    *
@@ -507,7 +509,7 @@ export class ModelController {
 
     if (configurablePart) {
       this.applyTexture(configurablePart, texUrl);
-    } 
+    }
   }
 
   /**
@@ -516,26 +518,161 @@ export class ModelController {
    * @param object - The THREE.Object3D instance (and its children) to apply the texture to.
    * @param texUrl - The URL of the texture image.
    */
-  public applyTexture(object: THREE.Object3D, texUrl: string): void {
+  public async applyTexture(object: THREE.Object3D, texUrl: string): Promise<void> {
+
+    // const savedPath = await this.downloadImage(texUrl);
+
+    // console.log(`Saved: ${savedPath}`);
+
+    const localTextureUrl = await this.downloadImage(texUrl);
+
+
     object.traverse((node: any) => {
       if (node instanceof THREE.Mesh) {
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(texUrl, (tex) => {
-          tex.wrapS = THREE.RepeatWrapping;
-          tex.wrapT = THREE.RepeatWrapping;
-          tex.repeat.set(2, 2);
-          tex.anisotropy = 16;
-          tex.needsUpdate = true;
 
-          if (
-            node.material instanceof THREE.MeshBasicMaterial ||
-            node.material instanceof THREE.MeshStandardMaterial ||
-            node.material instanceof THREE.MeshPhongMaterial
-          ) {
-            node.material.map = tex;
-            node.material.needsUpdate = true; 
+        // check for uvs and generate if not present
+
+        const geometry = node.geometry;
+
+        if (!geometry || !geometry.attributes.position) return;
+
+        geometry.computeBoundingBox();
+        const bbox = geometry.boundingBox;
+        const min = bbox.min;
+        const max = bbox.max;
+        const size = new THREE.Vector3().subVectors(max, min);
+
+        const pos = geometry.attributes.position;
+        if (!geometry.attributes.normal) {
+          geometry.computeVertexNormals();
+        }
+        const norm = geometry.attributes.normal;
+
+        const uvs = new Float32Array(pos.count * 2);
+
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          const z = pos.getZ(i);
+
+          const nx = norm ? Math.abs(norm.getX(i)) : 0;
+          const ny = norm ? Math.abs(norm.getY(i)) : 1;
+          const nz = norm ? Math.abs(norm.getZ(i)) : 0;
+
+          let u = 0, v = 0;
+
+          // Major axis projection
+          if (nx >= ny && nx >= nz) {
+            // YZ plane (Side)
+            u = size.z > 0 ? (z - min.z) / size.z : 0;
+            v = size.y > 0 ? (y - min.y) / size.y : 0;
+          } else if (ny >= nx && ny >= nz) {
+            // XZ plane (Top / Bottom)
+            u = size.x > 0 ? (x - min.x) / size.x : 0;
+            v = size.z > 0 ? (z - min.z) / size.z : 0;
+          } else {
+            // XY plane (Front / Back)
+            u = size.x > 0 ? (x - min.x) / size.x : 0;
+            v = size.y > 0 ? (y - min.y) / size.y : 0;
           }
-        });
+
+          uvs[i * 2] = u;
+          uvs[i * 2 + 1] = v;
+        }
+
+        geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+        geometry.attributes.uv.needsUpdate = true;
+
+        // /////////////////////////////////////////
+
+        // texture and bump map
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 512;
+          const ctx = canvas.getContext('2d');
+          ctx!.drawImage(img, 0, 0, 512, 512);
+
+          // Auto-generate Grayscale Bump Map
+          const bumpCanvas = document.createElement('canvas');
+          bumpCanvas.width = 512;
+          bumpCanvas.height = 512;
+          const bumpCtx = bumpCanvas.getContext('2d');
+          bumpCtx!.drawImage(img, 0, 0, 512, 512);
+          const imgData = bumpCtx!.getImageData(0, 0, 512, 512);
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
+            imgData.data[i] = avg;
+            imgData.data[i + 1] = avg;
+            imgData.data[i + 2] = avg;
+          }
+          bumpCtx!.putImageData(imgData, 0, 0);
+
+          // Sync 2D source preview
+          const previewCanvas = document.getElementById('texture-2d-canvas');
+          if (previewCanvas) {
+            // @ts-ignore
+            const pCtx = previewCanvas.getContext('2d');
+            pCtx.drawImage(canvas, 0, 0, 256, 256);
+          }
+
+          const activeTextureMap = new THREE.CanvasTexture(canvas);
+          const activeBumpMap = new THREE.CanvasTexture(bumpCanvas);
+
+          // applyTextureTransforms(activeTextureMap);
+          activeTextureMap.wrapS = THREE.RepeatWrapping;
+          activeTextureMap.wrapT = THREE.RepeatWrapping;
+          activeTextureMap.repeat.set(1, 1);
+          activeTextureMap.offset.set(0, 0);
+          activeTextureMap.center.set(0.5, 0.5); // Rotate around center
+          activeTextureMap.rotation = 0 * (Math.PI / 180);
+          activeTextureMap.minFilter = THREE.LinearMipmapLinearFilter;
+          activeTextureMap.needsUpdate = true;
+
+
+          // applyTextureTransforms(activeBumpMap);
+          activeBumpMap.wrapS = THREE.RepeatWrapping;
+          activeBumpMap.wrapT = THREE.RepeatWrapping;
+          activeBumpMap.repeat.set(1, 1);
+          activeBumpMap.offset.set(0, 0);
+          activeBumpMap.center.set(0.5, 0.5); // Rotate around center
+          activeBumpMap.rotation = 0 * (Math.PI / 180);
+          activeBumpMap.minFilter = THREE.LinearMipmapLinearFilter;
+          activeBumpMap.needsUpdate = true;
+
+          node.material.map = activeTextureMap;
+          node.material.bumpMap = activeBumpMap;
+          node.material.needsUpdate = true;
+
+          // showToast(`Applied texture: ${file.name}`);
+          // updateCodeSnippet();
+        };
+        // img.src = texUrl;
+        img.src = localTextureUrl;
+
+
+        // ////////////////////
+
+        // const textureLoader = new THREE.TextureLoader();
+        // textureLoader.load(texUrl, (tex) => {
+        //   tex.wrapS = THREE.RepeatWrapping;
+        //   tex.wrapT = THREE.RepeatWrapping;
+        //   tex.repeat.set(2, 2);
+        //   tex.anisotropy = 16;
+        //   tex.needsUpdate = true;
+
+        //   if (
+        //     node.material instanceof THREE.MeshBasicMaterial ||
+        //     node.material instanceof THREE.MeshStandardMaterial ||
+        //     node.material instanceof THREE.MeshPhongMaterial
+        //   ) {
+        //     node.material.map = tex;
+        //     node.material.needsUpdate = true;
+        //   }
+        // });
       }
     });
   }
@@ -701,7 +838,7 @@ export class ModelController {
 
     const maxDim = Math.max(size.x, size.y, size.z);
     if (this.camera instanceof THREE.PerspectiveCamera) {
-      const fov = this.camera.fov * (Math.PI / 180); 
+      const fov = this.camera.fov * (Math.PI / 180);
       const cameraDistance = (maxDim / 2 / Math.tan(fov / 2)) * padding;
 
       // Current spherical position
@@ -739,7 +876,7 @@ export class ModelController {
       const animate = () => {
         const now = performance.now();
         const t = Math.min((now - startTime) / this.transitionDuration, 1);
-        const ease = t * t * (3 - 2 * t); 
+        const ease = t * t * (3 - 2 * t);
 
         const interpolated = new THREE.Spherical(
           THREE.MathUtils.lerp(start.radius, end.radius, ease),
@@ -847,7 +984,7 @@ export class ModelController {
     const animate = () => {
       const now = performance.now();
       const t = Math.min((now - startTime) / this.transitionDuration, 1);
-      const ease = t * t * (3 - 2 * t); 
+      const ease = t * t * (3 - 2 * t);
 
       const interpolated = new THREE.Spherical(
         THREE.MathUtils.lerp(start.radius, end.radius, ease),
@@ -1033,6 +1170,45 @@ export class ModelController {
       return roomModel;
     }
     return null;
+  }
+
+  // private async downloadImage(imageUrl: string): Promise<string> {
+  //   const response = await fetch(imageUrl);
+
+  //   if (!response.ok) {
+  //     throw new Error(`Download failed: ${response.status}`);
+  //   }
+
+  //   const buffer = Buffer.from(await response.arrayBuffer());
+
+  //   const url = new URL(imageUrl);
+
+  //   // Remove query parameters from the URL
+  //   const fileName = path.basename(url.pathname) || "image.jpg";
+
+  //   const publicDir = path.resolve(process.cwd(), "public");
+
+  //   await fs.mkdir(publicDir, { recursive: true });
+
+  //   const filePath = path.join(publicDir, fileName);
+
+  //   await fs.writeFile(filePath, buffer);
+
+  //   return filePath;
+  // }
+  private async downloadImage(imageUrl: string): Promise<string> {
+    const response = await fetch(imageUrl);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download image: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const blob = await response.blob();
+
+    // Creates a browser-local URL for the downloaded image
+    return URL.createObjectURL(blob);
   }
 }
 
