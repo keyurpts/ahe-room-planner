@@ -18,4 +18,14 @@ export const TOAST_MESSAGES = {
     title: "Room not Present",
     description: "Please create a room first",
   },
+
+  OBJECT_MEASUREMENT_START: {
+    title: "Object to Object Measurement",
+    description: "Please select the first model in the scene",
+  },
+
+  OBJECT_MEASUREMENT_SAME_MODEL: {
+    title: "Same Model Selected",
+    description: "Please select a different model in the scene",
+  },
 };

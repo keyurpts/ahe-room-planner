@@ -55,5 +55,10 @@ export enum ConfiguratorEventType {
   /**
    * Fired when rotation of a model changes.
    */
-  ROTATION_CHANGED = "rotationChanged"
+  ROTATION_CHANGED = "rotationChanged",
+
+  /**
+   * Fired when the distance between measured objects is updated.
+   */
+  OBJECT_DISTANCE_UPDATED = "objectDistanceUpdated"
 }
