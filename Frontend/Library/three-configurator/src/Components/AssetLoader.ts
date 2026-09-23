@@ -124,17 +124,21 @@ export class AssetLoader {
    * @returns A new THREE.Object3D copy
    */
   private cloneGLTF(gltf: GLTF, selectable: boolean): THREE.Object3D {
+    // Clone the scene FIRST so we don't mutate the cached original
+    const clonedScene = gltf.scene.clone(true);
+
     const box = new THREE.Box3();
-    box.setFromObject(gltf.scene);
+    box.setFromObject(clonedScene);
     const center = new THREE.Vector3();
     box.getCenter(center);
+    
     let modelWrapper = new THREE.Group();
     modelWrapper.position.copy(center);
-    modelWrapper.attach(gltf.scene);
+    modelWrapper.attach(clonedScene);
 
     modelWrapper.rotateX(Math.PI / 2);
 
-    const clone = modelWrapper.clone(true);
+    const clone = modelWrapper;
 
     // for room configurator to check if the model is selectable or not
     if (selectable) {

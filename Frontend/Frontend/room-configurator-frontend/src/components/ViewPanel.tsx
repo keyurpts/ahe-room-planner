@@ -122,12 +122,13 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
         const loadEnvMap = async (CI: ConfiguratorCore) => {
           if (CI) {
             await CI.loadEnvironmentMap(
-              "/lebombo_4k.hdr"
+              "/lebombo_4k.hdr",
+              0.5
             );
           }
         }
 
-        // loadEnvMap(instance);
+        loadEnvMap(instance);
 
         setConfiguratorInstance(instance);
       }
@@ -152,15 +153,15 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
 
     // get core instance and load env map
     const instance = newManager.getConfiguratorCore();
-    instance!.setBackgroundColor(0xbad0d4);
+    instance!.setBackgroundColor(0xffffff);
 
     let loadEnvMap = async () => {
       await instance.loadEnvironmentMap(
         "/lebombo_4k.hdr"
-        , 0.7
+        , 0.5
       );
     }
-    // loadEnvMap();
+    loadEnvMap();
 
     return () => {
       // Cleanup on unmount / re-mount
