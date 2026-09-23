@@ -407,10 +407,10 @@ export default function DesignArea({
           undefined
         );
 
-        await configuratorInstance.loadEnvironmentMap(
-          "/lebombo_4k.hdr",
-          0.7
-        );
+        // await configuratorInstance.loadEnvironmentMap(
+        //   "/lebombo_4k.hdr",
+        //   0.7
+        // );
       };
 
       setTimeout(() => {

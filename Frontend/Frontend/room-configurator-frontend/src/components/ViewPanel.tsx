@@ -127,7 +127,7 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
           }
         }
 
-        loadEnvMap(instance);
+        // loadEnvMap(instance);
 
         setConfiguratorInstance(instance);
       }
@@ -160,7 +160,7 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
         , 0.7
       );
     }
-    loadEnvMap();
+    // loadEnvMap();
 
     return () => {
       // Cleanup on unmount / re-mount
