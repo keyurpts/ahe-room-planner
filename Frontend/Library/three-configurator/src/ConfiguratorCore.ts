@@ -309,11 +309,27 @@ export class ConfiguratorCore {
   private isShowAllMeasurementsActive: boolean = false;
 
   /**
+   * Flag to check if object-to-object measurement mode is currently active.
+   */
+  public isObjectToObjectActive: boolean = false;
+
+  /**
+   * Holds references to the two models being measured in object-to-object measurement mode.
+   */
+  private objectToObjectModels: [Object3D, Object3D] | null = null;
+
+  /**
+   * Holds reference to the first model selected for object-to-object measurement.
+   */
+  private firstMeasurementModel: Object3D | null = null;
+
+  /**
    * Public state object for distance measurement to be accessed and updated by the frontend.
    */
   public measurementState = {
     isActive: false,
     isWallsOnly: false,
+    isObjectToObject: false,
   };
 
   /**
@@ -5657,6 +5673,48 @@ export class ConfiguratorCore {
   }
 
   /**
+   * Records the currently selected model inside the library as the first model
+   * for object-to-object measurement.
+   * @returns {boolean} - True if a model was selected and recorded, false otherwise.
+   * @public
+   */
+  public setFirstMeasurementModel(): boolean {
+    if (!this.modelRoot) return false;
+    this.firstMeasurementModel = this.modelRoot;
+    return true;
+  }
+
+  /**
+   * Checks if the currently selected model is identical to the first measured model.
+   * @returns {boolean} - True if the currently selected model is the same as the first model.
+   * @public
+   */
+  public isSameMeasurementModel(): boolean {
+    return !!(this.modelRoot && this.firstMeasurementModel && this.modelRoot === this.firstMeasurementModel);
+  }
+
+  /**
+   * Deselects the currently selected model, detaching transform controls
+   * and clearing bounding box helpers and model selection state.
+   * @public
+   */
+  public deselectModel(): void {
+    const controls = this.controlsManager.getActiveControl();
+    if (controls instanceof TransformControls) {
+      controls.detach();
+      const TControlsHelper = this.scene.getObjectByName(
+        RequiredStrings.TRANSFORM_CONTROLS_GIZMO_HELPER
+      );
+      if (TControlsHelper) {
+        TControlsHelper.visible = false;
+      }
+    }
+    this.modelController.removeBoundingBoxHelper();
+    this.modelRoot = null;
+    Events.emit(ConfiguratorEventType.MODEL_SELECTED, null);
+  }
+
+  /**
    * Retrieves the metadata of the currently selected model.
    *
    * @returns {any | null}
@@ -5729,6 +5787,15 @@ export class ConfiguratorCore {
       this.currentSelectedLastValidPosition,
       this.currentSelectedLastValidRotation
     );
+
+    if (!wasReverted) {
+      this.modelController.updateHelper();
+      if (this.isShowAllMeasurementsActive) {
+        this.showAllMeasurements();
+      } else if (this.isMeasurementActive) {
+        this.toggleMeasurement();
+      }
+    }
 
     return !wasReverted;
   }
@@ -5915,6 +5982,11 @@ export class ConfiguratorCore {
    * @public
    */
   public toggleMeasurement() {
+    if (this.isObjectToObjectActive && this.objectToObjectModels) {
+      this.updateObjectToObjectMeasurement();
+      return true;
+    }
+
     if (!this.measurementState.isActive) {
       this.clearAllMeasurements();
       this.isMeasurementActive = false;
@@ -5944,6 +6016,174 @@ export class ConfiguratorCore {
     this.scene.add(this.measurementGroup);
     this.drawMeasurementForCollider(activeCollider, this.measurementState.isWallsOnly);
     return true;
+  }
+
+  /**
+   * Calculates the distance between the closest bounding box faces of two models.
+   * Model references are taken from inside the library (the first recorded model
+   * and the currently selected model).
+   *
+   * @param {Object3D} [modelA] - Optional first model reference.
+   * @param {Object3D} [modelB] - Optional second model reference.
+   * @returns {number | null} - The calculated distance in units, or null if invalid or same model.
+   * @public
+   */
+  public measureBetweenModels(modelA?: Object3D, modelB?: Object3D): number | null {
+    const first = modelA || this.firstMeasurementModel;
+    const second = modelB || this.modelRoot;
+    if (!first || !second || first === second) return null;
+
+    this.clearAllMeasurements();
+    this.isMeasurementActive = true;
+    this.isObjectToObjectActive = true;
+    this.objectToObjectModels = [first, second];
+
+    return this.drawObjectToObjectMeasurement(first, second);
+  }
+
+  /**
+   * Updates the active object-to-object measurement line and label.
+   * @public
+   */
+  public updateObjectToObjectMeasurement(): void {
+    if (this.isObjectToObjectActive && this.objectToObjectModels) {
+      this.drawObjectToObjectMeasurement(this.objectToObjectModels[0], this.objectToObjectModels[1]);
+    }
+  }
+
+  /**
+   * Helper method to compute precise world-space bounding box for a model, ignoring temporary helper objects.
+   * @private
+   */
+  private computeModelWorldBox(model: Object3D): Box3 {
+    const box = new Box3();
+    model.updateWorldMatrix(true, true);
+    model.traverse((child) => {
+      if (child instanceof Mesh && child.geometry) {
+        const geom = child.geometry;
+        if (!geom.boundingBox) geom.computeBoundingBox();
+        if (geom.boundingBox) {
+          const meshBox = geom.boundingBox.clone().applyMatrix4(child.matrixWorld);
+          box.union(meshBox);
+        }
+      }
+    });
+    if (box.isEmpty()) {
+      box.setFromObject(model, true);
+    }
+    return box;
+  }
+
+  /**
+   * Draws the measurement line, arrows, distance sprite, and bounding box helpers between two models.
+   * @private
+   */
+  private drawObjectToObjectMeasurement(modelA: Object3D, modelB: Object3D): number | null {
+    if (this.measurementGroup) {
+      this.scene.remove(this.measurementGroup);
+      this.measurementGroup.traverse((child) => {
+        if (child instanceof Line2) {
+          (child.geometry as LineGeometry)?.dispose();
+          (child.material as LineMaterial)?.dispose();
+        } else if (child instanceof Sprite) {
+          (child.material.map as Texture)?.dispose();
+          child.material.dispose();
+        }
+      });
+      this.measurementGroup = null;
+    }
+
+    const boxA = this.computeModelWorldBox(modelA);
+    const boxB = this.computeModelWorldBox(modelB);
+
+    if (boxA.isEmpty() || boxB.isEmpty()) return null;
+
+    this.measurementGroup = new Group();
+    this.measurementGroup.name = RequiredStrings.MEASUREMENT_HELPER;
+    this.scene.add(this.measurementGroup);
+
+    // Add subtle visual bounding box helpers for both models
+    const helperA = new Box3Helper(boxA, new Color(0x3b82f6));
+    const helperB = new Box3Helper(boxB, new Color(0x10b981));
+    this.measurementGroup.add(helperA);
+    this.measurementGroup.add(helperB);
+
+    // Determine closest face coordinates in X, Y, Z
+    let pAx = 0;
+    let pBx = 0;
+    if (boxA.max.x < boxB.min.x) {
+      pAx = boxA.max.x;
+      pBx = boxB.min.x;
+    } else if (boxB.max.x < boxA.min.x) {
+      pAx = boxA.min.x;
+      pBx = boxB.max.x;
+    } else {
+      const xOverlapMin = Math.max(boxA.min.x, boxB.min.x);
+      const xOverlapMax = Math.min(boxA.max.x, boxB.max.x);
+      const xMid = (xOverlapMin + xOverlapMax) / 2;
+      pAx = xMid;
+      pBx = xMid;
+    }
+
+    let pAz = 0;
+    let pBz = 0;
+    if (boxA.max.z < boxB.min.z) {
+      pAz = boxA.max.z;
+      pBz = boxB.min.z;
+    } else if (boxB.max.z < boxA.min.z) {
+      pAz = boxA.min.z;
+      pBz = boxB.max.z;
+    } else {
+      const zOverlapMin = Math.max(boxA.min.z, boxB.min.z);
+      const zOverlapMax = Math.min(boxA.max.z, boxB.max.z);
+      const zMid = (zOverlapMin + zOverlapMax) / 2;
+      pAz = zMid;
+      pBz = zMid;
+    }
+
+    let pAy = 0;
+    let pBy = 0;
+    if (boxA.max.y < boxB.min.y) {
+      pAy = boxA.max.y;
+      pBy = boxB.min.y;
+    } else if (boxB.max.y < boxA.min.y) {
+      pAy = boxA.min.y;
+      pBy = boxB.max.y;
+    } else {
+      const yOverlapMin = Math.max(boxA.min.y, boxB.min.y);
+      const yOverlapMax = Math.min(boxA.max.y, boxB.max.y);
+      const yMid = (yOverlapMin + yOverlapMax) / 2;
+      pAy = yMid;
+      pBy = yMid;
+    }
+
+    // Ensure line elevation is slightly above the floor for clear visibility
+    if (pAy < 0.15) {
+      const suggestedY = Math.max(0.15, Math.min(boxA.max.y, boxB.max.y) * 0.5);
+      pAy = suggestedY;
+      pBy = suggestedY;
+    }
+
+    const startPoint = new Vector3(pAx, pAy, pAz);
+    const endPoint = new Vector3(pBx, pBy, pBz);
+    const distance = startPoint.distanceTo(endPoint);
+
+    if (distance > 0.001) {
+      const dir = new Vector3().subVectors(endPoint, startPoint).normalize();
+      this.drawMeasurementLine(startPoint, endPoint, dir, distance);
+    } else {
+      // If overlapping / colliding
+      const mid = new Vector3().addVectors(startPoint, endPoint).multiplyScalar(0.5);
+      mid.y += 0.1;
+      const labelSprite = this.createTextSprite("0.00 unit");
+      labelSprite.position.copy(mid);
+      this.measurementGroup.add(labelSprite);
+    }
+
+    const finalDistance = distance > 0.001 ? distance : 0;
+    Events.emit(ConfiguratorEventType.OBJECT_DISTANCE_UPDATED, finalDistance);
+
+    return finalDistance;
   }
 
   /**
@@ -6004,8 +6244,15 @@ export class ConfiguratorCore {
       this.activeInput = null;
     }
 
+    if (this.isObjectToObjectActive) {
+      Events.emit(ConfiguratorEventType.OBJECT_DISTANCE_UPDATED, null);
+    }
+
     this.isMeasurementActive = false;
     this.isShowAllMeasurementsActive = false;
+    this.isObjectToObjectActive = false;
+    this.objectToObjectModels = null;
+    this.firstMeasurementModel = null;
   }
 
   /**

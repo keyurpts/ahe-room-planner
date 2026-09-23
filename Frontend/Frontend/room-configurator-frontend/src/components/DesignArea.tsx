@@ -45,6 +45,8 @@ type DesignAreaProps = {
   setSingleMeasurementActive: React.Dispatch<React.SetStateAction<boolean>>;
   wallsOnlyMeasurementActive: boolean;
   setWallsOnlyMeasurementActive: React.Dispatch<React.SetStateAction<boolean>>;
+  objectToObjectMeasurementActive: boolean;
+  setObjectToObjectMeasurementActive: React.Dispatch<React.SetStateAction<boolean>>;
   wallHidingActive: boolean;
   setWallHidingActive: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPriceSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -76,6 +78,8 @@ export default function DesignArea({
   setSingleMeasurementActive,
   wallsOnlyMeasurementActive,
   setWallsOnlyMeasurementActive,
+  objectToObjectMeasurementActive,
+  setObjectToObjectMeasurementActive,
   wallHidingActive,
   setWallHidingActive,
   setIsPriceSummaryOpen,
@@ -93,9 +97,17 @@ export default function DesignArea({
   const allMeasurementsActiveRef = useRef<boolean>(false);
   const singleMeasurementActiveRef = useRef<boolean>(false);
   const wallsOnlyMeasurementActiveRef = useRef<boolean>(false);
+  const objectToObjectMeasurementActiveRef = useRef<boolean>(false);
   const isRightSidebarOpenRef = useRef<boolean>(false);
   const isNewModelLoadingRef = useRef<boolean>(false);
   const isConfigUiOpenRef = useRef<boolean>(false);
+
+  const [objectSelectionStep, setObjectSelectionStep] = useState<0 | 1 | 2 | 3>(0);
+  const [firstSelectedModelName, setFirstSelectedModelName] = useState<string | null>(null);
+  const [secondSelectedModelName, setSecondSelectedModelName] = useState<string | null>(null);
+  const [objectToObjectDistance, setObjectToObjectDistance] = useState<number | null>(null);
+  const objectSelectionStepRef = useRef<0 | 1 | 2 | 3>(0);
+  const firstSelectedModelNameRef = useRef<string | null>(null);
 
   const sampleInput3DConfig = {
     "chair-1": {
@@ -378,6 +390,25 @@ export default function DesignArea({
   }, [wallsOnlyMeasurementActive]);
 
   useEffect(() => {
+    objectToObjectMeasurementActiveRef.current = objectToObjectMeasurementActive;
+    if (!objectToObjectMeasurementActive) {
+      setObjectSelectionStep(0);
+      setFirstSelectedModelName(null);
+      setSecondSelectedModelName(null);
+      setObjectToObjectDistance(null);
+      objectSelectionStepRef.current = 0;
+      firstSelectedModelNameRef.current = null;
+      configuratorInstance?.deselectModel();
+      setIsModelSelected(false);
+      showSlider(false);
+    }
+  }, [objectToObjectMeasurementActive]);
+
+  useEffect(() => {
+    objectSelectionStepRef.current = objectSelectionStep;
+  }, [objectSelectionStep]);
+
+  useEffect(() => {
     isRightSidebarOpenRef.current = isRightSidebarOpen;
   }, [isRightSidebarOpen]);
 
@@ -416,7 +447,6 @@ export default function DesignArea({
       setTimeout(() => {
         init();
       }, 500);
-      // }, 100);
 
     }
   }, [configuratorInstance, roomConfig]);
@@ -439,6 +469,56 @@ export default function DesignArea({
     const handleModelSelected = (metadata: any) => {
       setContextMenu(null);
       console.log("metadata : ", metadata);
+
+      if (objectToObjectMeasurementActiveRef.current && metadata !== null) {
+        const modelName = metadata?.name || "Model";
+
+        if (objectSelectionStepRef.current === 1 || !firstSelectedModelNameRef.current) {
+          configuratorInstance?.setFirstMeasurementModel();
+          setFirstSelectedModelName(modelName);
+          firstSelectedModelNameRef.current = modelName;
+          setObjectSelectionStep(2);
+          objectSelectionStepRef.current = 2;
+
+          closeAll();
+          addToast({
+            title: "First Model Selected",
+            description: `Selected "${modelName}". Now select the second model in the scene`,
+            timeout: 4000,
+            color: "primary",
+            shouldShowTimeoutProgress: true,
+          });
+        } else if (objectSelectionStepRef.current === 2) {
+          if (configuratorInstance?.isSameMeasurementModel()) {
+            closeAll();
+            addToast({
+              title: TOAST_MESSAGES.OBJECT_MEASUREMENT_SAME_MODEL.title,
+              description: TOAST_MESSAGES.OBJECT_MEASUREMENT_SAME_MODEL.description,
+              timeout: 3000,
+              color: "warning",
+              shouldShowTimeoutProgress: true,
+            });
+            return;
+          }
+
+          setSecondSelectedModelName(modelName);
+          const distance = configuratorInstance?.measureBetweenModels();
+          if (distance !== null && distance !== undefined) {
+            setObjectToObjectDistance(distance);
+            setObjectSelectionStep(3);
+            objectSelectionStepRef.current = 3;
+            closeAll();
+            addToast({
+              title: "Measurement Complete",
+              description: `Distance between ${firstSelectedModelNameRef.current || "First Model"} and ${modelName}: ${distance.toFixed(2)} units`,
+              timeout: 4000,
+              color: "success",
+              shouldShowTimeoutProgress: true,
+            });
+          }
+        }
+      }
+
       if (metadata === null) {
         setIsModelSelected(false);
 
@@ -464,6 +544,8 @@ export default function DesignArea({
           setSingleMeasurementActive(true);
         } else if (wallsOnlyMeasurementActiveRef.current) {
           setWallsOnlyMeasurementActive(true);
+        } else if (objectToObjectMeasurementActiveRef.current) {
+          setObjectToObjectMeasurementActive(true);
         }
 
         if (isRightSidebarOpenRef.current) {
@@ -500,6 +582,7 @@ export default function DesignArea({
     const handlePreviewCancelled = () => {
       setSingleMeasurementActive(false);
       setWallsOnlyMeasurementActive(false);
+      setObjectToObjectMeasurementActive(false);
       setAllMeasurementsActive(false);
     };
 
@@ -544,6 +627,10 @@ export default function DesignArea({
       }
     };
 
+    const handleObjectDistanceUpdated = (dist: number | null) => {
+      setObjectToObjectDistance(dist);
+    };
+
     //  Listen for events
     Events.on(ConfiguratorEventType.COLLISION, handleCollision);
     Events.on(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
@@ -551,6 +638,7 @@ export default function DesignArea({
     Events.on(ConfiguratorEventType.PREVIEW_CANCELLED, handlePreviewCancelled);
     Events.on(ConfiguratorEventType.REPLACE, handleReplaceEvent);
     Events.on(ConfiguratorEventType.CLONE, handleCloneEvent);
+    Events.on(ConfiguratorEventType.OBJECT_DISTANCE_UPDATED, handleObjectDistanceUpdated);
 
 
     return () => {
@@ -560,6 +648,7 @@ export default function DesignArea({
       Events.off(ConfiguratorEventType.PREVIEW_CANCELLED, handlePreviewCancelled);
       Events.off(ConfiguratorEventType.REPLACE, handleReplaceEvent);
       Events.off(ConfiguratorEventType.CLONE, handleCloneEvent);
+      Events.off(ConfiguratorEventType.OBJECT_DISTANCE_UPDATED, handleObjectDistanceUpdated);
     };
   }, [configuratorInstance]);
 
@@ -657,6 +746,7 @@ export default function DesignArea({
     allMeasurementsActive,
     singleMeasurementActive,
     wallsOnlyMeasurementActive,
+    objectToObjectMeasurementActive,
     isRightSidebarOpen
   ]);
 
@@ -728,6 +818,15 @@ export default function DesignArea({
     let isRemove = configuratorInstance.deleteModel();
     closeAll();
     if (isRemove) {
+      if (objectToObjectMeasurementActiveRef.current) {
+        setObjectToObjectMeasurementActive(false);
+        setObjectSelectionStep(0);
+        objectSelectionStepRef.current = 0;
+        setFirstSelectedModelName(null);
+        setSecondSelectedModelName(null);
+        setObjectToObjectDistance(null);
+        firstSelectedModelNameRef.current = null;
+      }
       addToast({
         title: "Successful",
         description: `${selectedModelCategory} deleted successfully!`,
@@ -777,6 +876,9 @@ export default function DesignArea({
     if (wallsOnlyMeasurementActive) {
       setWallsOnlyMeasurementActive(false);
     }
+    if (objectToObjectMeasurementActive) {
+      setObjectToObjectMeasurementActive(false);
+    }
     if (newState) {
       configuratorInstance?.showAllMeasurements();
     } else {
@@ -792,6 +894,9 @@ export default function DesignArea({
     }
     if (wallsOnlyMeasurementActive) {
       setWallsOnlyMeasurementActive(false);
+    }
+    if (objectToObjectMeasurementActive) {
+      setObjectToObjectMeasurementActive(false);
     }
 
     const newState = !singleMeasurementActive;
@@ -811,6 +916,9 @@ export default function DesignArea({
     if (singleMeasurementActive) {
       setSingleMeasurementActive(false);
     }
+    if (objectToObjectMeasurementActive) {
+      setObjectToObjectMeasurementActive(false);
+    }
 
     const newState = !wallsOnlyMeasurementActive;
     setWallsOnlyMeasurementActive(newState);
@@ -818,6 +926,58 @@ export default function DesignArea({
     configuratorInstance.measurementState.isActive = newState;
     configuratorInstance.measurementState.isWallsOnly = true;
     configuratorInstance.toggleMeasurement();
+  };
+
+  const handleObjectToObjectMeasurement = () => {
+    setIsRightSidebarOpen(false);
+
+    if (allMeasurementsActive) {
+      setAllMeasurementsActive(false);
+    }
+    if (singleMeasurementActive) {
+      setSingleMeasurementActive(false);
+    }
+    if (wallsOnlyMeasurementActive) {
+      setWallsOnlyMeasurementActive(false);
+    }
+
+    const newState = !objectToObjectMeasurementActive;
+    setObjectToObjectMeasurementActive(newState);
+
+    if (newState) {
+      configuratorInstance?.deselectModel();
+      setIsModelSelected(false);
+      showSlider(false);
+
+      setObjectSelectionStep(1);
+      objectSelectionStepRef.current = 1;
+      setFirstSelectedModelName(null);
+      setSecondSelectedModelName(null);
+      setObjectToObjectDistance(null);
+      firstSelectedModelNameRef.current = null;
+      configuratorInstance?.clearAllMeasurements();
+
+      closeAll();
+      addToast({
+        title: TOAST_MESSAGES.OBJECT_MEASUREMENT_START.title,
+        description: TOAST_MESSAGES.OBJECT_MEASUREMENT_START.description,
+        timeout: 4000,
+        color: "primary",
+        shouldShowTimeoutProgress: true,
+      });
+    } else {
+      configuratorInstance?.deselectModel();
+      setIsModelSelected(false);
+      showSlider(false);
+
+      setObjectSelectionStep(0);
+      objectSelectionStepRef.current = 0;
+      setFirstSelectedModelName(null);
+      setSecondSelectedModelName(null);
+      setObjectToObjectDistance(null);
+      firstSelectedModelNameRef.current = null;
+      configuratorInstance?.clearAllMeasurements();
+    }
   };
 
   const SetPerspectiveCamera = () => {
@@ -930,6 +1090,11 @@ export default function DesignArea({
     handleToggleAllMeasurements();
   };
 
+  const handleContextMenuObjectToObjectMeasurement = () => {
+    setContextMenu(null);
+    handleObjectToObjectMeasurement();
+  };
+
   const handleContextMenuDelete = () => {
     setContextMenu(null);
     handleRemoveModel();
@@ -941,6 +1106,73 @@ export default function DesignArea({
       ref={container3DRef}
       style={{ height: "92%", width: "100%" }}
     >
+      {/* Object-to-Object Measurement Prompt Banner */}
+      {objectToObjectMeasurementActive && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 rounded-2xl shadow-xl backdrop-blur-md border border-white/20 transition-all duration-300 animate-fade-in bg-zinc-900/90 text-white select-none">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-400/20 text-amber-400 shrink-0">
+            <Icon icon="mdi:ruler-square" width={20} height={20} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+              Object to Object Measurement
+            </span>
+            <span className="text-xs md:text-sm font-medium text-zinc-200">
+              {objectSelectionStep === 1 && "Step 1/2: Please select the first model in the scene"}
+              {objectSelectionStep === 2 && !objectToObjectDistance && (
+                <>
+                  Step 2/2: Selected <strong className="text-white">"{firstSelectedModelName}"</strong>. Click the second model.
+                </>
+              )}
+              {objectToObjectDistance !== null && (
+                <>
+                  Distance: <strong className="text-amber-400 text-sm md:text-base font-bold">{objectToObjectDistance.toFixed(2)} unit</strong> between {firstSelectedModelName} &amp; {secondSelectedModelName}
+                </>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-3">
+            {objectToObjectDistance !== null && (
+              <Button
+                size="sm"
+                variant="flat"
+                className="bg-zinc-800 text-zinc-200 hover:text-white hover:bg-zinc-700 text-xs px-2.5 h-7 rounded-lg"
+                onPress={() => {
+                  configuratorInstance?.deselectModel();
+                  setIsModelSelected(false);
+                  showSlider(false);
+                  setObjectSelectionStep(1);
+                  objectSelectionStepRef.current = 1;
+                  setFirstSelectedModelName(null);
+                  setSecondSelectedModelName(null);
+                  setObjectToObjectDistance(null);
+                  firstSelectedModelNameRef.current = null;
+                  configuratorInstance?.clearAllMeasurements();
+                  closeAll();
+                  addToast({
+                    title: TOAST_MESSAGES.OBJECT_MEASUREMENT_START.title,
+                    description: TOAST_MESSAGES.OBJECT_MEASUREMENT_START.description,
+                    timeout: 4000,
+                    color: "primary",
+                    shouldShowTimeoutProgress: true,
+                  });
+                }}
+              >
+                New Pair
+              </Button>
+            )}
+            <Button
+              size="sm"
+              isIconOnly
+              variant="light"
+              className="text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-full w-7 h-7 min-w-7"
+              onPress={handleObjectToObjectMeasurement}
+            >
+              <Icon icon="mdi:close" width={16} height={16} />
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Right-click context menu for the selected furniture model */}
       {contextMenu && (
         <div
@@ -984,10 +1216,11 @@ export default function DesignArea({
               key: "measureParent",
               label: "Measurements",
               icon: Icons.measurementIcon,
-              active: singleMeasurementActive || wallsOnlyMeasurementActive || allMeasurementsActive,
+              active: singleMeasurementActive || wallsOnlyMeasurementActive || objectToObjectMeasurementActive || allMeasurementsActive,
               children: [
                 { key: "measure", label: "Item to Item/Wall", icon: Icons.measurementIcon, shortcut: "M", active: singleMeasurementActive, onClick: handleContextMenuMeasurement },
                 { key: "measureWall", label: "Item to Wall", icon: "mdi:arrow-expand-horizontal", active: wallsOnlyMeasurementActive, onClick: handleContextMenuWallsOnlyMeasurement },
+                { key: "measureObjectToObject", label: "Object to Object", icon: "mdi:ruler-square", active: objectToObjectMeasurementActive, onClick: handleContextMenuObjectToObjectMeasurement },
                 { key: "measureAll", label: "All Measurements", icon: Icons.rulerIcon, shortcut: "⇧ M", active: allMeasurementsActive, onClick: handleContextMenuAllMeasurements },
               ]
             },
@@ -1229,13 +1462,13 @@ export default function DesignArea({
               isOpen={isMeasurementMenuOpen}
               onOpenChange={setIsMeasurementMenuOpen}
               placement="top"
-              className={`w-[152px] min-w-[152px] px-2 mb-2 border ${theme === "dark" ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-zinc-200 text-black"}`}
+              className={`w-[165px] min-w-[165px] px-2 mb-2 border ${theme === "dark" ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-zinc-200 text-black"}`}
             >
               <DropdownTrigger>
                 <button
                   onMouseEnter={() => setIsMeasurementMenuOpen(true)}
                   onMouseLeave={() => setIsMeasurementMenuOpen(false)}
-                  className={`flex items-center gap-2 cursor-pointer p-2 rounded-full transition ${singleMeasurementActive || wallsOnlyMeasurementActive ? (theme === "dark" ? "bg-amber-400 text-black shadow-md shadow-amber-400/20 font-bold" : "bg-white text-black shadow-md shadow-white/20 font-bold") : "hover:bg-zinc-800/80 text-zinc-400 hover:text-white"
+                  className={`flex items-center gap-2 cursor-pointer p-2 rounded-full transition ${singleMeasurementActive || wallsOnlyMeasurementActive || objectToObjectMeasurementActive ? (theme === "dark" ? "bg-amber-400 text-black shadow-md shadow-amber-400/20 font-bold" : "bg-white text-black shadow-md shadow-white/20 font-bold") : "hover:bg-zinc-800/80 text-zinc-400 hover:text-white"
                     }`}
                 >
                   <Icon icon={Icons.measurementIcon} width={18} height={18} />
@@ -1259,6 +1492,13 @@ export default function DesignArea({
                   className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${wallsOnlyMeasurementActive ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}
                 >
                   Item to Wall
+                </DropdownItem>
+                <DropdownItem
+                  key="objectToObject"
+                  onClick={handleObjectToObjectMeasurement}
+                  className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${objectToObjectMeasurementActive ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}
+                >
+                  Object to Object
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>

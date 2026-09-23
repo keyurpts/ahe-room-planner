@@ -27,6 +27,7 @@ type TopPanelProps = {
   setAllMeasurementsActive?: React.Dispatch<React.SetStateAction<boolean>>;
   setSingleMeasurementActive?: React.Dispatch<React.SetStateAction<boolean>>;
   setWallsOnlyMeasurementActive?: React.Dispatch<React.SetStateAction<boolean>>;
+  setObjectToObjectMeasurementActive?: React.Dispatch<React.SetStateAction<boolean>>;
   setWallHidingActive?: React.Dispatch<React.SetStateAction<boolean>>;
   showSlider?: React.Dispatch<React.SetStateAction<boolean>>;
   manager?: any;
@@ -49,6 +50,7 @@ const TopPanel = ({
   setAllMeasurementsActive,
   setSingleMeasurementActive,
   setWallsOnlyMeasurementActive,
+  setObjectToObjectMeasurementActive,
   setWallHidingActive,
   showSlider,
   setIsRightSidebarOpen,
@@ -268,6 +270,7 @@ const TopPanel = ({
                   setAllMeasurementsActive?.(false);
                   setSingleMeasurementActive?.(false);
                   setWallsOnlyMeasurementActive?.(false);
+                  setObjectToObjectMeasurementActive?.(false);
                   setWallHidingActive?.(false);
                   showSlider?.(false);
                 }}
@@ -339,6 +342,7 @@ const TopPanel = ({
                     setAllMeasurementsActive?.(false);
                     setSingleMeasurementActive?.(false);
                     setWallsOnlyMeasurementActive?.(false);
+                    setObjectToObjectMeasurementActive?.(false);
                     setWallHidingActive?.(false);
                     showSlider?.(false);
                   }}
