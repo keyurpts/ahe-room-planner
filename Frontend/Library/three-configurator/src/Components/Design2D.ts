@@ -1,7 +1,7 @@
 import Konva from "konva";
 import { v4 as uuidv4 } from 'uuid';
 import { Floorplan } from "../Model/Floorplan";
-import { NodeName, VisualStyle, Config, RoomEditorMode } from "../Constants";
+import { NodeName, VisualStyle, Config, RoomEditorMode, LengthUnit, normalizeLengthUnit } from "../Constants";
 import { RoomDetector } from "../utils/RoomDetector";
 import type { Room } from "../utils/RoomDetector";
 import type { Predefined2DShapes } from "../shapeTemplates";
@@ -110,6 +110,12 @@ export class Design2D {
    * Unit conversion factor (e.g. 30/30 since 30 is the default grid size)
    */
   private unit_conversion_factor: number = 1;
+
+  /**
+   * Current unit for displaying wall lengths ('mm', 'cm', 'inch', 'foot').
+   * Default is 'mm' (millimeters).
+   */
+  private currentUnit: LengthUnit = LengthUnit.MM;
 
   /**
    * Stores the last placed point while drawing walls
@@ -970,6 +976,7 @@ export class Design2D {
           isVertical,
           clientX: e.evt.clientX,
           clientY: e.evt.clientY,
+          unit: this.currentUnit,
           setNewWallDimension: (newValue: number, pointToChange: string) => {
             this.editWallDimensions(wallGroup, newValue, pointToChange);
           }
@@ -1045,8 +1052,11 @@ export class Design2D {
     const ux = dx / currentLength;
     const uy = dy / currentLength;
 
-    // Convert to konva unit
-    newLength = newLength / ((Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor);
+    // Convert input newLength (in currentUnit) to cm first
+    const lengthInCm = this.convertToCm(newLength, this.currentUnit);
+
+    // Convert to konva unit (1 konva unit = 1 cm)
+    newLength = lengthInCm / ((Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor);
     // Final wall coordinates
     let startX = x1;
     let startY = y1;
@@ -2548,7 +2558,7 @@ export class Design2D {
     const text = new Konva.Text({
       x: midX,
       y: midY,
-      text: (length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor).toFixed(1) + " " + "cm", //scaled and with dynamic unit suffix
+      text: this.formatWallLength(length),
       fontSize: VisualStyle.DIMENSION_FONT_SIZE as number,
       fontFamily: VisualStyle.DIMENSION_FONT_FAMILY as string,
       fill: color,
@@ -2868,6 +2878,84 @@ export class Design2D {
   }
 
   /**
+   * Sets the unit for displaying wall lengths and dimensions on the 2D canvas.
+   * @param unit The unit to display ('mm', 'cm', 'inch', 'foot').
+   */
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.currentUnit = normalizeLengthUnit(unit);
+    this.refreshDimensions();
+    this.refreshWindows();
+    this.refreshDoors();
+  }
+
+  /**
+   * Gets the current display length unit.
+   */
+  public getLengthUnit(): LengthUnit {
+    return this.currentUnit;
+  }
+
+  /**
+   * Alias for setLengthUnit.
+   */
+  public setUnit(unit: LengthUnit | string): void {
+    this.setLengthUnit(unit);
+  }
+
+  /**
+   * Alias for getLengthUnit.
+   */
+  public getUnit(): LengthUnit {
+    return this.getLengthUnit();
+  }
+
+  /**
+   * Converts a length in cm to the specified or current display unit.
+   * 1 Konva unit = 1 cm.
+   */
+  public convertFromCm(lengthInCm: number, unit: LengthUnit = this.currentUnit): { value: number; suffix: string } {
+    switch (unit) {
+      case LengthUnit.MM:
+        return { value: lengthInCm * 10, suffix: "mm" };
+      case LengthUnit.CM:
+        return { value: lengthInCm, suffix: "cm" };
+      case LengthUnit.INCH:
+        return { value: lengthInCm / 2.54, suffix: "inch" };
+      case LengthUnit.FOOT:
+        return { value: lengthInCm / 30.48, suffix: "foot" };
+      default:
+        return { value: lengthInCm * 10, suffix: "mm" };
+    }
+  }
+
+  /**
+   * Converts a value in the specified or current display unit back to cm.
+   */
+  public convertToCm(value: number, unit: LengthUnit = this.currentUnit): number {
+    switch (unit) {
+      case LengthUnit.MM:
+        return value / 10;
+      case LengthUnit.CM:
+        return value;
+      case LengthUnit.INCH:
+        return value * 2.54;
+      case LengthUnit.FOOT:
+        return value * 30.48;
+      default:
+        return value / 10;
+    }
+  }
+
+  /**
+   * Formats a raw Konva length into the current display unit string.
+   */
+  public formatWallLength(length: number): string {
+    const lengthInCm = length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor;
+    const { value, suffix } = this.convertFromCm(lengthInCm, this.currentUnit);
+    return `${value.toFixed(1)} ${suffix}`;
+  }
+
+  /**
    * Repositions doors and windows on a wall such that the ratio of the distance of the door/window center
    * from the wall start to the wall end is maintained.
    */
@@ -3015,11 +3103,29 @@ export class Design2D {
         const length = Math.sqrt(dx * dx + dy * dy);
 
         // update the text with new unit
-        node.text((length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor).toFixed(1) + " " + "cm");
+        node.text(this.formatWallLength(length));
 
         // Adjust offset if text width changed
         node.offsetX(node.width() / 2);
         node.offsetY(node.height() / 2);
+
+        // Adjust gap for dimension lines if present
+        const textPadding = Config.DIMENSION_TEXT_PADDING as number;
+        const gap = node.width() + textPadding;
+        const leftLine = dimensionGroup.findOne(`.${NodeName.DIMENSION_LEFT_LINE}`) as Konva.Line;
+        const rightLine = dimensionGroup.findOne(`.${NodeName.DIMENSION_RIGHT_LINE}`) as Konva.Line;
+
+        if (leftLine && rightLine && length > gap) {
+          const dimData = this.calculateDimensionData(x1, y1, x2, y2);
+          if (dimData) {
+            const ux = dx / length;
+            const uy = dy / length;
+            const gapStartDist = (length - gap) / 2;
+            const gapEndDist = (length + gap) / 2;
+            leftLine.points([dimData.sx, dimData.sy, dimData.sx + ux * gapStartDist, dimData.sy + uy * gapStartDist]);
+            rightLine.points([dimData.sx + ux * gapEndDist, dimData.sy + uy * gapEndDist, dimData.ex, dimData.ey]);
+          }
+        }
       }
     });
 
@@ -4824,6 +4930,7 @@ export class Design2D {
       this.previewWindow = interactionLayer.findOne(`.${NodeName.WINDOW_GROUP}`) as Konva.Group;
       this.previewDoor = interactionLayer.findOne(`.${NodeName.DOOR_GROUP}`) as Konva.Group;
     }
+    this.refreshDimensions();
     this.stage.draw();
 
     this.fitLayout();
