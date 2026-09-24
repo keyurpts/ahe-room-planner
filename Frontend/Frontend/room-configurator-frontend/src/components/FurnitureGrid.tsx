@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useIntersectionObserver } from "../utils/useIntersectionObserver";
 import {
   Accordion,
   AccordionItem,
@@ -47,6 +48,8 @@ const setLoadingCursor = (isLoading: boolean) => {
 };
 
 const thumbnailCache = new Map<string, string>();
+const modelUrlCache = new Map<string, string>();
+const textureUrlCache = new Map<string, string>();
 
 type ModelThumbnailProps = {
   categoryId: string;
@@ -65,40 +68,53 @@ const ModelThumbnail = ({
   alt,
   className,
 }: ModelThumbnailProps) => {
-  const [imageUrl, setImageUrl] = useState<string>(fallbackImage);
+  const [imageUrl, setImageUrl] = useState<string | null>(() => {
+    const cacheKey = `${categoryId}_${modelId}_${textureId}`;
+    if (categoryId && modelId && textureId && thumbnailCache.has(cacheKey)) {
+      return thumbnailCache.get(cacheKey)!;
+    }
+    return null;
+  });
+  const [hasError, setHasError] = useState<boolean>(false);
   const [isImgLoading, setIsImgLoading] = useState<boolean>(false);
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const entry = useIntersectionObserver(ref, {
+    threshold: 0,
+    rootMargin: "200px",
+    freezeOnceVisible: true,
+  });
+  
+  const isVisible = !!entry?.isIntersecting;
 
   useEffect(() => {
     if (!categoryId || !modelId || !textureId) {
-      setImageUrl(fallbackImage);
+      setHasError(true);
       return;
     }
 
     const cacheKey = `${categoryId}_${modelId}_${textureId}`;
     if (thumbnailCache.has(cacheKey)) {
       setImageUrl(thumbnailCache.get(cacheKey)!);
+      setHasError(false);
       return;
     }
 
+    if (!isVisible) return;
+
     let isMounted = true;
     setIsImgLoading(true);
+    setHasError(false);
 
     const fetchThumbnail = async () => {
       try {
         const token = getAccessToken();
-        const headers: Record<string, string> = {
-          Accept: "*/*",
-        };
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
+        const headers: Record<string, string> = { Accept: "*/*" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(
           getThumbnailDownloadUrlApi(categoryId, modelId, textureId),
-          {
-            method: "GET",
-            headers,
-          }
+          { method: "GET", headers }
         );
 
         if (res.ok) {
@@ -129,14 +145,16 @@ const ModelThumbnail = ({
             const resolved = resolveStorageUrl(url);
             thumbnailCache.set(cacheKey, resolved);
             setImageUrl(resolved);
+          } else if (isMounted) {
+            setHasError(true);
           }
         } else {
-          console.warn(
-            `Failed to fetch thumbnail for category: ${categoryId}, model: ${modelId}, texture: ${textureId} (${res.status})`
-          );
+          console.warn(`Failed to fetch thumbnail for model: ${modelId}`);
+          if (isMounted) setHasError(true);
         }
       } catch (err) {
         console.warn("Error fetching thumbnail URL:", err);
+        if (isMounted) setHasError(true);
       } finally {
         if (isMounted) setIsImgLoading(false);
       }
@@ -147,20 +165,26 @@ const ModelThumbnail = ({
     return () => {
       isMounted = false;
     };
-  }, [categoryId, modelId, textureId, fallbackImage]);
+  }, [categoryId, modelId, textureId, isVisible]);
+
+  const finalImage = imageUrl || (hasError ? (fallbackImage || "./images/twod.jfif") : null);
 
   return (
-    <div className="relative w-full h-32 overflow-hidden">
-      <img
-        src={imageUrl || fallbackImage || "./images/twod.jfif"}
-        alt={alt}
-        className={className}
-        onError={(e) => {
-          if (fallbackImage && e.currentTarget.src !== fallbackImage) {
-            e.currentTarget.src = fallbackImage;
-          }
-        }}
-      />
+    <div ref={ref} className="relative w-full h-32 overflow-hidden">
+      {finalImage && (
+        <img
+          src={finalImage}
+          alt={alt}
+          className={className}
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            if (fallbackImage && e.currentTarget.src !== fallbackImage) {
+              e.currentTarget.src = fallbackImage;
+            }
+          }}
+        />
+      )}
       {isImgLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
           <Spinner size="sm" color="warning" />
@@ -204,6 +228,7 @@ export default function FurnitureGrid({
   const [textures, setTextures] = useState<any[]>([]);
   const [selectedTexture, setSelectedTexture] = useState<string>("");
   const [isLoadingTextures, setIsLoadingTextures] = useState<boolean>(false);
+  const hoverTimersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   const pendingTextureRef = useRef<{
     downloadUrl: string;
@@ -427,6 +452,33 @@ export default function FurnitureGrid({
             }));
             setTextures(formatted);
             setSelectedTexture((prev) => prev || formatted[0].id);
+
+            // Pre-fetch texture URLs so they are ready instantly
+            formatted.forEach(async (t: any) => {
+              if (textureUrlCache.has(t.id)) return;
+              try {
+                const texRes = await fetch(getTextureDownloadUrlApi(t.id), { method: "GET", headers });
+                if (texRes.ok) {
+                  const cType = texRes.headers.get("content-type");
+                  let resolvedUrl = "";
+                  if (cType && cType.includes("application/json")) {
+                    const data = await texRes.json();
+                    resolvedUrl = resolveStorageUrl(data.downloadUrl);
+                  } else {
+                    const textUrl = await texRes.text();
+                    resolvedUrl = resolveStorageUrl(textUrl.trim());
+                  }
+                  if (resolvedUrl) {
+                    textureUrlCache.set(t.id, resolvedUrl);
+                    // Force browser to cache the image file
+                    const img = new Image();
+                    img.src = resolvedUrl;
+                  }
+                }
+              } catch (e) {
+                console.warn("Failed to prefetch texture URL for", t.id, e);
+              }
+            });
           } else {
             fallbackTextures();
           }
@@ -517,6 +569,14 @@ export default function FurnitureGrid({
     // so pendingTextureRef is set BEFORE MODEL_SELECTED fires during placement
     const texturePromise = selectedTexture
       ? (async () => {
+          if (textureUrlCache.has(selectedTexture)) {
+            pendingTextureRef.current = {
+              downloadUrl: textureUrlCache.get(selectedTexture)!,
+              textureId: selectedTexture,
+            };
+            return;
+          }
+
           try {
             const token = getAccessToken();
             const headers: Record<string, string> = { Accept: "*/*" };
@@ -533,18 +593,10 @@ export default function FurnitureGrid({
               const contentType = textureRes.headers.get("content-type");
               if (contentType && contentType.includes("application/json")) {
                 const data = await textureRes.json();
-                console.log("texture response data", data);
-
                 const downloadUrl = resolveStorageUrl(data.downloadUrl);
                 const textureId = data.textureId;
-
-                // Always store as pending — model starts in preview mode,
-                // texture will be applied when MODEL_SELECTED fires after placement
+                textureUrlCache.set(selectedTexture, downloadUrl);
                 pendingTextureRef.current = { downloadUrl, textureId };
-                console.log("Texture URL fetched and stored in pendingTextureRef:", {
-                  downloadUrl,
-                  textureId,
-                });
               } else {
                 const textUrl = await textureRes.text();
                 if (
@@ -554,6 +606,7 @@ export default function FurnitureGrid({
                     textUrl.startsWith("/"))
                 ) {
                   const resolvedUrl = resolveStorageUrl(textUrl.trim());
+                  textureUrlCache.set(selectedTexture, resolvedUrl);
                   pendingTextureRef.current = {
                     downloadUrl: resolvedUrl,
                     textureId: selectedTexture,
@@ -579,56 +632,63 @@ export default function FurnitureGrid({
       const modelId = item.modelId || item.id;
 
       if (modelId) {
-        try {
-          const token = getAccessToken();
-          const headers: Record<string, string> = {
-            Accept: "*/*",
-          };
-          if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-          }
+        if (modelUrlCache.has(modelId)) {
+          modelUrlToLoad = modelUrlCache.get(modelId)!;
+        } else {
+          try {
+            const token = getAccessToken();
+            const headers: Record<string, string> = {
+              Accept: "*/*",
+            };
+            if (token) {
+              headers["Authorization"] = `Bearer ${token}`;
+            }
 
-          const res = await fetch(getStorageDownloadUrlApi(modelId), {
-            method: "GET",
-            headers,
-          });
+            const res = await fetch(getStorageDownloadUrlApi(modelId), {
+              method: "GET",
+              headers,
+            });
 
-          if (res.ok) {
-            const contentType = res.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-              const data = await res.json();
-              const url =
-                data?.downloadUrl ||
-                data?.url ||
-                data?.downloadURL ||
-                (typeof data === "string"
-                  ? data
-                  : data?.data?.downloadUrl || data?.data?.url || data?.data);
-              if (url && typeof url === "string") {
-                modelUrlToLoad = url;
+            if (res.ok) {
+              const contentType = res.headers.get("content-type");
+              if (contentType && contentType.includes("application/json")) {
+                const data = await res.json();
+                const url =
+                  data?.downloadUrl ||
+                  data?.url ||
+                  data?.downloadURL ||
+                  (typeof data === "string"
+                    ? data
+                    : data?.data?.downloadUrl || data?.data?.url || data?.data);
+                if (url && typeof url === "string") {
+                  modelUrlToLoad = url;
+                }
+              } else {
+                const textUrl = await res.text();
+                if (
+                  textUrl &&
+                  (textUrl.startsWith("http://") ||
+                    textUrl.startsWith("https://") ||
+                    textUrl.startsWith("/"))
+                ) {
+                  modelUrlToLoad = textUrl.trim();
+                }
+              }
+              if (modelUrlToLoad) {
+                modelUrlCache.set(modelId, modelUrlToLoad);
               }
             } else {
-              const textUrl = await res.text();
-              if (
-                textUrl &&
-                (textUrl.startsWith("http://") ||
-                  textUrl.startsWith("https://") ||
-                  textUrl.startsWith("/"))
-              ) {
-                modelUrlToLoad = textUrl.trim();
-              }
+              console.warn(
+                `Failed to get signed download URL for model ${modelId} (${res.status}), falling back to item path:`,
+                item.path
+              );
             }
-          } else {
+          } catch (storageErr) {
             console.warn(
-              `Failed to get signed download URL for model ${modelId} (${res.status}), falling back to item path:`,
-              item.path
+              `Error fetching storage download URL for model ${modelId}, falling back to item path:`,
+              storageErr
             );
           }
-        } catch (storageErr) {
-          console.warn(
-            `Error fetching storage download URL for model ${modelId}, falling back to item path:`,
-            storageErr
-          );
         }
       }
 
@@ -652,6 +712,63 @@ export default function FurnitureGrid({
       setLoadingCursor(false);
     } finally {
       setLoadingCursor(false);
+    }
+  };
+
+  const handlePrefetchGLB = (item: any) => {
+    if (!configuratorInstance) return;
+    const modelId = item.modelId || item.id;
+    if (!modelId) return;
+
+    if (hoverTimersRef.current[modelId]) {
+      clearTimeout(hoverTimersRef.current[modelId]);
+    }
+
+    hoverTimersRef.current[modelId] = setTimeout(async () => {
+      try {
+        let modelUrlToLoad = item.path;
+
+        if (modelUrlCache.has(modelId)) {
+          modelUrlToLoad = modelUrlCache.get(modelId)!;
+        } else {
+          const token = getAccessToken();
+          const headers: Record<string, string> = { Accept: "*/*" };
+          if (token) headers["Authorization"] = `Bearer ${token}`;
+
+          const res = await fetch(getStorageDownloadUrlApi(modelId), { method: "GET", headers });
+          if (res.ok) {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+              const data = await res.json();
+              const url = data?.downloadUrl || data?.url || data?.downloadURL || (typeof data === "string" ? data : data?.data?.downloadUrl || data?.data?.url || data?.data);
+              if (url && typeof url === "string") modelUrlToLoad = url;
+            } else {
+              const textUrl = await res.text();
+              if (textUrl && (textUrl.startsWith("http://") || textUrl.startsWith("https://") || textUrl.startsWith("/"))) {
+                modelUrlToLoad = textUrl.trim();
+              }
+            }
+            if (modelUrlToLoad) {
+              modelUrlCache.set(modelId, modelUrlToLoad);
+            }
+          }
+        }
+        
+        if (modelUrlToLoad) {
+          modelUrlToLoad = resolveStorageUrl(modelUrlToLoad);
+          configuratorInstance.getAssetLoader().loadGLB(modelUrlToLoad).catch(() => {});
+        }
+      } catch (err) {
+        console.warn("Error prefetching model:", err);
+      }
+    }, 400); // 400ms delay before prefetch
+  };
+
+  const cancelPrefetchGLB = (item: any) => {
+    const modelId = item.modelId || item.id;
+    if (modelId && hoverTimersRef.current[modelId]) {
+      clearTimeout(hoverTimersRef.current[modelId]);
+      delete hoverTimersRef.current[modelId];
     }
   };
 
@@ -682,43 +799,51 @@ export default function FurnitureGrid({
                       <span className="text-xs text-default-400">Loading models...</span>
                     </div>
                   ) : furnitureItemsFinal.length > 0 ? (
-                    furnitureItemsFinal.map((item: any, index: any) => (
-                      <Card
-                        key={index}
-                        isPressable
-                        className={`group relative w-full overflow-hidden border ${colors.gridItemBg} ${colors.gridItemBorder} ${colors.gridItemHoverBorder} ${colors.gridItemHoverShadow} ${colors.textMain} rounded-xl transition-all duration-300 !outline-none data-[focus-visible=true]:!outline-none`}
-                        onClick={() => handleLoadGLB(item)}
-                      >
-                        <CardBody className="p-0 overflow-hidden">
-                          <ModelThumbnail
-                            categoryId={selectedItem || item.category || item.categoryId}
-                            modelId={item.modelId || item.id}
-                            textureId={selectedTexture}
-                            fallbackImage={item.image}
-                            alt={item.name}
-                            className={`w-full h-32 object-cover border-b ${colors.borderAccent} group-hover:scale-105 transition-transform duration-500`}
-                          />
-                        </CardBody>
-                        <CardFooter className={`flex-col items-start p-2 ${theme === "dark" ? "bg-zinc-950/20" : "bg-zinc-100/60"}`}>
-                          <h3 className={`text-sm font-semibold transition-colors ${theme === "dark" ? "text-zinc-200 group-hover:text-amber-400" : "text-zinc-800 group-hover:text-zinc-900"}`}>{item.name}</h3>
-                        </CardFooter>
-                        <div className="absolute top-2 right-2 bg-black/50 rounded-full p-1 z-10 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(item.id);
-                          }}
+                    furnitureItemsFinal.map((item: any, index: any) => {
+                      const selectedTextureObj = textures.find((t: any) => t.id === selectedTexture);
+                      const isWhiteTexture = selectedTextureObj?.name?.toLowerCase().includes("white");
+                      const bgClass = isWhiteTexture ? "p-2" : "bg-white";
+
+                      return (
+                        <Card
+                          key={index}
+                          isPressable
+                          className={`group relative w-full overflow-hidden border ${colors.gridItemBg} ${colors.gridItemBorder} ${colors.gridItemHoverBorder} ${colors.gridItemHoverShadow} ${colors.textMain} rounded-xl transition-all duration-300 !outline-none data-[focus-visible=true]:!outline-none`}
+                          onClick={() => handleLoadGLB(item)}
+                          onMouseEnter={() => handlePrefetchGLB(item)}
+                          onMouseLeave={() => cancelPrefetchGLB(item)}
                         >
-                          <Icon
-                            icon={
-                              favorites.has(item.id)
-                                ? Icons.heart_filled
-                                : Icons.heart_outline
-                            }
-                            className={`w-4 h-4 ${favorites.has(item.id) ? "text-red-500" : "text-white"}`}
-                          />
-                        </div>
-                      </Card>
-                    ))
+                          <CardBody className="p-0 overflow-hidden">
+                            <ModelThumbnail
+                              categoryId={selectedItem || item.category || item.categoryId}
+                              modelId={item.modelId || item.id}
+                              textureId={selectedTexture}
+                              fallbackImage={item.image}
+                              alt={item.name}
+                              className={`w-full h-32 object-contain ${bgClass} border-b ${colors.borderAccent} scale-105 group-hover:scale-110 transition-transform duration-500`}
+                            />
+                          </CardBody>
+                          <CardFooter className={`flex-col items-start p-2 ${theme === "dark" ? "bg-zinc-950/20" : "bg-zinc-100/60"}`}>
+                            <h3 className={`text-sm font-semibold transition-colors ${theme === "dark" ? "text-zinc-200 group-hover:text-amber-400" : "text-zinc-800 group-hover:text-zinc-900"}`}>{item.name}</h3>
+                          </CardFooter>
+                          <div className="absolute top-2 right-2 bg-black/50 rounded-full p-1 z-10 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(item.id);
+                            }}
+                          >
+                            <Icon
+                              icon={
+                                favorites.has(item.id)
+                                  ? Icons.heart_filled
+                                  : Icons.heart_outline
+                              }
+                              className={`w-4 h-4 ${favorites.has(item.id) ? "text-red-500" : "text-white"}`}
+                            />
+                          </div>
+                        </Card>
+                      );
+                    })
                   ) : (
                     <p className="text-center text-gray-500 mt-4">
                       {searchFurniture

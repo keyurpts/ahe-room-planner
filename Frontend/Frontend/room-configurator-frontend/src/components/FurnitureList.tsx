@@ -61,6 +61,32 @@ const FurnitureList: FC<FurnitureListProps> = ({
           items = data.data;
         }
 
+        const customOrder = [
+          "floor cupboard",
+          "wall cupboard",
+          "drawer cupboard",
+          "tall cupboard",
+          "appliance cupboard"
+        ];
+
+        const getCategoryName = (c: CategoryItem) => (c.name || c.category || c.title || c.categoryName || c.id || "").toLowerCase();
+
+        items.sort((a, b) => {
+          const nameA = getCategoryName(a);
+          const nameB = getCategoryName(b);
+
+          let indexA = customOrder.findIndex(keyword => nameA.includes(keyword));
+          let indexB = customOrder.findIndex(keyword => nameB.includes(keyword));
+
+          if (indexA === -1) indexA = 999;
+          if (indexB === -1) indexB = 999;
+
+          if (indexA !== indexB) {
+            return indexA - indexB;
+          }
+          return nameA.localeCompare(nameB);
+        });
+
         if (isMounted) {
           if (items.length > 0) {
             setCategories(items);

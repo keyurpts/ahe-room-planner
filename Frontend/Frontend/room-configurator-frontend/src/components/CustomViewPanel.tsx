@@ -53,65 +53,72 @@ function hasValid3DJson(project3DJson: any): boolean {
  */
 async function fetchModelDownloadUrl(
   modelId: string,
-  cache?: Map<string, string>
+  cache?: Map<string, Promise<string | null>>
 ): Promise<string | null> {
   if (!modelId) return null;
+  
   if (cache && cache.has(modelId)) {
     return cache.get(modelId)!;
   }
 
-  try {
-    const token = getAccessToken();
-    const headers: Record<string, string> = {
-      Accept: "*/*",
-    };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+  const fetchPromise = (async () => {
+    try {
+      const token = getAccessToken();
+      const headers: Record<string, string> = {
+        Accept: "*/*",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
 
-    const res = await fetch(getStorageDownloadUrlApi(modelId), {
-      method: "GET",
-      headers,
-    });
+      const res = await fetch(getStorageDownloadUrlApi(modelId), {
+        method: "GET",
+        headers,
+      });
 
-    if (res.ok) {
-      let url = "";
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const data = await res.json();
-        url =
-          data?.downloadUrl ||
-          data?.url ||
-          data?.downloadURL ||
-          (typeof data === "string"
-            ? data
-            : data?.data?.downloadUrl || data?.data?.url || data?.data);
-      } else {
-        const textUrl = await res.text();
-        if (
-          textUrl &&
-          (textUrl.startsWith("http://") ||
-            textUrl.startsWith("https://") ||
-            textUrl.startsWith("/"))
-        ) {
-          url = textUrl.trim();
+      if (res.ok) {
+        let url = "";
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          url =
+            data?.downloadUrl ||
+            data?.url ||
+            data?.downloadURL ||
+            (typeof data === "string"
+              ? data
+              : data?.data?.downloadUrl || data?.data?.url || data?.data);
+        } else {
+          const textUrl = await res.text();
+          if (
+            textUrl &&
+            (textUrl.startsWith("http://") ||
+              textUrl.startsWith("https://") ||
+              textUrl.startsWith("/"))
+          ) {
+            url = textUrl.trim();
+          }
         }
-      }
 
-      if (url) {
-        const resolved = resolveStorageUrl(url);
-        if (cache) cache.set(modelId, resolved);
-        return resolved;
+        if (url) {
+          return resolveStorageUrl(url);
+        }
+      } else {
+        console.warn(
+          `Failed to get signed download URL for model ${modelId} (${res.status})`
+        );
       }
-    } else {
-      console.warn(
-        `Failed to get signed download URL for model ${modelId} (${res.status})`
-      );
+    } catch (err) {
+      console.warn(`Error fetching storage download URL for model ${modelId}:`, err);
     }
-  } catch (err) {
-    console.warn(`Error fetching storage download URL for model ${modelId}:`, err);
+    return null;
+  })();
+
+  if (cache) {
+    cache.set(modelId, fetchPromise);
   }
-  return null;
+
+  return fetchPromise;
 }
 
 /**
@@ -216,7 +223,7 @@ async function enrichLeafEntry(
   key: string,
   entry: any,
   lookup: Map<string, any>,
-  cache?: Map<string, string>
+  cache?: Map<string, Promise<string | null>>
 ): Promise<void> {
   if (!Array.isArray(entry.children) || entry.children.length !== 0) return;
 
@@ -258,7 +265,8 @@ async function enrichLeafEntry(
 async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promise<Record<string, any>> {
   const lookup = await fetchRoomConfigLookup();
   const textureLookup = await fetchTextureConfigLookup();
-  const downloadUrlCache = new Map<string, string>();
+  const downloadUrlCache = new Map<string, Promise<string | null>>();
+  const enrichPromises: Promise<void>[] = [];
 
   for (const [key, entry] of Object.entries(config3D)) {
     if (!entry || typeof entry !== "object") continue;
@@ -266,8 +274,11 @@ async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promis
     if (Array.isArray(entry.children) && entry.children.length === 0) {
       // Leaf model — enrich directly
       const keyUpdated = key.replace(/_node\d+$/, "");
-      await enrichLeafEntry(keyUpdated, entry, lookup, downloadUrlCache);
-      enrichTextureEntry(entry, textureLookup);
+      enrichPromises.push(
+        enrichLeafEntry(keyUpdated, entry, lookup, downloadUrlCache).then(() => {
+          enrichTextureEntry(entry, textureLookup);
+        })
+      );
     } else if (Array.isArray(entry.children) && entry.children.length > 0) {
       // Group — enrich each child object
       for (const childObj of entry.children) {
@@ -275,14 +286,19 @@ async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promis
           for (const [childKey, childEntry] of Object.entries(childObj)) {
             if (childEntry && typeof childEntry === "object") {
               const childKeyUpdated = childKey.replace(/_node\d+$/, "");
-              await enrichLeafEntry(childKeyUpdated, childEntry as any, lookup, downloadUrlCache);
-              enrichTextureEntry(childEntry as any, textureLookup);
+              enrichPromises.push(
+                enrichLeafEntry(childKeyUpdated, childEntry as any, lookup, downloadUrlCache).then(() => {
+                  enrichTextureEntry(childEntry as any, textureLookup);
+                })
+              );
             }
           }
         }
       }
     }
   }
+
+  await Promise.all(enrichPromises);
 
   // Enrich walls if present by searching finishId in wallPresets, colorPresets, and floorPresets
   const wallsList = Array.isArray(config3D.walls)
@@ -407,23 +423,61 @@ export default function CustomViewPanel({
               ? JSON.parse(selectedProject.project3DJson)
               : selectedProject.project3DJson;
 
-            // Enrich config3D with url and modelData from roomConfig.json
+            // Enrich config3D with url and modelData from roomConfig.json (runs concurrently)
             config3D = await enrichConfig3DWithRoomData(config3D);
             console.log("Enriched config3D", config3D);
 
-            setTimeout(async () => {
-              const result = await configuratorInstance.import3DConfig(config3D);
-              console.log("import3DConfig result", result);
+            // Warm the browser's HTTP cache by fetching all GLB files concurrently.
+            // We use native fetch() instead of loadGLB() to avoid touching Three.js's gltf
+            // cache/scene graph. When import3DConfig later calls loadGLB sequentially, the
+            // browser serves each file from its local cache instantly (no network wait).
+            const urlsToWarm = new Set<string>();
+            const extractUrls = (obj: any) => {
+              if (!obj || typeof obj !== "object") return;
+              for (const key in obj) {
+                const val = obj[key];
+                if (val && typeof val === "object") {
+                  if (Array.isArray(val.children) && val.children.length === 0) {
+                    if (val.url) urlsToWarm.add(val.url);
+                  } else if (Array.isArray(val.children)) {
+                    for (const child of val.children) extractUrls(child);
+                  }
+                }
+              }
+            };
+            extractUrls(config3D);
 
-              // setTimeout(async () => {
-              //   if (config3D.walls && typeof configuratorInstance.processObjectMaterials === "function") {
-              //     await configuratorInstance.processObjectMaterials(config3D.walls);
-              //   }
-              // }, 1000);
+            if (urlsToWarm.size > 0) {
+              console.log(`Warming browser HTTP cache for ${urlsToWarm.size} models...`);
 
-              // Dismiss the project loader after 3D config is fully imported
-              dismissLoader();
-            }, 1000);
+              // Fire off all fetches concurrently — we don't await them here so they run
+              // in parallel while we do the rAF wait below.
+              // NOTE: No Authorization header — these are SAS URLs, self-authenticated via query params.
+              const warmPromises = Array.from(urlsToWarm).map((url) =>
+                fetch(url, { method: "GET" })
+                  .then((res) => res.arrayBuffer()) // consume body so browser caches it
+                  .catch(() => {}) // ignore errors — this is best-effort
+              );
+
+              // enter3DView() calls resumeRenderer() inside a requestAnimationFrame.
+              // Wait for the renderer to process its first full frame before importing.
+              await new Promise<void>((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+              });
+
+              // Wait for any remaining downloads to finish before import3DConfig
+              await Promise.all(warmPromises);
+            } else {
+              await new Promise<void>((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+              });
+            }
+
+            // Import the config — GLBs are now in the browser cache, loadGLB reads locally
+            const result = await configuratorInstance.import3DConfig(config3D);
+            console.log("import3DConfig result", result);
+
+            dismissLoader();
             console.log("Successfully imported saved 3D config for project:", selectedProject.name || selectedProject.id);
           }
         }
@@ -433,11 +487,32 @@ export default function CustomViewPanel({
       }
     };
 
-    // Small delay to ensure the canvas/stage is fully ready
-    const timer = setTimeout(autoSwitchTo3D, 500);
-    // const timer = setTimeout(autoSwitchTo3D, 100);
+    // Poll until the 2D layout data is confirmed present before switching to 3D.
+    // This avoids the race condition where switchTo3D reads stale/empty 2D data
+    // because importJson (in ViewPanel) hasn't finished yet.
+    let pollTimer: ReturnType<typeof setTimeout>;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 40; // 40 * 100ms = 4s max wait
 
-    return () => clearTimeout(timer);
+    const waitFor2DAndSwitch = async () => {
+      if (attempts >= MAX_ATTEMPTS) {
+        console.warn("Timed out waiting for 2D data before switching to 3D, proceeding anyway.");
+        autoSwitchTo3D();
+        return;
+      }
+      const has2D = await manager.is2DDataPresent();
+      if (has2D) {
+        autoSwitchTo3D();
+      } else {
+        attempts++;
+        pollTimer = setTimeout(waitFor2DAndSwitch, 100);
+      }
+    };
+
+    // Give the 2D import (which has a 300ms delay in ViewPanel) a chance to kick off
+    pollTimer = setTimeout(waitFor2DAndSwitch, 50);
+
+    return () => clearTimeout(pollTimer);
   }, [manager, selectedProject, configuratorInstance, dismissLoader]);
 
   // Dismiss loader for 2D-only projects (no 3D data to load)

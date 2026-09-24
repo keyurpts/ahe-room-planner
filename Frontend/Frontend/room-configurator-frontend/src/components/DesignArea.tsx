@@ -109,6 +109,9 @@ export default function DesignArea({
   const objectSelectionStepRef = useRef<0 | 1 | 2 | 3>(0);
   const firstSelectedModelNameRef = useRef<string | null>(null);
 
+  const [isBgMenuOpen, setIsBgMenuOpen] = useState(false);
+  const [bgColor, setBgColor] = useState<number>(0xffffff);
+
   const sampleInput3DConfig = {
     "chair-1": {
       "url": "RoomConfiguratorModels/chair/chair_1.glb",
@@ -409,6 +412,12 @@ export default function DesignArea({
   }, [objectSelectionStep]);
 
   useEffect(() => {
+    if (configuratorInstance) {
+      configuratorInstance.setBackgroundColor(bgColor);
+    }
+  }, [configuratorInstance]);
+
+  useEffect(() => {
     isRightSidebarOpenRef.current = isRightSidebarOpen;
   }, [isRightSidebarOpen]);
 
@@ -440,7 +449,7 @@ export default function DesignArea({
 
         await configuratorInstance.loadEnvironmentMap(
           "/lebombo_4k.hdr",
-          0.7
+          0.5
         );
       };
 
@@ -979,6 +988,11 @@ export default function DesignArea({
       configuratorInstance?.clearAllMeasurements();
     }
   };
+  const handleBgColorChange = (color: number) => {
+    setBgColor(color);
+    configuratorInstance?.setBackgroundColor(color);
+    setIsBgMenuOpen(false);
+  };
 
   const SetPerspectiveCamera = () => {
     showSlider(false);
@@ -1434,7 +1448,7 @@ export default function DesignArea({
                 try {
                   // const glbData = await (configuratorInstance as any)?.exportSceneAsGLB();
                   const configData = await (configuratorInstance as any)?.export3DConfig();
-                  
+
 
                   console.log("configData", configData);
                 } catch (err) {
@@ -1513,6 +1527,51 @@ export default function DesignArea({
               <Icon icon={Icons.rulerIcon} width={18} height={18} />
             </button>
           </Tooltip>
+          <div className="w-px h-5 bg-zinc-800 mx-3"></div>
+          <div className="inline-block">
+            <Dropdown
+              isOpen={isBgMenuOpen}
+              onOpenChange={setIsBgMenuOpen}
+              placement="top"
+              className={`w-[150px] min-w-[150px] px-2 mb-2 border ${theme === "dark" ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-zinc-200 text-black"}`}
+            >
+              <DropdownTrigger>
+                <button
+                  onMouseEnter={() => setIsBgMenuOpen(true)}
+                  onMouseLeave={() => setIsBgMenuOpen(false)}
+                  className={`flex items-center gap-2 cursor-pointer p-2 rounded-full transition hover:bg-zinc-800/80 text-zinc-400 hover:text-white`}
+                >
+                  <Icon icon="mdi:palette" width={18} height={18} />
+                </button>
+              </DropdownTrigger>
+              <DropdownMenu
+                aria-label="Background Color Options"
+                onMouseEnter={() => setIsBgMenuOpen(true)}
+                onMouseLeave={() => setIsBgMenuOpen(false)}
+              >
+                <DropdownItem key="default" onClick={() => handleBgColorChange(0xbad0d4)} className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${bgColor === 0xbad0d4 ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}>Default Blue</DropdownItem>
+                <DropdownItem key="white" onClick={() => handleBgColorChange(0xffffff)} className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${bgColor === 0xffffff ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}>Solid White</DropdownItem>
+                <DropdownItem key="offwhite" onClick={() => handleBgColorChange(0xf5f5f5)} className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${bgColor === 0xf5f5f5 ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}>Off White</DropdownItem>
+                <DropdownItem key="lightgray" onClick={() => handleBgColorChange(0xe5e7eb)} className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${bgColor === 0xe5e7eb ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}>Light Gray</DropdownItem>
+                <DropdownItem key="darkgray" onClick={() => handleBgColorChange(0x374151)} className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"} ${bgColor === 0x374151 ? (theme === "dark" ? "text-amber-400 font-bold" : "text-black font-bold") : theme === "dark" ? "text-zinc-200" : "text-zinc-700"}`}>Dark Gray</DropdownItem>
+                <DropdownItem key="custom" className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"}`} closeOnSelect={false}>
+                  <div className="flex items-center justify-between w-full">
+                    <span className={theme === "dark" ? "text-zinc-200" : "text-zinc-700"}>Custom...</span>
+                    <input 
+                      type="color" 
+                      value={`#${bgColor.toString(16).padStart(6, '0')}`} 
+                      onChange={(e) => {
+                        const color = parseInt(e.target.value.replace('#', ''), 16);
+                        handleBgColorChange(color);
+                        setIsBgMenuOpen(true);
+                      }}
+                      className="w-6 h-6 p-0 border-0 rounded cursor-pointer bg-transparent"
+                    />
+                  </div>
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
 
           <div className="w-px h-5 bg-zinc-800 mx-3"></div>
 

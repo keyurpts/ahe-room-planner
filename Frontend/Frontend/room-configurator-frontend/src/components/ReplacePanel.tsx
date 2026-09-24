@@ -76,7 +76,9 @@ const ReplacePanel = ({
                       <img
                         src={item.previewImage}
                         alt={item.name}
-                        className="w-full h-32 object-cover"
+                        className="w-full h-32 object-contain bg-white scale-105"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </CardBody>
                     <CardFooter className="flex-col items-start p-2">
