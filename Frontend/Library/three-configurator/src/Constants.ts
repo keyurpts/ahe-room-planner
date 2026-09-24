@@ -95,6 +95,45 @@ export enum Config {
 }
 
 /**
+ * Supported length units for measurement display.
+ */
+export enum LengthUnit {
+    MM = 'mm',
+    CM = 'cm',
+    INCH = 'inch',
+    FOOT = 'foot',
+}
+
+/**
+ * Normalizes any string representation of a unit to a valid LengthUnit.
+ * Defaults to LengthUnit.MM if invalid or unrecognized.
+ */
+export function normalizeLengthUnit(unit: string | LengthUnit): LengthUnit {
+    if (!unit) return LengthUnit.MM;
+    const lower = unit.toString().toLowerCase().trim();
+    switch (lower) {
+        case 'mm':
+        case 'millimeter':
+        case 'millimeters':
+            return LengthUnit.MM;
+        case 'cm':
+        case 'centimeter':
+        case 'centimeters':
+            return LengthUnit.CM;
+        case 'inch':
+        case 'inches':
+        case 'in':
+            return LengthUnit.INCH;
+        case 'foot':
+        case 'feet':
+        case 'ft':
+            return LengthUnit.FOOT;
+        default:
+            return LengthUnit.MM;
+    }
+}
+
+/**
  * Enums for preset camera view names.
  */
 export enum CameraViews {

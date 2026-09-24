@@ -1,6 +1,6 @@
 import type { ConfiguratorCore } from "../ConfiguratorCore";
 import { Design3D } from "./Design3D";
-import { RoomEditorMode } from "../Constants";
+import { RoomEditorMode, LengthUnit, normalizeLengthUnit } from "../Constants";
 import { Design2D } from "./Design2D";
 import { Predefined2DShapes } from "../shapeTemplates";
 
@@ -11,6 +11,7 @@ import { Predefined2DShapes } from "../shapeTemplates";
 export class FloorplanManager {
   private design2D: Design2D | null = null;
   private design3D: Design3D | null = null;
+  private initialUnit: LengthUnit = LengthUnit.MM;
 
   /**
    * Initializes both the 2D viewer and the 3D viewer
@@ -34,6 +35,7 @@ export class FloorplanManager {
    */
   public init(container2D: HTMLDivElement, container3D: HTMLDivElement): void {
     this.design2D = new Design2D(container2D);
+    this.design2D.setLengthUnit(this.initialUnit);
     this.design3D = new Design3D(container3D);
   }
 
@@ -262,6 +264,46 @@ export class FloorplanManager {
    */
   public set2DUnitScale(cmValue: number): void {
     this.design2D?.setKonvaUnitScale(cmValue);
+  }
+
+  /**
+   * Sets the unit for displaying wall lengths and dimensions on the 2D canvas.
+   *
+   * @param {LengthUnit | string} unit
+   * The length unit to display ('mm', 'cm', 'inch', 'foot').
+   *
+   * @returns {void}
+   */
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.initialUnit = normalizeLengthUnit(unit);
+    this.design2D?.setLengthUnit(this.initialUnit);
+  }
+
+  /**
+   * Gets the current display length unit on the 2D canvas.
+   *
+   * @returns {LengthUnit}
+   */
+  public getLengthUnit(): LengthUnit {
+    return this.design2D?.getLengthUnit() ?? this.initialUnit;
+  }
+
+  /**
+   * Alias for setLengthUnit.
+   *
+   * @param {LengthUnit | string} unit
+   */
+  public setUnit(unit: LengthUnit | string): void {
+    this.setLengthUnit(unit);
+  }
+
+  /**
+   * Alias for getLengthUnit.
+   *
+   * @returns {LengthUnit}
+   */
+  public getUnit(): LengthUnit {
+    return this.getLengthUnit();
   }
 
   /**

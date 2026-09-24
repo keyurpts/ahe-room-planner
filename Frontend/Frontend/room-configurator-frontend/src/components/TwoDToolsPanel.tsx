@@ -1,10 +1,10 @@
-import { Tooltip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
+import { Tooltip, Dropdown, DropdownTrigger, DropdownMenu, DropdownSection, DropdownItem, Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Icons from "../icons";
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { FloorplanManager, Predefined2DShapes, Events, ConfiguratorEventType } from "three-configurator";
+import { FloorplanManager, Predefined2DShapes, Events, ConfiguratorEventType, LengthUnit } from "three-configurator";
 import { DETECT_FLOORPLAN_API, IS_AI_TOOLS_ENABLED } from "./Constants";
 import ConfirmationToast from "./ConfirmationToast";
 
@@ -22,6 +22,7 @@ export default function TwoDToolsPanel({
   const [isGridEnabled, setIsGridEnabled] = useState(true);
   const [isMeasurementActive, setIsMeasurementActive] = useState(true);
   const [gridScale, setGridScale] = useState<number>(30);
+  const [selectedUnit, setSelectedUnit] = useState<string>(LengthUnit.MM);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadStep, setUploadStep] = useState(0);
@@ -46,6 +47,7 @@ export default function TwoDToolsPanel({
   ];
   useEffect(() => {
     if (manager) {
+      manager.setLengthUnit(selectedUnit);
       manager.on2DModeChange = (mode: any) => {
         if (mode === null) {
           setActiveTool("");
@@ -61,7 +63,7 @@ export default function TwoDToolsPanel({
         }
       };
     }
-  }, [manager]);
+  }, [manager, selectedUnit]);
   useEffect(() => {
     const handleEditDimension = (payload: any) => {
       setActiveTool("edit");
@@ -298,6 +300,14 @@ export default function TwoDToolsPanel({
     manager.set2DUnitScale(val);
     setGridScale(val);
     console.log(`Grid scale changed to ${val} cm`);
+  };
+
+  const handleUnitChange = (unit: string) => {
+    setSelectedUnit(unit);
+    if (manager) {
+      manager.setLengthUnit(unit);
+      console.log(`Unit changed to ${unit}`);
+    }
   };
 
   const scaleOptions = [30, 40, 50, 60, 70, 80, 90, 100];
@@ -559,6 +569,47 @@ export default function TwoDToolsPanel({
             </Tooltip>
           </>
         )}
+
+        <div className="w-px h-5 bg-gray-600 mx-3"></div>
+
+        {/* Measurement Unit Dropdown */}
+        <Tooltip content="Unit" placement="top" closeDelay={50}>
+          <div className="inline-block">
+            <Dropdown placement="top" className="bg-zinc-950 border border-zinc-800 text-white">
+              <DropdownTrigger>
+                <Button
+                  size="sm"
+                  className="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white font-bold text-xs min-w-unit-12 h-8 rounded-full px-3 uppercase"
+                >
+                  {selectedUnit}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                aria-label="Measurement Unit Options"
+                selectedKeys={new Set([selectedUnit])}
+                selectionMode="single"
+                onAction={(key) => handleUnitChange(key as string)}
+              >
+                <DropdownSection title="Metric" className="text-zinc-400">
+                  <DropdownItem key="mm" className="text-zinc-200 hover:bg-zinc-800">
+                    mm (Millimeter)
+                  </DropdownItem>
+                  <DropdownItem key="cm" className="text-zinc-200 hover:bg-zinc-800">
+                    cm (Centimeter)
+                  </DropdownItem>
+                </DropdownSection>
+                <DropdownSection title="Imperial" className="text-zinc-400">
+                  <DropdownItem key="inch" className="text-zinc-200 hover:bg-zinc-800">
+                    inch (Inches)
+                  </DropdownItem>
+                  <DropdownItem key="foot" className="text-zinc-200 hover:bg-zinc-800">
+                    foot (Feet)
+                  </DropdownItem>
+                </DropdownSection>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </Tooltip>
       </div>
 
       {/* AI Tools Toggle Button */}
@@ -807,7 +858,7 @@ export default function TwoDToolsPanel({
               step="any"
               defaultValue={Number(parseFloat(editDimensionMenu.currentValue).toFixed(1))}
               id="wall-dimension-input"
-              className={`w-14 h-7 px-1 rounded-full text-center font-bold text-xs outline-none transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none bg-[#161a22] text-white focus:bg-[#1e232e]`}
+              className={`min-w-16 h-7 px-2 rounded-full text-center font-bold text-xs outline-none transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none bg-[#161a22] text-white focus:bg-[#1e232e]`}
               onChange={(e) => {
                 const val = Number(e.target.value);
                 if (val > 0) {
