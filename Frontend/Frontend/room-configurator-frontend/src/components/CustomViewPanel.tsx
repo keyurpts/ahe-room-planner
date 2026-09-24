@@ -448,16 +448,36 @@ export default function CustomViewPanel({
             extractUrls(config3D);
 
             if (urlsToWarm.size > 0) {
-              console.log(`Warming browser HTTP cache for ${urlsToWarm.size} models...`);
+              console.log(`Warming browser HTTP cache for ${urlsToWarm.size} models (Max 6 concurrent)...`);
 
-              // Fire off all fetches concurrently — we don't await them here so they run
-              // in parallel while we do the rAF wait below.
-              // NOTE: No Authorization header — these are SAS URLs, self-authenticated via query params.
-              const warmPromises = Array.from(urlsToWarm).map((url) =>
-                fetch(url, { method: "GET" })
-                  .then((res) => res.arrayBuffer()) // consume body so browser caches it
-                  .catch(() => {}) // ignore errors — this is best-effort
-              );
+              // Fire off fetches with a concurrency limit of 6 (standard browser limit).
+              // We do NOT await this function. It runs in the background.
+              const warmCacheConcurrently = async () => {
+                const urls = Array.from(urlsToWarm);
+                const maxConcurrent = 6;
+                let i = 0;
+                
+                const fetchNext = async (): Promise<void> => {
+                  if (i >= urls.length) return;
+                  const url = urls[i++];
+                  try {
+                    const res = await fetch(url, { method: "GET" });
+                    await res.arrayBuffer(); // consume body so browser caches it
+                  } catch (err) {
+                    // ignore errors — this is best-effort
+                  }
+                  return fetchNext();
+                };
+
+                const workers = [];
+                for (let w = 0; w < Math.min(maxConcurrent, urls.length); w++) {
+                  workers.push(fetchNext());
+                }
+                await Promise.all(workers);
+              };
+              
+              // Start downloading in background without awaiting it!
+              warmCacheConcurrently();
 
               // enter3DView() calls resumeRenderer() inside a requestAnimationFrame.
               // Wait for the renderer to process its first full frame before importing.
@@ -465,8 +485,10 @@ export default function CustomViewPanel({
                 requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
               });
 
-              // Wait for any remaining downloads to finish before import3DConfig
-              await Promise.all(warmPromises);
+              // NOTE: We no longer wait for all downloads to finish here.
+              // import3DConfig will start adding models to the scene immediately.
+              // It loads sequentially, seamlessly picking up files as they finish
+              // downloading from the background queue.
             } else {
               await new Promise<void>((resolve) => {
                 requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
