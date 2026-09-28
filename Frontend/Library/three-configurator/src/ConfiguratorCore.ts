@@ -4,7 +4,6 @@ import {
   Object3D,
   Vector3,
   Euler,
-  Matrix4,
   Camera,
   PerspectiveCamera,
   Box3,
@@ -29,18 +28,19 @@ import {
   SpriteMaterial,
   Texture,
   ArrowHelper,
-  Box3Helper,
   Spherical,
   SpotLight,
   MeshStandardMaterial,
   Float32BufferAttribute,
   BufferGeometry,
+  BoxGeometry,
   BufferAttribute,
   MirroredRepeatWrapping,
   PlaneGeometry,
   TextureLoader,
   RepeatWrapping,
-  SRGBColorSpace
+  SRGBColorSpace,
+  Matrix4,
 } from "three";
 import {
   Tween,
@@ -79,9 +79,11 @@ import { PostProcessingManager } from "./Components/PostProcessingManager";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
-import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle } from "./Constants";
+import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, Config, KeyboardKey,Opening3DConstraints, AnnotationMode } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
-
+import { WallCutter } from "./Components/WallCutter";
+import { DoorWindowHelper } from "./Components/DoorWindowHelper";
+import { RoomAnnotationManager} from "./Components/RoomAnnotationManager";
 /**
  * Core class for the 3D configurator
  * Handles scene setup, model management, and state export
@@ -219,6 +221,11 @@ export class ConfiguratorCore {
   private modelRoot: Object3D | null = null;
 
   /**
+     * LabelManager helper instance for managing labels.
+     */
+  private roomAnnotationManager: RoomAnnotationManager;
+
+  /**
    * Currently active camera control.
    */
   private controls!:
@@ -309,27 +316,11 @@ export class ConfiguratorCore {
   private isShowAllMeasurementsActive: boolean = false;
 
   /**
-   * Flag to check if object-to-object measurement mode is currently active.
-   */
-  public isObjectToObjectActive: boolean = false;
-
-  /**
-   * Holds references to the two models being measured in object-to-object measurement mode.
-   */
-  private objectToObjectModels: [Object3D, Object3D] | null = null;
-
-  /**
-   * Holds reference to the first model selected for object-to-object measurement.
-   */
-  private firstMeasurementModel: Object3D | null = null;
-
-  /**
    * Public state object for distance measurement to be accessed and updated by the frontend.
    */
   public measurementState = {
     isActive: false,
     isWallsOnly: false,
-    isObjectToObject: false,
   };
 
   /**
@@ -405,7 +396,7 @@ export class ConfiguratorCore {
   /**
    * Box3Helper used to highlight an object while hovering.
    */
-  private hoverBoxHelper: Box3Helper | null = null;
+  private hoverBoxHelper: Object3D  | null = null;
 
   /**
    * Currently hovered mobile collider (used to detect hover changes).
@@ -425,11 +416,7 @@ export class ConfiguratorCore {
   /**
    * The color currently selected for wall coloring.
    */
-  private selectedWallColor: { color: string, id: string, name: string } = {
-    color: "#f5b942",
-    id: "123e4567-e89b-12d3-a456-426614174000",
-    name: "sample_color"
-  };
+  private selectedWallColor: string = "#f5b942";
 
   /**
    * Flag to indicate if wall coloring mode is active.
@@ -487,6 +474,11 @@ export class ConfiguratorCore {
   private isPreviewDragging = false;
 
   /**
+   * Stored handler reference for adding/removing KEY_DOWN event listener.
+   */
+  private handleKeyDown = (e: KeyboardEvent): void => this.onKeyDown(e);
+
+  /**
    * Creates a new ConfiguratorCore instance
    *
    * @param options - Configuration options
@@ -500,6 +492,7 @@ export class ConfiguratorCore {
     this.cameraManager = new CameraManager();
     this.controlsManager = new ControlsManager(this.scene);
     this.projectFileReader = new ProjectFileReader();
+    this.roomAnnotationManager = RoomAnnotationManager.getInstance();
 
     this.options = options;
 
@@ -712,6 +705,9 @@ export class ConfiguratorCore {
     this.rendererManager.renderer.domElement.addEventListener(DOMEvents.MOUSE_UP, (e) =>
       this.onPointerUp(e)
     );
+
+    this.enableKeyboardShortcuts(true);
+
     this.vrManager = new VRManager(
       this.rendererManager.renderer,
       this.scene,
@@ -747,17 +743,17 @@ export class ConfiguratorCore {
       position: { x: 5, y: 10, z: 7.5 },
       castShadow: true,
       shadow: {
-        mapSize: { width: 4096, height: 4096 },
+        mapSize: { width: 2048, height: 2048 },
         bias: -0.0005,
         normalBias: 0.05,
-        radius: 2,
+        radius: 3,
         camera: {
-          left: -8,
-          right: 8,
-          top: 8,
-          bottom: -8,
+          left: -100,
+          right: 100,
+          top: 100,
+          bottom: -100,
           near: 0.1,
-          far: 30,
+          far: 200,
         },
       },
     });
@@ -819,17 +815,9 @@ export class ConfiguratorCore {
       this.camera.position.y = 0;
     }
 
-    // update hover box helper if needed
-    if (this.hoverBoxHelper && (this.hoverBoxHelper as any).target) {
-      this.hoverBoxHelper.box.setFromObject((this.hoverBoxHelper as any).target, true);
-    }
 
     // update model helper
     this.modelController.updateHelper();
-
-    if (this.hoverBoxHelper && this.hoveredCollider) {
-      this.hoverBoxHelper.box.setFromObject(this.hoveredCollider, true);
-    }
 
     //  update all sprites in measurementGroup to face the camera
     if (this.measurementGroup) {
@@ -871,6 +859,7 @@ export class ConfiguratorCore {
         }
       }
     }
+    this.roomAnnotationManager.update(this.camera);
     this.viewCubeGizmo.update();
   }
 
@@ -1439,6 +1428,301 @@ export class ConfiguratorCore {
   }
 
   /**
+   * Recreate the walls with the updated wall and opening dimensions.
+   *
+   * @param wallHeight
+   * @param doorWidth
+   * @param doorHeight
+   * @param windowWidth
+   * @param windowHeight
+   * @param windowFloorDistance
+   */
+  private recreateWalls(
+    wallHeight?: number,
+    doorWidth?: number,
+    doorHeight?: number,
+    windowWidth?: number,
+    windowHeight?: number,
+    windowFloorDistance?: number
+  ): void {
+    const walls: Mesh[] = [];
+
+    this.scene.traverse((child) => {
+      if (child instanceof Mesh && (child as any).wall_id) {
+        walls.push(child);
+      }
+    });
+
+    if (walls.length === 0) return;
+
+    // Store everything required to re-insert the final wall later.
+    const wallInfo = new Map<
+      string,
+      {
+        parent: Object3D;
+        index: number;
+        oldHalfHeight: number;
+        newHalfHeight: number;
+        boundaryCube?: Object3D;
+      }
+    >();
+
+    // Preserve the original material of each wall.
+    const wallMaterials = new Map<string, Material>();
+
+    const stagingGroup = new Group();
+
+    const wallThicknessLocal =(Config.WALL_THICKNESS as number) * (Config.WORLD_SCALE as number);
+
+    walls.forEach((oldWall) => {
+      oldWall.geometry.computeBoundingBox();
+
+      const bbox = oldWall.geometry.boundingBox;
+      if (!bbox) return;
+
+      const wallId = (oldWall as any).wall_id;
+
+      const start = (oldWall as any).startPoint;
+      const end = (oldWall as any).endPoint;
+
+      // Calculate wall width from start/end points when available.
+      let width: number;
+
+      if (start && end) {
+        const dx = end.x - start.x;
+        const dz = end.z - start.z;
+
+        width = Math.sqrt(dx * dx + dz * dz) + 10 * wallThicknessLocal;
+      } else {
+        width = bbox.max.x - bbox.min.x;
+      }
+
+      const depth = wallThicknessLocal;
+
+      const existingHeight = bbox.max.y - bbox.min.y;
+
+      // New wall height.
+      const newWallHeight = wallHeight !== undefined
+        ? wallHeight * (Config.WORLD_SCALE as number)
+        : existingHeight;
+
+      // Preserve original wall material.
+      const originalMaterial = (oldWall as any).material;
+      wallMaterials.set(wallId, originalMaterial);
+
+      // Create the new plain wall used as the CSG input.
+      const plainWall = new Mesh(
+        new BoxGeometry(width,newWallHeight,depth),
+        originalMaterial
+      );
+
+      // Preserve all existing userData.
+      plainWall.userData = {
+        ...oldWall.userData,
+      };
+
+      const defaultMaterial = new Array(6)
+        .fill(null)
+        .map(
+          () =>
+            new MeshStandardMaterial({
+              color: 0xaaaaaa,
+              roughness: 0.4,
+            })
+        );
+
+      plainWall.userData.defaultMaterial = defaultMaterial;
+
+      (plainWall as any).wall_id = wallId;
+
+      plainWall.position.copy(oldWall.position);
+      plainWall.position.y = newWallHeight / 2;
+      plainWall.quaternion.copy(oldWall.quaternion);
+      plainWall.scale.copy(oldWall.scale);
+
+      (plainWall as any).startPoint = (oldWall as any).startPoint;
+      (plainWall as any).endPoint = (oldWall as any).endPoint;
+      (plainWall as any).startPointWallIds = (oldWall as any).startPointWallIds;
+      (plainWall as any).endPointWallIds = (oldWall as any).endPointWallIds;
+      (plainWall as any).windows = (oldWall as any).windows;
+      (plainWall as any).doors = (oldWall as any).doors;
+      (plainWall as any).currentHeight = newWallHeight;
+
+      this.updateOpeningDimensionValues(
+        plainWall,
+        doorWidth,
+        doorHeight,
+        windowWidth,
+        windowHeight,
+        windowFloorDistance
+      );
+
+      const boundaryCube = oldWall.children.find((child) =>
+        child.name.startsWith(
+          RequiredStrings.BOUNDARY_CUBE
+        )
+      );
+
+      if (boundaryCube) {
+        oldWall.remove(boundaryCube);
+      }
+
+      const parent = oldWall.parent;
+
+      if (parent) {
+        wallInfo.set(wallId, {
+          parent,
+          index: parent.children.indexOf(oldWall),
+          oldHalfHeight: oldWall.position.y,
+          newHalfHeight: newWallHeight / 2,
+          boundaryCube,
+        });
+
+        parent.remove(oldWall);
+      }
+
+      oldWall.geometry.dispose();
+
+      stagingGroup.add(plainWall);
+    });
+
+    const unitConversionFactor =
+      walls.find((wall) => wall.userData?.unitConversionFactor != null
+      )?.userData.unitConversionFactor ?? 1;
+
+    const wallCutter = WallCutter.getInstance();
+
+    wallCutter.setUnitConversionFactor( unitConversionFactor );
+
+    wallCutter.setWallGroup(stagingGroup);
+
+    const trimmedWallsGroup = wallCutter.cutWalls();
+
+    trimmedWallsGroup.traverse((child) => {
+      if (!(child instanceof Mesh)) return;
+
+      const wallId = (child as any).wall_id;
+
+      if (!wallId) return;
+
+      const material = wallMaterials.get(wallId);
+      const info = wallInfo.get(wallId);
+
+      if (!material || !info) return;
+
+      const heightScale =
+        info.oldHalfHeight > 0
+          ? info.newHalfHeight / info.oldHalfHeight
+          : 1;
+
+      this.applyWallMaterial(
+        child,
+        material,
+        heightScale
+      );
+
+      if (!child.userData.defaultMaterial) {
+        child.userData.defaultMaterial =
+          new Array(6)
+            .fill(null)
+            .map(
+              () =>
+                new MeshStandardMaterial({
+                  color: 0xaaaaaa,
+                  roughness: 0.4,
+                })
+            );
+      }
+    });
+
+    const placements = wallCutter.getPlacements();
+    DoorWindowHelper.addDoorAndWindow(trimmedWallsGroup, placements, wallThicknessLocal
+    );
+
+    const trimmedWallsList = trimmedWallsGroup.children.slice();
+
+    stagingGroup.children.forEach((wall) => {
+      (wall as Mesh).geometry?.dispose();
+    });
+
+    trimmedWallsList.forEach((trimmedWall) => {
+      const wallId = (trimmedWall as any).wall_id;
+
+      const info = wallInfo.get(wallId);
+
+      if (!info) return;
+
+      if (info.boundaryCube) {
+        if (info.oldHalfHeight > 0) {
+          info.boundaryCube.position.y =
+            (info.boundaryCube.position.y /
+              info.oldHalfHeight) *
+            info.newHalfHeight;
+        }
+
+        trimmedWall.add(info.boundaryCube);
+      }
+
+      info.parent.add(trimmedWall);
+
+      if (info.index >= 0) {
+        const children = info.parent.children;
+
+        children.splice(children.indexOf(trimmedWall), 1 );
+
+        children.splice(Math.min(info.index, children.length), 0, trimmedWall);
+      }
+      trimmedWall.updateWorldMatrix(true, false);
+    });
+  }
+
+  /**
+   * Update door/window opening dimensions stored in a wall's userdata arrays.
+   * Any dimension left undefined is preserved at its current value.
+   * @param wall The plain (pre-cut) wall mesh whose .doors / .windows arrays to update
+   * @param doorWidth New door width in design units, or undefined to leave unchanged
+   * @param doorHeight New door height in design units, or undefined to leave unchanged
+   * @param windowWidth New window width in design units, or undefined to leave unchanged
+   * @param windowHeight New window height in design units, or undefined to leave unchanged
+   */
+  private updateOpeningDimensionValues(
+    wall: Mesh,
+    doorWidth?: number,
+    doorHeight?: number,
+    windowWidth?: number,
+    windowHeight?: number,
+    windowFloorDistance?: number
+  ): void {
+    if (
+      doorWidth === undefined &&
+      doorHeight === undefined &&
+      windowWidth === undefined &&
+      windowHeight === undefined &&
+      windowFloorDistance === undefined
+    ) {
+      return;
+    }
+    const doors = (wall as any).doors;
+    if (Array.isArray(doors)) {
+      doors.forEach((door: any) => {
+        if (!door) return;
+        if (doorWidth !== undefined) door.width = doorWidth;
+        if (doorHeight !== undefined) door.height = doorHeight;
+      });
+    }
+
+    const windows = (wall as any).windows;
+    if (Array.isArray(windows)) {
+      windows.forEach((win: any) => {
+        if (!win) return;
+        if (windowWidth !== undefined) win.width = windowWidth;
+        if (windowHeight !== undefined) win.height = windowHeight;
+        if (windowFloorDistance !== undefined) win.windowFloorDistance=windowFloorDistance;
+      });
+    }
+  }
+
+  /**
    * Initializes a ResizeObserver to handle container resizing.
    *
    * @private
@@ -1463,6 +1747,7 @@ export class ConfiguratorCore {
    */
   private createWallVisibilityChecker(cube: Mesh, model: Object3D) {
     const raycaster = new Raycaster();
+    raycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
     const direction = new Vector3();
 
     const cubeCorners: Vector3[] = [];
@@ -1660,7 +1945,8 @@ export class ConfiguratorCore {
 
           this.modelRoot = this.furnitureGroup;
           this.modelController.addBoundingBoxHelper(
-            this.modelRoot as Object3D
+            this.modelRoot as Object3D,
+            "select"
           );
           this.switchControlMode(ControlTypes.TRANSFORM);
 
@@ -2135,6 +2421,7 @@ export class ConfiguratorCore {
    */
   private drawMeasurementForCollider(collider: Object3D, isWallsOnly: boolean = false) {
     const raycaster = new Raycaster();
+    raycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
     const box = new Box3().setFromObject(collider, true);
     const center = new Vector3();
     const size = new Vector3();
@@ -2236,6 +2523,7 @@ export class ConfiguratorCore {
     let isUnderneathFloor = false;
     if (baseModel) {
       const floorRaycaster = new Raycaster();
+      floorRaycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
       const rayStart = new Vector3(previewModel.position.x, 1000, previewModel.position.z);
       const rayDir = new Vector3(0, -1, 0);
       floorRaycaster.set(rayStart, rayDir);
@@ -2304,6 +2592,11 @@ export class ConfiguratorCore {
     this.previewCollider = null;
     this.basePreviewModel = null;
     this.isPreviewOnFloor = false;
+
+    const activeControl = this.controlsManager.getActiveControl();
+    if (activeControl instanceof TransformControls) {
+      activeControl.detach();
+    }
 
     this.rendererManager.renderer.domElement.style.cursor = CursorStyle.DEFAULT;
   }
@@ -2380,7 +2673,7 @@ export class ConfiguratorCore {
 
       const currentMode = this.controlsManager.getCurrentTransformMode();
       if (this.modelRoot.name === RequiredStrings.FURNITURE_GROUP) {
-        this.modelController.addBoundingBoxHelper(this.modelRoot as Object3D);
+        this.modelController.addBoundingBoxHelper(this.modelRoot as Object3D, "select");
         this.setTransformMode(currentMode);
 
       } else {
@@ -2404,6 +2697,30 @@ export class ConfiguratorCore {
 
     const selectedMetadata = this.getModelMetadata();
     Events.emit(ConfiguratorEventType.MODEL_SELECTED, selectedMetadata);
+  }
+
+  /**
+   * Handles keyboard shortcuts for deleting and duplicating models.
+   *
+   * @private
+   * @param {KeyboardEvent} event - The triggered keyboard event.
+   * @returns {void}
+   */
+  private onKeyDown(event: KeyboardEvent): void {
+    // Ctrl + C or Cmd + C for Duplicate/Copy model
+    const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+    if (isCtrlOrCmd && event.key.toLowerCase() === KeyboardKey.COPY) {
+      event.preventDefault();
+      this.duplicateModel();
+      return;
+    }
+
+    // Delete key for Delete model
+    if (event.key === KeyboardKey.DELETE) {
+      event.preventDefault();
+      this.deleteModel();
+      return;
+    }
   }
 
   /**
@@ -2528,7 +2845,8 @@ export class ConfiguratorCore {
       activeControl.attach(this.modelRoot!);
       activeControl.setSpace("world");
       this.modelController.addBoundingBoxHelper(
-        this.modelRoot as Object3D
+        this.modelRoot as Object3D,
+        "select"
       );
 
       if (this.isReplacingModel) {
@@ -2561,7 +2879,7 @@ export class ConfiguratorCore {
           this.modelRoot = clonedChildren[0] || null;
           if (this.modelRoot && activeControl instanceof TransformControls) {
             activeControl.attach(this.modelRoot);
-            this.modelController.addBoundingBoxHelper(this.modelRoot);
+            this.modelController.addBoundingBoxHelper(this.modelRoot, "select");
           }
         }
         Events.emit(ConfiguratorEventType.CLONE, {
@@ -2626,10 +2944,13 @@ export class ConfiguratorCore {
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       const raycaster = new Raycaster();
+      raycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
 
       raycaster.setFromCamera(mouse, this.camera);
 
-      const intersects = raycaster.intersectObject(this.basePreviewModel, true);
+      // Intersect ONLY with the floor model to avoid interference from furniture or gizmos
+      const intersects = raycaster.intersectObject(this.basePreviewModel, true).filter((hit) => !this.isLabelHit(hit.object));
+
       if (intersects.length > 0) {
         const hit = intersects[0];
         const obj = hit.object;
@@ -2663,6 +2984,8 @@ export class ConfiguratorCore {
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       const raycaster = new Raycaster();
+      raycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
+      raycaster.setFromCamera(mouse, this.camera);
       const intersectsRaw = raycaster.intersectObjects(
         this.modelController.placedModels,
         true
@@ -2689,14 +3012,15 @@ export class ConfiguratorCore {
 
         if (hoveredModel && this.hoveredCollider !== hoveredModel) {
           if (this.hoverBoxHelper) {
-            this.scene.remove(this.hoverBoxHelper);
+            this.hoverBoxHelper.parent?.remove(this.hoverBoxHelper);
             this.hoverBoxHelper = null;
           }
 
           this.hoveredCollider = hoveredModel;
-          const box = new Box3().setFromObject(hoveredModel, true);
-          this.hoverBoxHelper = new Box3Helper(box, 0x0000ff);
-          this.scene.add(this.hoverBoxHelper);
+          const helper = this.modelController.addBoundingBoxHelper(hoveredModel, "hover") as Object3D ;
+          if (helper) {
+            this.hoverBoxHelper = helper;
+          }
 
           Events.emit(
             ConfiguratorEventType.MODEL_HOVERED,
@@ -2705,7 +3029,7 @@ export class ConfiguratorCore {
         }
       } else {
         if (this.hoverBoxHelper) {
-          this.scene.remove(this.hoverBoxHelper);
+          this.hoverBoxHelper.parent?.remove(this.hoverBoxHelper);
           this.hoverBoxHelper = null;
           this.hoveredCollider = null;
           Events.emit(ConfiguratorEventType.MODEL_HOVERED, null);
@@ -3046,6 +3370,8 @@ export class ConfiguratorCore {
   private removeModelMultiSelect(): boolean {
     if (!this.modelRoot) return false;
 
+    const category = this.modelRoot?.userData?.metadata?.category || "Asset";
+
     const childrenToRemove = [...this.modelRoot.children];
 
     // Remove from placedModels list
@@ -3095,6 +3421,15 @@ export class ConfiguratorCore {
     Events.emit(ConfiguratorEventType.MODEL_SELECTED, null);
     Events.emit(ConfiguratorEventType.HIERARCHY_CHANGED);
     Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
+
+    if (!this.isReplacingModel) {
+      Events.emit(ConfiguratorEventType.DELETE, {
+        title: "Successful",
+        message: `${category} deleted successfully!`,
+        category: category,
+        color: "warning",
+      });
+    }
 
     return true;
   }
@@ -3359,65 +3694,44 @@ export class ConfiguratorCore {
    * @param {PointerEvent} event - The pointer event.
    * @returns {{ mesh: Mesh, targetGroupIndex: number } | null} - | null} Information about the clicked wall face group.
    */
-  private getClickedWallFace(event: PointerEvent): { mesh: Mesh, targetGroupIndex: number } | null {
+  private getClickedWallFace(
+    event: PointerEvent
+  ): { mesh: Mesh; materialIndex: number } | null {
     const rect = this.rendererManager.renderer.domElement.getBoundingClientRect();
     const mouse = new Vector2();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     const raycaster = new Raycaster();
+    raycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
     raycaster.setFromCamera(mouse, this.camera);
 
     const meshes: Mesh[] = [];
     this.scene.traverse((child) => {
-      if (child instanceof Mesh && (child as any).wall_id && child.material.opacity !== 0) {
+      if (
+        child instanceof Mesh &&
+        (child as any).wall_id &&
+        child.material.opacity !== 0
+      ) {
         meshes.push(child);
       }
     });
 
-    const intersects = raycaster.intersectObjects(meshes, true);
+    const intersects = raycaster.intersectObjects(meshes, false);
 
     if (intersects.length === 0) return null;
 
     const intersect = intersects[0];
     const mesh = intersect.object as Mesh;
-    const nocf = intersect.face?.normal;
 
-    if (!nocf) return null;
-
-    if (!(mesh as any)._wallFacesPrepared) {
-      this.groupFacesByNormal(mesh);
-    }
-    const geometry = mesh.geometry;
-    const normalAttr = geometry.getAttribute("normal");
-    let targetGroupIndex = -1;
-
-    // Round the face normal the same way prepareMeshForColoring rounds keys
-    const roundedNx = Math.round(nocf.x * 100) / 100;
-    const roundedNy = Math.round(nocf.y * 100) / 100;
-    const roundedNz = Math.round(nocf.z * 100) / 100;
-
-    for (let i = 0; i < geometry.groups.length; i++) {
-      const group = geometry.groups[i];
-      const gnx = Math.round(normalAttr.getX(group.start) * 100) / 100;
-      const gny = Math.round(normalAttr.getY(group.start) * 100) / 100;
-      const gnz = Math.round(normalAttr.getZ(group.start) * 100) / 100;
-
-      if (
-        Math.abs(gnx - roundedNx) < 0.02 &&
-        Math.abs(gny - roundedNy) < 0.02 &&
-        Math.abs(gnz - roundedNz) < 0.02
-      ) {
-        targetGroupIndex = i;
-        break;
-      }
-    }
-
-    if (targetGroupIndex === -1) {
+    if (intersect.faceIndex === undefined || intersect.faceIndex === -1) {
       return null;
     }
 
-    return { mesh, targetGroupIndex };
+    // Direct access to face materialIndex (defaults to 0 if non-indexed/single material)
+    const materialIndex = intersect.face?.materialIndex ?? 0;
+
+    return { mesh, materialIndex };
   }
 
   /**
@@ -3431,13 +3745,49 @@ export class ConfiguratorCore {
     if (!this.isWallColoringMode) return;
     const wallFace = this.getClickedWallFace(event);
     if (wallFace) {
-      const targetColor = new Color(this.selectedWallColor.color);
-      console.log("wallFace : ", wallFace);
-
-      this.splitWallFace(wallFace.mesh, wallFace.targetGroupIndex, [1], [targetColor], this.selectedWallColor.id);
+      const targetColor = new Color(this.selectedWallColor);
+      this.updateColorMaterial(wallFace.mesh, wallFace.materialIndex,targetColor);
     }
   };
 
+  /**
+   * Updates the material color of the specified material index of a mesh.
+   *
+   * @param {Mesh} mesh - The mesh whose material should be updated.
+   * @param {number} materialIndex - The index of the material to update.
+   * @param {Color|string|number} targetColor - The new color to apply.
+   * @returns {void}
+   */
+  private updateColorMaterial(
+    mesh: Mesh,
+    materialIndex: number,
+    targetColor: Color | string | number
+  ): void {
+    const materials = Array.isArray(mesh.material)
+      ? [...mesh.material]
+      : [mesh.material];
+
+    const material = materials[materialIndex];
+
+    if (!(material instanceof MeshStandardMaterial)) {
+      return;
+    }
+
+    // Clone the material so other meshes sharing this material remain unaffected
+    const newMaterial = material.clone();
+    if (newMaterial.map) {
+      newMaterial.map.dispose();
+      newMaterial.map = null;
+    }
+
+    // Apply the new color
+    newMaterial.color.set(targetColor);
+    newMaterial.needsUpdate = true;
+
+    // Replace only the target material
+    materials[materialIndex] = newMaterial;
+    mesh.material = materials;
+  }
   /**
    * Resets the material of a specific mesh to its original default.
    *
@@ -3452,80 +3802,81 @@ export class ConfiguratorCore {
     if (!defaultMaterial) {
       return false;
     }
-    // Restore entire if the material index is not provided
+
+    // Extract a single material reference if defaultMaterial is an array
+    const singleDefaultMat: Material = Array.isArray(defaultMaterial)
+      ? defaultMaterial[0]
+      : defaultMaterial;
+
+    const defaultMaterialsArray = Array.isArray(defaultMaterial)
+      ? defaultMaterial
+      : [defaultMaterial];
+
+    const disposeMaterial = (mat: Material) => {
+      if (!defaultMaterialsArray.includes(mat)) {
+        if (mat instanceof MeshStandardMaterial || mat instanceof MeshBasicMaterial) {
+          mat.map?.dispose();
+        }
+        mat.dispose();
+      }
+    };
+
     if (materialIndex === undefined) {
-      if (mesh.material !== defaultMaterial) {
-        const currentMaterials = Array.isArray(mesh.material)
-          ? mesh.material
-          : [mesh.material];
-
-        const defaultMaterials = Array.isArray(defaultMaterial)
-          ? defaultMaterial
-          : [defaultMaterial];
-
-        currentMaterials.forEach((mat) => {
-          // Don't dispose materials that are part of the default
-          if (!defaultMaterials.includes(mat)) {
-            if (mat instanceof MeshStandardMaterial || mat instanceof MeshBasicMaterial) {
-              mat.map?.dispose();
-            }
-            mat.dispose();
-          }
-        });
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach(disposeMaterial);
+        mesh.material = mesh.material.map(() => singleDefaultMat);
+      } else {
+        if (mesh.material !== singleDefaultMat) {
+          disposeMaterial(mesh.material);
+        }
+        mesh.material = singleDefaultMat;
       }
 
-      mesh.material = defaultMaterial;
-
-      const materials = Array.isArray(mesh.material)
-        ? mesh.material
-        : [mesh.material];
-
-      materials.forEach((mat) => (mat.needsUpdate = true));
-
+      singleDefaultMat.needsUpdate = true;
       return true;
     }
 
-    // Restore a single material if material index is provided
     if (!Array.isArray(mesh.material)) {
-      if (mesh.material === defaultMaterial) {
-        return true;
-      }
-      const numGroups = mesh.geometry.groups ? mesh.geometry.groups.length : 1;
+      const numGroups = mesh.geometry.groups?.length || 1;
       const baseMat = mesh.material;
-      const initialMaterials: Material[] = [];
+      const newMaterials: Material[] = [];
+
       for (let i = 0; i < numGroups; i++) {
-        initialMaterials[i] = (i === materialIndex) ? defaultMaterial : baseMat.clone();
+        if (i === materialIndex) {
+          newMaterials[i] = Array.isArray(defaultMaterial)
+            ? defaultMaterial[i] ?? singleDefaultMat
+            : singleDefaultMat;
+        } else {
+          newMaterials[i] = baseMat.clone();
+        }
       }
-      mesh.material = initialMaterials;
-      defaultMaterial.needsUpdate = true;
+
+      mesh.material = newMaterials;
+      singleDefaultMat.needsUpdate = true;
       return false;
     }
 
     const updatedMaterials = [...mesh.material];
     const currentMaterial = updatedMaterials[materialIndex];
 
-    if (currentMaterial && currentMaterial !== defaultMaterial) {
-      if (currentMaterial instanceof MeshStandardMaterial || currentMaterial instanceof MeshBasicMaterial) {
-        currentMaterial.map?.dispose();
-      }
-
-      currentMaterial.dispose();
+    if (currentMaterial) {
+      disposeMaterial(currentMaterial);
     }
 
-    updatedMaterials[materialIndex] = defaultMaterial;
+    const targetDefaultMat = Array.isArray(defaultMaterial)
+      ? defaultMaterial[materialIndex] ?? singleDefaultMat
+      : singleDefaultMat;
 
-    const allDefault = updatedMaterials.every(
-      (mat) => mat === defaultMaterial
-    );
+    updatedMaterials[materialIndex] = targetDefaultMat;
+    mesh.material = updatedMaterials;
+    targetDefaultMat.needsUpdate = true;
 
-    if (allDefault) {
-      // Collapse back to a single material
-      mesh.material = defaultMaterial;
-    } else {
-      mesh.material = updatedMaterials;
-    }
-
-    defaultMaterial.needsUpdate = true;
+    const allDefault = updatedMaterials.every((mat, idx) => {
+      const expectedMat = Array.isArray(defaultMaterial)
+        ? defaultMaterial[idx] ?? singleDefaultMat
+        : singleDefaultMat;
+      return mat === expectedMat;
+    });
 
     return allDefault;
   }
@@ -3540,9 +3891,6 @@ export class ConfiguratorCore {
   private onWallTexturingClick = (event: PointerEvent) => {
     if (!this.isWallTexturingMode || !this.selectedWallTexture) return;
     const wallFace = this.getClickedWallFace(event);
-
-    console.log("clicked wall face : ", wallFace);
-
     if (wallFace) {
       const loader = new TextureLoader();
       loader.load(this.selectedWallTexture.url, (tex) => {
@@ -3564,15 +3912,52 @@ export class ConfiguratorCore {
         wallTex.repeat.set(repeatX, repeatY);
         wallTex.needsUpdate = true;
 
-        // @ts-ignore
-        this.splitWallFace(wallFace.mesh, wallFace.targetGroupIndex, [1], [wallTex], this.selectedWallTexture.id);
+        this.updateTextureMaterial(wallFace.mesh, wallFace.materialIndex,wallTex);
       });
     }
   };
 
   /**
+   * Applies a texture to the material assigned to a specific material index on a mesh.
+   *
+   * @private
+   * @param {Mesh} mesh - The target wall mesh.
+   * @param {number} materialIndex - The index of the material to update.
+   * @param {Texture} texture - The texture to apply to the material.
+   * @returns {void}
+   */
+  private updateTextureMaterial(
+    mesh: Mesh,
+    materialIndex: number,
+    texture: Texture
+  ): void {
+    const materials = Array.isArray(mesh.material)
+      ? [...mesh.material]
+      : [mesh.material];
+
+    const material = materials[materialIndex];
+
+    if (!(material instanceof MeshStandardMaterial)) {
+      return;
+    }
+
+    const newMaterial = material.clone();
+
+    if (newMaterial.map && newMaterial.map !== texture) {
+      newMaterial.map.dispose();
+    }
+
+    newMaterial.map = texture;
+    newMaterial.color.set(0xffffff);
+    newMaterial.needsUpdate = true;
+
+    materials[materialIndex] = newMaterial;
+    mesh.material = materials;
+  }
+
+  /**
    * Click handler for wall material reset mode.
-   * When active, clicking a wall resets it to its original material.
+   * When active, clicking a wall face resets it to its original material.
    *
    * @private
    * @param {PointerEvent} event - The pointer event.
@@ -3584,180 +3969,39 @@ export class ConfiguratorCore {
     const wallFace = this.getClickedWallFace(event);
     if (!wallFace) return;
 
-    const { mesh, targetGroupIndex } = wallFace;
+    const { mesh, materialIndex } = wallFace;
+    const defaultData = mesh.userData.defaultMaterial;
+    if (!defaultData) return;
 
-    // Returns true if all faces are now back to the default material
-    const fullyRestored = this.restoreDefaultMaterial(mesh, targetGroupIndex);
+    const currentMaterials = Array.isArray(mesh.material)
+      ? [...mesh.material]
+      : [mesh.material];
 
-    if (!fullyRestored) {
-      return;
-    }
+    // Extract the default material for the specific face index
+    const defaultMaterialForFace = Array.isArray(defaultData)
+      ? defaultData[materialIndex]
+      : defaultData;
 
-    // Reset wall-specific state only when the wall has been fully restored
-    (mesh as any)._wallFacesPrepared = false;
-    delete mesh.userData.faceGroups;
-    mesh.userData.faceOverrides = {};
+    if (!defaultMaterialForFace) return;
 
-  };
+    const activeMaterial = currentMaterials[materialIndex];
 
-  /**
-   * Prepares a mesh for wall coloring by grouping faces by normal.
-   * Each group of faces (triangles) that share the same normal direction
-   * will get its own material. This allows different wall sides to be
-   * colored independently.
-   *
-   * @private
-   * @param {Mesh} mesh - The wall mesh to prepare.
-   * @returns {void}
-   */
-  private groupFacesByNormal = (mesh: Mesh) => {
+    // Safely dispose active material textures if it is a modified/cloned instance
+    const isDefaultRef = Array.isArray(defaultData)
+      ? defaultData.includes(activeMaterial)
+      : activeMaterial === defaultData;
 
-    let geometry = mesh.geometry.toNonIndexed();
-
-    const positionAttribute = geometry.getAttribute('position');
-    const normalAttribute = geometry.getAttribute('normal');
-    const uvAttribute = geometry.getAttribute('uv');
-
-    if (!normalAttribute) {
-      geometry.computeVertexNormals();
-    }
-
-    const faceCount = positionAttribute.count / 3;
-
-    const faceGroups: Map<string, number[]> = new Map();
-
-    // Iterate over all faces in the geometry.
-    for (let i = 0; i < faceCount; i++) {
-
-      // Get the normal of the first vertex of the triangle.
-      const nx = normalAttribute.getX(i * 3);
-      const ny = normalAttribute.getY(i * 3);
-      const nz = normalAttribute.getZ(i * 3);
-
-      // Create a key representing the normal direction.
-      const key = `${Math.round(nx * 100) / 100},${Math.round(ny * 100) / 100},${Math.round(nz * 100) / 100}`;
-
-      if (!faceGroups.has(key)) {
-        faceGroups.set(key, []);
+    if (activeMaterial && !isDefaultRef) {
+      if (activeMaterial instanceof MeshStandardMaterial || activeMaterial instanceof MeshBasicMaterial) {
+        activeMaterial.map?.dispose();
       }
-
-      // Add this face index to the group for this normal.
-      faceGroups.get(key)!.push(i);
+      activeMaterial.dispose();
     }
 
-    // Each face group will receive its own material.
-    const materials: Material[] = [];
-
-    // Clear any existing geometry groups.
-    geometry.clearGroups();
-
-    // Keeps track of where the next material group starts in the vertex buffer.
-    let currentGroupStart = 0;
-
-    // Arrays to store reconstructed vertex data.
-    // We rebuild geometry so that faces belonging to the same
-    // normal group are stored sequentially.
-    const newPositions: number[] = [];
-    const newNormals: number[] = [];
-    const newUvs: number[] = [];
-
-    // Sort the normal keys so grouping order is deterministic.
-    // (Useful for debugging and predictable material ordering.)
-    const sortedKeys = Array.from(faceGroups.keys()).sort();
-
-    // Get existing base material from mesh to preserve any active texture or color
-    const currentMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-
-    // Process each normal group.
-    sortedKeys.forEach((key, index) => {
-
-      // Faces that share this normal direction
-      const faceIndices = faceGroups.get(key)!;
-
-      // Start index for this group in the vertex buffer
-      const startIndex = currentGroupStart;
-
-      // Copy vertex data of all faces in this group into the new geometry buffers.
-      faceIndices.forEach(faceIdx => {
-
-        for (let v = 0; v < 3; v++) {
-
-          const idx = faceIdx * 3 + v;
-
-          newPositions.push(
-            positionAttribute.getX(idx),
-            positionAttribute.getY(idx),
-            positionAttribute.getZ(idx)
-          );
-
-          // Copy vertex normal
-          newNormals.push(
-            normalAttribute.getX(idx),
-            normalAttribute.getY(idx),
-            normalAttribute.getZ(idx)
-          );
-
-          // Copy vertex uv
-          if (uvAttribute) {
-            newUvs.push(
-              uvAttribute.getX(idx),
-              uvAttribute.getY(idx)
-            );
-          }
-        }
-      });
-
-      // Number of vertices in this group (faces * 3 vertices per face)
-      const groupCount = faceIndices.length * 3;
-
-      // Register a geometry group: startIndex -> starting vertex, groupCount -> number of vertices, index -> material index
-      geometry.addGroup(startIndex, groupCount, index);
-
-      // Move start pointer for next group.
-      currentGroupStart += groupCount;
-
-      // Create a material for this face group, preserving existing material if available.
-      if (currentMat) {
-        materials.push(currentMat.clone());
-      } else {
-        materials.push(new MeshStandardMaterial({
-          side: DoubleSide,
-          roughness: 0.7,
-          color: 0xaaaaaa
-        }));
-      }
-    });
-
-    // Replace geometry attributes with the reconstructed data. Ensures faces belonging to the same group are contiguous.
-    geometry.setAttribute(
-      'position',
-      new Float32BufferAttribute(newPositions, 3)
-    );
-
-    geometry.setAttribute(
-      'normal',
-      new Float32BufferAttribute(newNormals, 3)
-    );
-
-    if (uvAttribute) {
-      geometry.setAttribute(
-        'uv',
-        new Float32BufferAttribute(newUvs, 2)
-      );
-    }
-    geometry.computeBoundingBox();
-    geometry.computeBoundingSphere();
-
-    // Assign the updated geometry back to the mesh.
-    mesh.geometry = geometry;
-
-    // Assign material array. Three.js will use geometry groups to decide which faces use which material.
-    mesh.material = materials;
-
-    // Custom flag to mark that this mesh has already been processed by the face grouping logic Prevents duplicate processing later.
-    (mesh as any)._wallFacesPrepared = true;
-
-    return { geometry, materials, sortedKeys, faceGroups };
+    // Restore original material for this specific face index
+    currentMaterials[materialIndex] = defaultMaterialForFace;
+    defaultMaterialForFace.needsUpdate = true;
+    mesh.material = currentMaterials;
   };
 
   /**
@@ -3865,6 +4109,7 @@ export class ConfiguratorCore {
     });
 
     const raycaster = new Raycaster();
+    raycaster.camera= this.camera;
     raycaster.set(origin, direction);
     const hit = raycaster.intersectObject(roomModel, true)[0];
 
@@ -4007,6 +4252,7 @@ export class ConfiguratorCore {
     const rect = this.rendererManager.renderer.domElement.getBoundingClientRect();
     const mouse = new Vector2();
     const raycaster = new Raycaster();
+    raycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
 
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -4071,9 +4317,12 @@ export class ConfiguratorCore {
 
     const raycaster = new Raycaster();
     raycaster.set(camera.position, direction);
+    raycaster.camera = camera; // required — Sprite.raycast() needs this or it throws
 
     // Intersect ONLY with the room model to avoid interference from furniture or gizmos
-    const intersects = raycaster.intersectObject(roomModel, true);
+    const intersects = raycaster
+      .intersectObject(roomModel, true)
+      .filter((hit) => !this.isLabelHit(hit.object));
 
     if (intersects.length > 0 && intersects[0].object === cube) {
       if (cube.parent) {
@@ -4104,250 +4353,23 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Splits a wall face into multiple sections and applies colors or textures.
+   * Checks if the given object is a room label.
    *
    * @private
-   * @param {Mesh} mesh - The target mesh.
-   * @param {number} groupIndex - The index of the face group to split.
-   * @param {number[]} [ratios=[0.5]] - The ratios defining the split positions.
-   * @param {(Color | Texture)[]} [contents] - Colors or textures to apply to the split sections.
-   * @returns {void}
+   * @param {Object3D} object - The object to check.
+   * @returns {boolean} `true` if the object is a room label, `false` otherwise.
    */
-  private splitWallFace(
-    mesh: Mesh,
-    groupIndex: number,
-    ratios: number[] = [0.5],
-    contents: (Color | Texture)[] = [new Color(0xffaa00), new Color(0x00aaff)],
-    textureId?: string
-  ): void {
-
-    // Get mesh geometry and ensure it has groups (faces separated by material index)
-    const geometry = mesh.geometry as BufferGeometry;
-    if (!geometry.groups || geometry.groups.length <= groupIndex) return;
-
-    // Select the specific face group we want to modify
-    const group = geometry.groups[groupIndex];
-
-    // Access vertex position and normal attributes
-    const posAttr = geometry.getAttribute('position') as BufferAttribute;
-    const normAttr = geometry.getAttribute('normal') as BufferAttribute;
-
-    const box = new Box3();
-
-    // Expand bounding box using all vertices belonging to the selected group
-    for (let i = group.start; i < group.start + group.count; i++) {
-      box.expandByPoint(
-        new Vector3(
-          posAttr.getX(i),
-          posAttr.getY(i),
-          posAttr.getZ(i)
-        )
-      );
+  private isLabelHit(object: Object3D): boolean {
+    let current: Object3D | null = object;
+    while (current) {
+      if (current.userData?.type === "room-label") {
+        return true;
+      }
+      current = current.parent;
     }
-
-    // Compute size of the bounding box (width, height, depth of face)
-    const size = box.getSize(new Vector3());
-
-    // Get the normal of the first vertex in this face group
-    // This helps determine which direction the face is facing
-    const normal = new Vector3(
-      normAttr.getX(group.start),
-      normAttr.getY(group.start),
-      normAttr.getZ(group.start)
-    );
-
-    // Absolute values of normal components for orientation checks
-    const nx = Math.abs(normal.x);
-    const ny = Math.abs(normal.y);
-
-    // Axis used to split the wall face
-    let splitAxis: 'x' | 'y' | 'z' = 'x';
-
-    // Axes used to generate UV coordinates for textures
-    let uvAxis: { u: 'x' | 'y' | 'z'; v: 'x' | 'y' | 'z' } = { u: 'y', v: 'z' };
-
-    if (nx > 0.9) {
-      // Wall facing ±X
-      splitAxis = size.y > size.z ? 'y' : 'z';
-      uvAxis = { u: 'z', v: 'y' };
-    } else if (ny > 0.9) {
-      // Wall facing ±Y
-      splitAxis = size.x > size.z ? 'x' : 'z';
-      uvAxis = { u: 'x', v: 'z' };
-    } else {
-      // Wall facing ±Z
-      splitAxis = size.x > size.y ? 'x' : 'y';
-      uvAxis = { u: 'x', v: 'y' };
-    }
-
-    // Access existing materials array or expand single material into array for all face groups
-    const existingMatArray = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    const baseMat = existingMatArray[0] || mesh.userData.defaultMaterial;
-    const numGroups = Math.max(geometry.groups ? geometry.groups.length : 1, groupIndex + 1);
-    const materials: Material[] = [];
-
-    for (let i = 0; i < numGroups; i++) {
-      if (existingMatArray[i]) {
-        materials[i] = existingMatArray[i];
-      } else if (baseMat) {
-        materials[i] = baseMat.clone();
-      } else {
-        materials[i] = new MeshStandardMaterial({
-          side: DoubleSide,
-          roughness: 0.7,
-          color: 0xaaaaaa,
-        });
-      }
-    }
-
-    // Detect whether each content item is a texture or a plain color
-    const isTex1 = contents[0] instanceof Texture;
-    const isTex2 = contents.length > 1 && contents[1] instanceof Texture;
-    const isTex3 = contents.length > 2 && contents[2] instanceof Texture;
-
-    // Create a base material which we will customize via shader modification
-    const material = new MeshStandardMaterial({
-      color: 0xffffff,
-      side: DoubleSide,
-      map: isTex1 ? (contents[0] as Texture) : (isTex2 ? (contents[1] as Texture) : (isTex3 ? (contents[2] as Texture) : null))
-    });
-
-    // @ts-ignore
-    material.finishId = textureId;
-
-    material.onBeforeCompile = (shader) => {
-
-      // Flags indicating if a texture is used for each section
-      shader.uniforms.useTex1 = { value: isTex1 };
-      shader.uniforms.useTex2 = { value: isTex2 };
-      shader.uniforms.useTex3 = { value: isTex3 };
-
-      // Texture samplers (only valid if texture is used)
-      shader.uniforms.tex1 = { value: isTex1 ? contents[0] : null };
-      shader.uniforms.tex2 = { value: isTex2 ? contents[1] : null };
-      shader.uniforms.tex3 = { value: isTex3 ? contents[2] : null };
-
-      // Fallback colors if textures are not used
-      shader.uniforms.color1 = { value: !isTex1 ? contents[0] : new Color(0xffffff) };
-      shader.uniforms.color2 = { value: contents.length > 1 && !isTex2 ? contents[1] : new Color(0xffffff) };
-      shader.uniforms.color3 = { value: contents.length > 2 && !isTex3 ? contents[2] : new Color(0xffffff) };
-
-      // Ratios defining the split positions along the selected axis
-      shader.uniforms.r1 = { value: ratios[0] };    // r1 is the ratio of the first part
-      shader.uniforms.r2 = { value: ratios.length > 1 ? ratios[1] : 2.0 };   // r2 is the ratio of the second part
-
-      // Convert axis labels to integer indices for shader logic
-      shader.uniforms.splitAxis = { value: splitAxis === 'x' ? 0 : splitAxis === 'y' ? 1 : 2 };
-      shader.uniforms.uvAxisU = { value: uvAxis.u === 'x' ? 0 : uvAxis.u === 'y' ? 1 : 2 };
-      shader.uniforms.uvAxisV = { value: uvAxis.v === 'x' ? 0 : uvAxis.v === 'y' ? 1 : 2 };
-
-      shader.uniforms.bboxMin = { value: box.min };
-      shader.uniforms.bboxMax = { value: box.max };
-
-      shader.vertexShader =
-        `varying vec3 vPosition;\n` + shader.vertexShader;
-
-      // Store vertex position for later use in fragment shader
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `
-      #include <begin_vertex>
-      vPosition = position;
-      `
-      );
-
-      shader.fragmentShader =
-        `
-      varying vec3 vPosition;
-
-      uniform bool useTex1;
-      uniform bool useTex2;
-      uniform bool useTex3;
-
-      uniform sampler2D tex1;
-      uniform sampler2D tex2;
-      uniform sampler2D tex3;
-
-      uniform vec3 color1;
-      uniform vec3 color2;
-      uniform vec3 color3;
-
-      uniform float r1;
-      uniform float r2;
-
-      uniform int splitAxis;
-      uniform int uvAxisU;
-      uniform int uvAxisV;
-
-      uniform vec3 bboxMin;
-      uniform vec3 bboxMax;
-
-      /*
-        Helper function to normalize vertex position
-        along a chosen axis (0=x,1=y,2=z).
-        Result is always between 0 and 1.
-      */
-      float getVal(int axis){
-        if(axis==0) return (vPosition.x-bboxMin.x)/(bboxMax.x-bboxMin.x);
-        if(axis==1) return (vPosition.y-bboxMin.y)/(bboxMax.y-bboxMin.y);
-        return (vPosition.z-bboxMin.z)/(bboxMax.z-bboxMin.z);
-      }
-
-      ` + shader.fragmentShader;
-
-      // Replace default texture mapping logic with our custom split logic
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <map_fragment>',
-        `
-      // Position of fragment along split axis
-      float val = getVal(splitAxis);
-
-      #ifdef USE_MAP
-        vec2 targetUv = vMapUv;
-      #else
-        vec2 targetUv = vec2(getVal(uvAxisU), getVal(uvAxisV));
-      #endif
-
-      vec3 finalColor;
-
-      // Section 1
-      if(val < r1){
-        finalColor = useTex1 ? texture2D(tex1,targetUv).rgb : color1;
-      }
-      // Section 2
-      else if(val < r2){
-        finalColor = useTex2 ? texture2D(tex2,targetUv).rgb : color2;
-      }
-      // Section 3
-      else{
-        finalColor = useTex3 ? texture2D(tex3,targetUv).rgb : color3;
-      }
-
-      // Output final color
-      diffuseColor = vec4(finalColor,1.0);
-      `
-      );
-
-    };
-
-    // dispose of old material at groupIndex if it is not shared with any other slot in existingMatArray
-    const oldMat = existingMatArray[groupIndex];
-    if (oldMat && oldMat !== mesh.userData.defaultMaterial) {
-      const isShared = existingMatArray.some((m, idx) => idx !== groupIndex && m === oldMat);
-      if (!isShared) {
-        if (oldMat instanceof MeshStandardMaterial || oldMat instanceof MeshBasicMaterial) {
-          oldMat.map?.dispose();
-        }
-        oldMat.dispose();
-      }
-    }
-
-    // Replace the material for the selected face group
-    materials[groupIndex] = material;
-
-    // Assign updated material array back to mesh
-    mesh.material = [...materials];
+    return false;
   }
+
 
   /**
    * Positions the preview model relative to the base model and updates
@@ -4355,24 +4377,54 @@ export class ConfiguratorCore {
    */
   private positionPreviewModel(baseModel: Object3D) {
     if (this.previewModel && this.modelRoot) {
+      const preview = this.previewModel as Object3D;
+
       this.modelRoot.updateMatrixWorld(true);
-      const bbox = this.modelController.computePreciseLocalBox(this.modelRoot);
-      const size = new Vector3();
-      bbox.getSize(size);
-      const center = new Vector3();
-      bbox.getCenter(center);
+      preview.updateMatrixWorld(true);
 
-      // Convert the local center to world coordinates
-      center.applyMatrix4(this.modelRoot.matrixWorld);
+      // World-space box: local box pushed through matrixWorld, so scale/rotation count
+      const bbox = this.modelController.computePreciseLocalBox(this.modelRoot)
+        .clone()
+        .applyMatrix4(this.modelRoot.matrixWorld);
+      if (bbox.isEmpty()) return;
 
-      // Position the preview model at the world center
-      (this.previewModel as any).position.x = center.x + size.x;
-      (this.previewModel as any).position.z = center.z + size.z;
+      const center = bbox.getCenter(new Vector3());
+      const half = bbox.getSize(new Vector3()).multiplyScalar(0.5);
+
+      // The copy has its own extent — half of each is what keeps them flush
+      const previewHalf = this.modelController.computePreciseLocalBox(preview)
+        .clone()
+        .applyMatrix4(preview.matrixWorld)
+        .getSize(new Vector3())
+        .multiplyScalar(0.5);
+
+      const roomCenter = new Box3().setFromObject(baseModel).getCenter(new Vector3());
+
+      // Snap to +/-X or +/-Z. x wins the tie; coincident centers fall through to +X
+      const dx = roomCenter.x - center.x;
+      const dz = roomCenter.z - center.z;
+      let ax = 0, az = 0;
+      if (Math.abs(dx) < 1e-6 && Math.abs(dz) < 1e-6) ax = 1;
+      else if (Math.abs(dx) >= Math.abs(dz)) ax = Math.sign(dx) || 1;
+      else az = Math.sign(dz);
+
+      const gap = 0;
+      const distance = (ax !== 0 ? half.x + previewHalf.x : half.z + previewHalf.z) + gap;
+
+      const target = new Vector3(center.x + ax * distance, 0, center.z + az * distance);
+      if (preview.parent) {
+        preview.parent.updateMatrixWorld(true);
+        target.applyMatrix4(new Matrix4().copy(preview.parent.matrixWorld).invert());
+      }
+      preview.position.x = target.x;
+      preview.position.z = target.z;
+
       (this.previewModel as any).updateMatrixWorld(true);
 
       // Re-evaluate floor presence at the newly offset position using downward raycast
       if (baseModel) {
         const floorRaycaster = new Raycaster();
+        floorRaycaster.camera = this.camera; // required — Sprite.raycast() needs this or it throws
         const rayStart = new Vector3(
           (this.previewModel as any).position.x,
           1000,
@@ -4454,6 +4506,41 @@ export class ConfiguratorCore {
     else {
       return false;
     }
+  }
+
+  /**
+  * Applies the preserved wall material and rescales its texture
+  * according to the wall height change.
+  *
+  * @param {Mesh} mesh The wall mesh.
+  * @param {Material | Material[]} material The preserved wall material(s).
+  * @param {number} heightScale The ratio between the new and old wall height.
+  * @returns {void}
+  * @private
+  */
+  private applyWallMaterial(
+    mesh: Mesh,
+    material: Material | Material[],
+    heightScale: number,
+  ): void {
+    const seen = new Set<Texture>();
+
+    const rescale = (mat: Material) => {
+      const map = (mat as MeshStandardMaterial).map;
+      if (!map || heightScale === 1) return;
+      if (seen.has(map)) return;   // already scaled this exact texture in this call
+      seen.add(map);
+
+      map.repeat.y *= heightScale;
+      map.needsUpdate = true;
+    };
+
+    if (Array.isArray(material)) {
+      material.forEach(rescale);
+    } else {
+      rescale(material);
+    }
+    mesh.material = material;
   }
 
   /**
@@ -4763,6 +4850,7 @@ export class ConfiguratorCore {
 
       // remove the actual model root
       if (this.modelRoot) {
+        const category = this.modelRoot?.userData?.metadata?.category || "Model";
 
         // dispose geometries, materials, and textures
         this.disposeGeometryAndMaterial(this.modelRoot);
@@ -4777,6 +4865,15 @@ export class ConfiguratorCore {
         Events.emit(ConfiguratorEventType.MODEL_SELECTED, null);
         Events.emit(ConfiguratorEventType.HIERARCHY_CHANGED);
         Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
+
+        if (!this.isReplacingModel) {
+          Events.emit(ConfiguratorEventType.DELETE, {
+            title: "Successful",
+            message: `${category} deleted successfully!`,
+            category: category,
+            color: "warning",
+          });
+        }
         return true;
       }
     }
@@ -4859,6 +4956,11 @@ export class ConfiguratorCore {
     this.rendererManager.renderer.setAnimationLoop(null);
 
     window.removeEventListener(DOMEvents.RESIZE, this.handleResize.bind(this));
+
+    this.rendererManager.renderer.domElement.removeEventListener(
+      DOMEvents.KEY_DOWN,
+      this.handleKeyDown
+    );
 
     // dispose of controls
     if (this.controls) {
@@ -5092,27 +5194,17 @@ export class ConfiguratorCore {
    * @description This method applies a texture to the currently selected model in the 3D viewer.
    * @public
    */
-  public applyTextureToModel(
-    texUrl: string,
-    id: string,
-    price?: string | number,
-    targetModel?: Object3D
-  ) {
+  public applyTextureToModel(texUrl: string, price?: string | number) {
 
     if (this.previewModel) return;
-    console.log(id, "textureid");
 
-    const model = targetModel || this.modelRoot;
-
-    if (!targetModel) {
-      const selectedId = this.getModelId();
-      console.log(selectedId, "selectedId");
-
-      if (!selectedId && (!model || model.name === RequiredStrings.ROOM_MODEL)) {
-        Events.emit(ConfiguratorEventType.MODEL_SELECTED, null);
-        return;
-      }
+    const selectedId = this.getModelId();
+    if (!selectedId) {
+      Events.emit(ConfiguratorEventType.MODEL_SELECTED, null);
+      return;
     }
+
+    let model = this.modelRoot;
     if (model && model.name !== RequiredStrings.ROOM_MODEL) {
       model.traverse((node: any) => {
         if (node instanceof Mesh && !node.userData.hasOriginalMaterial) {
@@ -5125,25 +5217,7 @@ export class ConfiguratorCore {
 
       // Save texture price to metadata
       if (!model.userData.metadata) model.userData.metadata = {};
-
-      if (model.userData.metadata.isGroup) {
-        model.children.forEach((child: any) => {
-          if (!child.userData.metadata) child.userData.metadata = {};
-          child.userData.metadata.appliedTexture = {
-            price,
-            id
-          };
-        });
-      }
-      else {
-        model.userData.metadata.appliedTexture = {
-          price,
-          id
-        };
-      }
-
-      console.log(model, "texture updated");
-
+      model.userData.metadata.appliedTexture = { price };
 
       Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
     }
@@ -5488,7 +5562,8 @@ export class ConfiguratorCore {
 
         let controls = this.controlsManager.getActiveControl();
         this.modelController.addBoundingBoxHelper(
-          this.modelRoot as Object3D
+          this.modelRoot as Object3D,
+          "select"
         );
 
         if (this.previewModel) {
@@ -5673,48 +5748,6 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Records the currently selected model inside the library as the first model
-   * for object-to-object measurement.
-   * @returns {boolean} - True if a model was selected and recorded, false otherwise.
-   * @public
-   */
-  public setFirstMeasurementModel(): boolean {
-    if (!this.modelRoot) return false;
-    this.firstMeasurementModel = this.modelRoot;
-    return true;
-  }
-
-  /**
-   * Checks if the currently selected model is identical to the first measured model.
-   * @returns {boolean} - True if the currently selected model is the same as the first model.
-   * @public
-   */
-  public isSameMeasurementModel(): boolean {
-    return !!(this.modelRoot && this.firstMeasurementModel && this.modelRoot === this.firstMeasurementModel);
-  }
-
-  /**
-   * Deselects the currently selected model, detaching transform controls
-   * and clearing bounding box helpers and model selection state.
-   * @public
-   */
-  public deselectModel(): void {
-    const controls = this.controlsManager.getActiveControl();
-    if (controls instanceof TransformControls) {
-      controls.detach();
-      const TControlsHelper = this.scene.getObjectByName(
-        RequiredStrings.TRANSFORM_CONTROLS_GIZMO_HELPER
-      );
-      if (TControlsHelper) {
-        TControlsHelper.visible = false;
-      }
-    }
-    this.modelController.removeBoundingBoxHelper();
-    this.modelRoot = null;
-    Events.emit(ConfiguratorEventType.MODEL_SELECTED, null);
-  }
-
-  /**
    * Retrieves the metadata of the currently selected model.
    *
    * @returns {any | null}
@@ -5731,12 +5764,13 @@ export class ConfiguratorCore {
 
     if (controls instanceof TransformControls && this.modelRoot) {
       if (this.modelRoot === this.furnitureGroup || this.modelRoot.name === RequiredStrings.FURNITURE_GROUP) {
+        const realItemsCount = this.furnitureGroup.children.filter(c => c.type !== 'LineSegments').length;
         return {
           id: "multi_selection",
-          name: `Multi-Selection (${this.furnitureGroup.children.length - 1} items)`,
+          name: `Multi-Selection (${realItemsCount} items)`,
           isMultiSelect: true,
-          canGroup: true,
-          count: this.furnitureGroup.children.length,
+          canGroup: realItemsCount > 1,
+          count: realItemsCount,
           price: 0,
           format: "Multi-Selection",
         };
@@ -5787,15 +5821,6 @@ export class ConfiguratorCore {
       this.currentSelectedLastValidPosition,
       this.currentSelectedLastValidRotation
     );
-
-    if (!wasReverted) {
-      this.modelController.updateHelper();
-      if (this.isShowAllMeasurementsActive) {
-        this.showAllMeasurements();
-      } else if (this.isMeasurementActive) {
-        this.toggleMeasurement();
-      }
-    }
 
     return !wasReverted;
   }
@@ -5982,11 +6007,6 @@ export class ConfiguratorCore {
    * @public
    */
   public toggleMeasurement() {
-    if (this.isObjectToObjectActive && this.objectToObjectModels) {
-      this.updateObjectToObjectMeasurement();
-      return true;
-    }
-
     if (!this.measurementState.isActive) {
       this.clearAllMeasurements();
       this.isMeasurementActive = false;
@@ -6016,174 +6036,6 @@ export class ConfiguratorCore {
     this.scene.add(this.measurementGroup);
     this.drawMeasurementForCollider(activeCollider, this.measurementState.isWallsOnly);
     return true;
-  }
-
-  /**
-   * Calculates the distance between the closest bounding box faces of two models.
-   * Model references are taken from inside the library (the first recorded model
-   * and the currently selected model).
-   *
-   * @param {Object3D} [modelA] - Optional first model reference.
-   * @param {Object3D} [modelB] - Optional second model reference.
-   * @returns {number | null} - The calculated distance in units, or null if invalid or same model.
-   * @public
-   */
-  public measureBetweenModels(modelA?: Object3D, modelB?: Object3D): number | null {
-    const first = modelA || this.firstMeasurementModel;
-    const second = modelB || this.modelRoot;
-    if (!first || !second || first === second) return null;
-
-    this.clearAllMeasurements();
-    this.isMeasurementActive = true;
-    this.isObjectToObjectActive = true;
-    this.objectToObjectModels = [first, second];
-
-    return this.drawObjectToObjectMeasurement(first, second);
-  }
-
-  /**
-   * Updates the active object-to-object measurement line and label.
-   * @public
-   */
-  public updateObjectToObjectMeasurement(): void {
-    if (this.isObjectToObjectActive && this.objectToObjectModels) {
-      this.drawObjectToObjectMeasurement(this.objectToObjectModels[0], this.objectToObjectModels[1]);
-    }
-  }
-
-  /**
-   * Helper method to compute precise world-space bounding box for a model, ignoring temporary helper objects.
-   * @private
-   */
-  private computeModelWorldBox(model: Object3D): Box3 {
-    const box = new Box3();
-    model.updateWorldMatrix(true, true);
-    model.traverse((child) => {
-      if (child instanceof Mesh && child.geometry) {
-        const geom = child.geometry;
-        if (!geom.boundingBox) geom.computeBoundingBox();
-        if (geom.boundingBox) {
-          const meshBox = geom.boundingBox.clone().applyMatrix4(child.matrixWorld);
-          box.union(meshBox);
-        }
-      }
-    });
-    if (box.isEmpty()) {
-      box.setFromObject(model, true);
-    }
-    return box;
-  }
-
-  /**
-   * Draws the measurement line, arrows, distance sprite, and bounding box helpers between two models.
-   * @private
-   */
-  private drawObjectToObjectMeasurement(modelA: Object3D, modelB: Object3D): number | null {
-    if (this.measurementGroup) {
-      this.scene.remove(this.measurementGroup);
-      this.measurementGroup.traverse((child) => {
-        if (child instanceof Line2) {
-          (child.geometry as LineGeometry)?.dispose();
-          (child.material as LineMaterial)?.dispose();
-        } else if (child instanceof Sprite) {
-          (child.material.map as Texture)?.dispose();
-          child.material.dispose();
-        }
-      });
-      this.measurementGroup = null;
-    }
-
-    const boxA = this.computeModelWorldBox(modelA);
-    const boxB = this.computeModelWorldBox(modelB);
-
-    if (boxA.isEmpty() || boxB.isEmpty()) return null;
-
-    this.measurementGroup = new Group();
-    this.measurementGroup.name = RequiredStrings.MEASUREMENT_HELPER;
-    this.scene.add(this.measurementGroup);
-
-    // Add subtle visual bounding box helpers for both models
-    const helperA = new Box3Helper(boxA, new Color(0x3b82f6));
-    const helperB = new Box3Helper(boxB, new Color(0x10b981));
-    this.measurementGroup.add(helperA);
-    this.measurementGroup.add(helperB);
-
-    // Determine closest face coordinates in X, Y, Z
-    let pAx = 0;
-    let pBx = 0;
-    if (boxA.max.x < boxB.min.x) {
-      pAx = boxA.max.x;
-      pBx = boxB.min.x;
-    } else if (boxB.max.x < boxA.min.x) {
-      pAx = boxA.min.x;
-      pBx = boxB.max.x;
-    } else {
-      const xOverlapMin = Math.max(boxA.min.x, boxB.min.x);
-      const xOverlapMax = Math.min(boxA.max.x, boxB.max.x);
-      const xMid = (xOverlapMin + xOverlapMax) / 2;
-      pAx = xMid;
-      pBx = xMid;
-    }
-
-    let pAz = 0;
-    let pBz = 0;
-    if (boxA.max.z < boxB.min.z) {
-      pAz = boxA.max.z;
-      pBz = boxB.min.z;
-    } else if (boxB.max.z < boxA.min.z) {
-      pAz = boxA.min.z;
-      pBz = boxB.max.z;
-    } else {
-      const zOverlapMin = Math.max(boxA.min.z, boxB.min.z);
-      const zOverlapMax = Math.min(boxA.max.z, boxB.max.z);
-      const zMid = (zOverlapMin + zOverlapMax) / 2;
-      pAz = zMid;
-      pBz = zMid;
-    }
-
-    let pAy = 0;
-    let pBy = 0;
-    if (boxA.max.y < boxB.min.y) {
-      pAy = boxA.max.y;
-      pBy = boxB.min.y;
-    } else if (boxB.max.y < boxA.min.y) {
-      pAy = boxA.min.y;
-      pBy = boxB.max.y;
-    } else {
-      const yOverlapMin = Math.max(boxA.min.y, boxB.min.y);
-      const yOverlapMax = Math.min(boxA.max.y, boxB.max.y);
-      const yMid = (yOverlapMin + yOverlapMax) / 2;
-      pAy = yMid;
-      pBy = yMid;
-    }
-
-    // Ensure line elevation is slightly above the floor for clear visibility
-    if (pAy < 0.15) {
-      const suggestedY = Math.max(0.15, Math.min(boxA.max.y, boxB.max.y) * 0.5);
-      pAy = suggestedY;
-      pBy = suggestedY;
-    }
-
-    const startPoint = new Vector3(pAx, pAy, pAz);
-    const endPoint = new Vector3(pBx, pBy, pBz);
-    const distance = startPoint.distanceTo(endPoint);
-
-    if (distance > 0.001) {
-      const dir = new Vector3().subVectors(endPoint, startPoint).normalize();
-      this.drawMeasurementLine(startPoint, endPoint, dir, distance);
-    } else {
-      // If overlapping / colliding
-      const mid = new Vector3().addVectors(startPoint, endPoint).multiplyScalar(0.5);
-      mid.y += 0.1;
-      const labelSprite = this.createTextSprite("0.00 unit");
-      labelSprite.position.copy(mid);
-      this.measurementGroup.add(labelSprite);
-    }
-
-    const finalDistance = distance > 0.001 ? distance : 0;
-    Events.emit(ConfiguratorEventType.OBJECT_DISTANCE_UPDATED, finalDistance);
-
-    return finalDistance;
   }
 
   /**
@@ -6244,15 +6096,8 @@ export class ConfiguratorCore {
       this.activeInput = null;
     }
 
-    if (this.isObjectToObjectActive) {
-      Events.emit(ConfiguratorEventType.OBJECT_DISTANCE_UPDATED, null);
-    }
-
     this.isMeasurementActive = false;
     this.isShowAllMeasurementsActive = false;
-    this.isObjectToObjectActive = false;
-    this.objectToObjectModels = null;
-    this.firstMeasurementModel = null;
   }
 
   /**
@@ -6396,9 +6241,10 @@ export class ConfiguratorCore {
 
     // Add new hover helper
     this.hoveredCollider = targetModel;
-    const box = new Box3().setFromObject(targetModel, true);
-    this.hoverBoxHelper = new Box3Helper(box, 0x0000ff);
-    this.scene.add(this.hoverBoxHelper);
+    const helper = this.modelController.addBoundingBoxHelper(targetModel, "hover") as Object3D ;
+    if (helper) {
+      this.hoverBoxHelper = helper;
+    }
 
     // Emit modelHovered so frontend updates
     Events.emit(ConfiguratorEventType.MODEL_HOVERED, targetModel.userData?.metadata || null);
@@ -6416,7 +6262,7 @@ export class ConfiguratorCore {
    */
   public clearHoverHighlight(): void {
     if (this.hoverBoxHelper) {
-      this.scene.remove(this.hoverBoxHelper);
+      this.hoverBoxHelper.parent?.remove(this.hoverBoxHelper);
       this.hoverBoxHelper = null;
       this.hoveredCollider = null;
       Events.emit(ConfiguratorEventType.MODEL_HOVERED, null);
@@ -6593,13 +6439,12 @@ export class ConfiguratorCore {
    * @internal
    */
   public load2DTo3DMesh(model: Object3D, groundPlane: Object3D): void {
-    console.log(groundPlane);
     model.name = RequiredStrings.ROOM_MODEL;
     this.mainModel = model;
     this.lightsManager.mainModel = model;
     this.modelRoot = model;
     this.scene.add(model);
-    // this.scene.add(groundPlane);
+    this.scene.add(groundPlane);
     this.enableShadowsOnObject(model);
 
     if (this.camera instanceof PerspectiveCamera) {
@@ -6783,8 +6628,8 @@ export class ConfiguratorCore {
    * @description Sets the color that will be applied to wall faces when wall coloring mode is active.
    * @public
    */
-  public setWallColor(colorObj: { color: string, id: string, name: string }): void {
-    this.selectedWallColor = colorObj;
+  public setWallColor(color: string): void {
+    this.selectedWallColor = color;
   }
 
   /**
@@ -6865,8 +6710,6 @@ export class ConfiguratorCore {
    * @public
    */
   public setWallTexture(texturePreset: { url: string; repeatX?: number; repeatY?: number }): void {
-    console.log("texturePreset : ", texturePreset);
-
     this.selectedWallTexture = texturePreset;
   }
 
@@ -6881,19 +6724,26 @@ export class ConfiguratorCore {
   public applyColorToAllWalls(hexColor: string): void {
     this.scene.traverse((child) => {
       if (child instanceof Mesh && (child as any).wall_id && child.material.opacity !== 0) {
-        // dispose old material(s)
-        if (Array.isArray(child.material)) {
-          child.material.forEach(mat => mat.dispose());
-        } else {
-          child.material.dispose();
-        }
+        const existingMaterials = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
 
-        // Apply one material to the whole mesh
-        child.material = new MeshStandardMaterial({
-          color: hexColor,
-          roughness: 0.7,
-          side: DoubleSide,
+        const newMaterials = existingMaterials.map(() =>
+          new MeshStandardMaterial({
+            color: hexColor,
+            roughness: 0.7,
+            side: DoubleSide,
+          })
+        );
+        // dispose old material(s) AND any textures they were holding
+        existingMaterials.forEach((mat) => {
+          if (mat instanceof MeshStandardMaterial || mat instanceof MeshBasicMaterial) {
+            mat.map?.dispose();
+          }
+          mat.dispose();
         });
+
+        child.material = Array.isArray(child.material) ? newMaterials : newMaterials[0];
       }
     });
   }
@@ -6927,15 +6777,9 @@ export class ConfiguratorCore {
 
       this.scene.traverse((child) => {
         if (child instanceof Mesh && (child as any).wall_id && child.material.opacity !== 0) {
-          // dispose old material
-          if (Array.isArray(child.material)) {
-            child.material.forEach((mat) => mat.dispose());
-          } else {
-            child.material.dispose();
-          }
-
-          // Clone texture so each wall can have its own repeat values
-          const wallTex = tex.clone();
+          const existingMaterials = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
 
           child.geometry.computeBoundingBox();
           const bbox = child.geometry.boundingBox;
@@ -6945,19 +6789,32 @@ export class ConfiguratorCore {
             bbox.getSize(size);
           }
 
-          wallTex.repeat.set(
-            (texturePreset.repeatX ?? 2) * (size.x || 1),
-            (texturePreset.repeatY ?? 2) * (size.y || 1)
-          );
+          const newMaterials = existingMaterials.map(() => {
+            const wallTex = tex.clone();
 
-          wallTex.needsUpdate = true;
+            wallTex.repeat.set(
+              (texturePreset.repeatX ?? 2) * (size.x || 1),
+              (texturePreset.repeatY ?? 2) * (size.y || 1)
+            );
 
-          // Apply one material to the whole mesh
-          child.material = new MeshStandardMaterial({
-            map: wallTex,
-            side: DoubleSide,
-            roughness: 0.7,
+            wallTex.needsUpdate = true;
+
+            return new MeshStandardMaterial({
+              map: wallTex,
+              side: DoubleSide,
+              roughness: 0.7,
+            });
           });
+
+          // dispose old material(s) AND any textures they were holding
+          existingMaterials.forEach((mat) => {
+            if (mat instanceof MeshStandardMaterial || mat instanceof MeshBasicMaterial) {
+              mat.map?.dispose();
+            }
+            mat.dispose();
+          });
+
+          child.material = Array.isArray(child.material) ? newMaterials : newMaterials[0];
         }
       });
     });
@@ -6979,11 +6836,6 @@ export class ConfiguratorCore {
       if (!this.restoreDefaultMaterial(child)) {
         return;
       }
-
-      // Reset wall-specific state
-      (child as any)._wallFacesPrepared = false;
-      delete child.userData.faceGroups;
-      child.userData.faceOverrides = {};
     });
   }
 
@@ -6996,7 +6848,7 @@ export class ConfiguratorCore {
    * in the room, clearing any custom textures that were previously applied.
    * @public
    */
-  public applyColorToAllFloors(hexColor: string, id: string): void {
+  public applyColorToAllFloors(hexColor: string): void {
     this.scene.traverse((child) => {
       if (child instanceof Mesh && ((child as any).isFloor || child.name.toLowerCase().includes(FloorNames.FLOOR))) {
         const mat = Array.isArray(child.material) ? child.material[0] : child.material;
@@ -7023,11 +6875,6 @@ export class ConfiguratorCore {
         }
       }
     });
-    let roomGroup = this.scene.getObjectByName("room_model") as Group;
-    if (roomGroup) {
-      //@ts-ignore
-      roomGroup.floorFinishId = id;
-    }
   }
 
   /**
@@ -7045,7 +6892,7 @@ export class ConfiguratorCore {
    * settings to all floor surfaces in the room.
    * @public
    */
-  public applyTextureToAllFloors(texturePreset: { url: string; id: string; repeatX?: number; repeatY?: number }): void {
+  public applyTextureToAllFloors(texturePreset: { url: string; repeatX?: number; repeatY?: number }): void {
     const loader = new TextureLoader();
     loader.load(texturePreset.url, (tex) => {
       tex.wrapS = MirroredRepeatWrapping;
@@ -7095,12 +6942,6 @@ export class ConfiguratorCore {
         }
       });
     });
-
-    let roomGroup = this.scene.getObjectByName("room_model") as Group;
-    if (roomGroup) {
-      // @ts-ignore
-      roomGroup.floorFinishId = texturePreset.id;
-    }
   }
 
   /**
@@ -7114,11 +6955,6 @@ export class ConfiguratorCore {
     this.scene.traverse((child) => {
       if (child instanceof Mesh && ((child as any).isFloor || child.name.toLowerCase().includes(FloorNames.FLOOR))) {
         this.restoreDefaultMaterial(child);
-        let roomGroup = this.scene.getObjectByName("room_model") as Group;
-        if (roomGroup) {
-          // @ts-ignore
-          roomGroup.floorFinishId = null;
-        }
       }
     });
   }
@@ -7133,6 +6969,26 @@ export class ConfiguratorCore {
   public enablePostProcessing(enable: boolean): void {
     this.isPostProcessingActive = enable;
     // this.enableEnvMap(enable);
+  }
+
+  /**
+   * Enables or disables keyboard shortcuts for model operations (duplicate, delete).
+   *
+   * @param {boolean} enabled - True to enable keyboard shortcuts, false to disable.
+   * @returns {void}
+   * @public
+   */
+  public enableKeyboardShortcuts(enabled: boolean): void {
+    const domElement = this.rendererManager?.renderer?.domElement;
+    if (!domElement) return;
+
+    if (enabled) {
+      domElement.setAttribute("tabindex", "0");
+      domElement.style.outline = "none";
+      domElement.addEventListener(DOMEvents.KEY_DOWN, this.handleKeyDown);
+    } else {
+      domElement.removeEventListener(DOMEvents.KEY_DOWN, this.handleKeyDown);
+    }
   }
 
   /**
@@ -7245,7 +7101,7 @@ export class ConfiguratorCore {
     this.scene.add(group);
 
     this.modelRoot = group;
-    this.modelController.addBoundingBoxHelper(group);
+    this.modelController.addBoundingBoxHelper(group, "select");
 
     this.switchControlMode(ControlTypes.TRANSFORM);
 
@@ -7365,1267 +7221,229 @@ export class ConfiguratorCore {
 
     return topLevelModels;
   }
-
   /**
-   * Exports the 3D scene (room layout and placed furniture) as a binary GLB (ArrayBuffer).
-   * Filters out helpers, cameras, lights, skyboxes, and gizmos.
-   */
-  public async exportSceneAsGLB(options: { binary?: boolean } = { binary: true }) {
+   * Gets the current wall height applied to the walls in the 3D viewer.
+   *
+   * @returns {number} Current wall height in design units.
+   * @description This method returns the current wall height applied to the walls in the 3D viewer.
+   * The returned value can be used to display the current wall height in the UI.
+   * @public
+  */
+  public getWallHeight(): number {
+    let wallHeight = 0;
 
-    console.log("options : ", options);
+    this.scene.traverse((child) => {
+      if (wallHeight > 0) {
+        return;
+      }
+      if (child instanceof Mesh && (child as any).wall_id) {
+        wallHeight = (child as any).currentHeight ?? 0;
+      }
+    });
 
-    console.log("scene : ", this.scene);
-
-
-
-    console.log("Exporting scene as GLB");
-
-    // const exportGroup = new Group();
-    // exportGroup.name = "ExportScene";
-
-    // // Collect exportable objects from scene
-    // const exportableObjects: Object3D[] = [];
-
-    // this.scene.children.forEach((child) => {
-    //   // Exclude cameras, lights, skyboxes, helpers, shadow planes, grid
-    //   if (
-    //     (child as any).isCamera ||
-    //     (child as any).isLight ||
-    //     child.name === "GroundedSkyBox" ||
-    //     child.name === "GlobalGroundShadowPlane" ||
-    //     child.name === "GridHelper" ||
-    //     child instanceof GridHelper ||
-    //     child instanceof Box3Helper ||
-    //     child instanceof ArrowHelper
-    //   ) {
-    //     return;
-    //   }
-
-    //   // Include room model, furniture group, or selectable furniture models
-    //   if (
-    //     child.name === RequiredStrings.ROOM_MODEL ||
-    //     child.name === RequiredStrings.FURNITURE_GROUP ||
-    //     child.userData?.selectable === SelectableState.TRUE ||
-    //     (child as any).isMesh ||
-    //     (child as any).isGroup
-    //   ) {
-    //     exportableObjects.push(child);
-    //   }
-    // });
-
-    // const exporter = new GLTFExporter();
-
-    // return new Promise((resolve, reject) => {
-    //   // We clone or pass the exportable objects
-    //   // If we pass an array of objects or exportGroup:
-    //   const target = exportableObjects.length === 1 ? exportableObjects[0] : exportableObjects;
-
-    //   exporter.parse(
-    //     target,
-    //     (gltf) => {
-    //       resolve(gltf);
-    //     },
-    //     (error) => {
-    //       console.error("Error exporting GLTF/GLB:", error);
-    //       reject(error);
-    //     },
-    //     {
-    //       binary: options.binary !== false, // default to binary .glb
-    //       onlyVisible: true,
-    //       embedImages: true,
-    //       maxTextureSize: 2048,
-    //     }
-    //   );
-    // });
+    console.log('configCore', Math.round(wallHeight / (Config.WORLD_SCALE as number)))
+    return Math.round(wallHeight / (Config.WORLD_SCALE as number));
   }
 
   /**
-   * Exports the 3D configuration of selectable objects in the scene.
+   * Gets the current geometry dimensions of doors and windows  in the 3D viewer.
+   * @returns {{
+   *   door: {
+   *     width: number;
+   *     height: number;
+   *   };
+   *   window: {
+   *     width: number;
+   *     height: number;
+   *   };
+   * }} Current door and window dimensions in design units.
    *
-   * Traverses the first-level children of the scene:
-   * - If an object has userData.selectable = "true" and !(userData.isGroup && userData.isGroup = true),
-   *   stores its transformation matrix against its userData.metadata.id.
-   * - If an object has userData.selectable = "true" and (userData.isGroup && userData.isGroup = true),
-   *   stores its transformation matrix, name, and children array against its userData.metadata.id.
-   *   For the children of this group, repeats the process for selectable non-group children.
-   *
-   * @returns An object containing the exported 3D configuration mapped against metadata IDs.
+   * @description Return the current opening width and height
+   * @public
    */
-  // public export3DConfig(): Record<string, any> {
-  //   const config: Record<string, any> = {};
+  public getCurrentOpeningDimensions(): {
+    door: { width: number; height: number };
+    window: { width: number; height: number; windowFloorDistance: number };
+  } {
+    let doorWidth = 0;
+    let doorHeight = 0;
+    let windowWidth = 0;
+    let windowHeight = 0;
+    let windowFloorDistance = 0;
 
-  //   this.scene.children.forEach((child: Object3D) => {
-  //     const isSelectable = child.userData?.selectable === SelectableState.TRUE;
+    const visit = (node: Object3D): boolean => {
+      if (node instanceof Mesh && (node as any).wall_id) {
+        const wall = node as any;
 
-  //     const isGroup = !!(child.userData?.isGroup && child.userData.isGroup === true);
-
-  //     // Selectable non-group child
-  //     if (isSelectable && !isGroup) {
-  //       const id = child.userData?.metadata?.id;
-  //       if (id) {
-  //         child.updateMatrix();
-  //         config[id] = {
-  //           name: child.userData?.metadata?.name || child.name,
-  //           matrix: child.matrix.clone(),
-  //           children: [],
-  //         };
-  //       }
-  //       return;
-  //     }
-
-  //     // Selectable group child
-  //     if (isSelectable && isGroup) {
-  //       const id = child.userData?.metadata?.id;
-  //       if (id) {
-  //         child.updateMatrix();
-  //         const children: Array<Record<string, any>> = [];
-
-  //         child.children.forEach((groupChild: Object3D) => {
-  //           // Note: When models are added to a group in groupSelectedObjects, their userData.selectable
-  //           // is set to SelectableState.FALSE so raycasting selects the parent group.
-  //           // Hence for group children, we check if they are models (having metadata.id or selectable TRUE/FALSE).
-  //           const childIsSelectable =
-  //             groupChild.userData?.selectable === SelectableState.TRUE ||
-  //             groupChild.userData?.selectable === SelectableState.FALSE ||
-  //             !!groupChild.userData?.metadata?.id;
-
-  //           const childIsGroup = !!(
-  //             groupChild.userData?.isGroup && groupChild.userData.isGroup === true
-  //           );
-
-  //           if (childIsSelectable && !childIsGroup) {
-  //             const childId = groupChild.userData?.metadata?.id;
-  //             if (childId) {
-  //               groupChild.updateMatrix();
-  //               const childData = {
-  //                 name: groupChild.userData?.metadata?.name || groupChild.name,
-  //                 matrix: groupChild.matrix.clone(),
-  //                 children: [],
-  //               };
-  //               const childEntry: Record<string, any> = {
-  //                 [childId]: childData,
-  //               };
-  //               Object.defineProperty(childEntry, "id", {
-  //                 value: childId,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               Object.defineProperty(childEntry, "name", {
-  //                 value: childData.name,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               Object.defineProperty(childEntry, "matrix", {
-  //                 value: childData.matrix,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               Object.defineProperty(childEntry, "children", {
-  //                 value: childData.children,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               children.push(childEntry);
-  //             }
-  //           }
-  //         });
-
-  //         config[id] = {
-  //           name: child.userData?.metadata?.name || child.name,
-  //           matrix: child.matrix.clone(),
-  //           children: children,
-  //         };
-  //       }
-  //     }
-  //   });
-
-  //   return config;
-  // }
-
-
-  public export3DConfig(): Record<string, any> {
-    const config: Record<string, any> = {};
-
-    this.scene.children.forEach((child: Object3D) => {
-      const isSelectable =
-        child.userData?.selectable === SelectableState.TRUE;
-
-      const isGroup =
-        child.userData?.isGroup === true;
-
-      // Selectable non-group child
-      if (isSelectable && !isGroup) {
-        const id = child.userData?.metadata?.id;
-
-        if (id) {
-          child.updateMatrix();
-
-          config[id] = {
-            name: child.userData?.metadata?.name || child.name,
-            matrix: child.matrix.clone(),
-            children: [],
-            textureId: child.userData?.metadata?.appliedTexture?.id
-          };
+        if (doorWidth === 0 && Array.isArray(wall.doors) && wall.doors.length > 0) {
+          const door = wall.doors[0];
+          doorWidth = door.width ?? 0;
+          doorHeight = door.height ?? 0;
         }
 
-        return;
-      }
-
-      // Selectable group child
-      if (isSelectable && isGroup) {
-        const id = child.userData?.metadata?.id;
-
-        if (id) {
-          child.updateMatrix();
-
-          const children: Array<Record<string, any>> = [];
-
-          child.children.forEach((groupChild: Object3D) => {
-            // Models inside a group have selectable FALSE because
-            // the parent group is the selectable object.
-            const childIsSelectable =
-              groupChild.userData?.selectable === SelectableState.TRUE ||
-              groupChild.userData?.selectable === SelectableState.FALSE ||
-              !!groupChild.userData?.metadata?.id;
-
-            const childIsGroup =
-              groupChild.userData?.isGroup === true;
-
-            if (childIsSelectable && !childIsGroup) {
-              const childId = groupChild.userData?.metadata?.id;
-
-              if (childId) {
-                groupChild.updateMatrix();
-
-                const childData = {
-                  name:
-                    groupChild.userData?.metadata?.name ||
-                    groupChild.name,
-                  matrix: groupChild.matrix.clone(),
-                  children: [],
-                  textureId: groupChild.userData?.metadata?.appliedTexture?.id
-                };
-
-                // ID is already the key, so no duplicate properties.
-                children.push({
-                  [childId]: childData,
-                });
-              }
-            }
-          });
-
-          config[id] = {
-            name: child.userData?.metadata?.name || child.name,
-            matrix: child.matrix.clone(),
-            children,
-            textureId: child.userData?.metadata?.appliedTexture?.id
-          };
+        if (windowWidth === 0 && Array.isArray(wall.windows) && wall.windows.length > 0) {
+          const window = wall.windows[0];
+          windowWidth = window.width ?? 0;
+          windowHeight = window.height ?? 0;
+          windowFloorDistance =window.windowFloorDistance ?? 0;
         }
       }
-    });
 
-    // Traverse all 3D walls in the scene and collect their wall IDs and material finishes
-    const wallsMap = new Map<string, Array<{ index: number; finishId: string }>>();
-
-    this.scene.traverse((child: Object3D) => {
-      if (!(child instanceof Mesh)) return;
-
-      const wallId = (child as any).wall_id || (child as any).wallId || child.userData?.wallId;
-      if (!wallId) return;
-
-      // Ignore helper or boundary meshes if any
-      if (child.name?.startsWith("boundary_cube") || (child.material && (child.material as any).opacity === 0)) {
-        return;
+      // Both found -> signal caller to stop.
+      if (doorWidth !== 0 && windowWidth !== 0) {
+        return true;
       }
 
-      if (!wallsMap.has(wallId)) {
-        wallsMap.set(wallId, []);
-      }
-
-      const existingMaterials = wallsMap.get(wallId)!;
-      const materialsArray = Array.isArray(child.material)
-        ? child.material
-        : [child.material];
-
-      materialsArray.forEach((mat: any, index: number) => {
-        const finishId = mat?.finishId ?? mat?.userData?.finishId;
-        if (finishId !== undefined && finishId !== null && finishId !== "") {
-          const existingEntry = existingMaterials.find((m) => m.index === index);
-          if (existingEntry) {
-            existingEntry.finishId = finishId;
-          } else {
-            existingMaterials.push({ index, finishId });
-          }
+      for (const child of node.children) {
+        if (visit(child)) {
+          return true;
         }
-      });
-    });
-
-    const walls: Array<{ id: string; materials: Array<{ index: number; finishId: string }> }> = [];
-    wallsMap.forEach((materials, id) => {
-      materials.sort((a, b) => a.index - b.index);
-      walls.push({
-        id,
-        materials,
-      });
-    });
-
-    config.walls = walls;
-
-
-    //storing floor id
-    let roomGroup = this.scene.getObjectByName("room_model");
-    //@ts-ignore
-    if (roomGroup && roomGroup.floorFinishId) {
-      const floor = {
-        //@ts-ignore
-        floorId: roomGroup.floorFinishId
-      }
-      config.floor = floor;
-
-      //@ts-ignore
-      // config.floorId = roomGroup.floorFinishId;
-    }
-
-    console.log(config, 'config3DExport');
-
-
-    return config;
-  }
-
-  /**
-   * Loads a GLB model from the specified URL using AssetLoader.
-   *
-   * @param url URL of the GLB model to load.
-   * @param callbacks Optional loading callbacks.
-   * @param isSelectable Whether the loaded model should be selectable.
-   * @returns Promise resolving to the loaded Object3D.
-   */
-  // public async loadGLB(
-  //   url: string,
-  //   callbacks?: ModelLoadCallbacks,
-  //   isSelectable: boolean = true
-  // ): Promise<Object3D> {
-  //   const model = await this.assetLoader.loadGLB(url, callbacks, isSelectable);
-  //   this.enableShadowsOnObject(model);
-  //   this.applyAnisotropicFiltering(model);
-  //   return model;
-  // }
-
-  /**
-   * Imports and loads a 3D configuration object, reconstructing objects and permanent groups.
-   *
-   * - If an object has 0 children: uses loadGLB to load the object, then applies its transformation matrix.
-   * - If an object has children: uses loadGLB to load each child, calls createPermanentGroup to group them,
-   *   and applies transformation matrices relative to the immediate parent for all loaded objects.
-   *
-   * @param config The 3D configuration object (or JSON string).
-   * @returns Promise resolving to a record of loaded top-level objects and groups mapped by ID.
-   */
-  // public async import3DConfig(
-  //   config: Record<string, any> | string
-  // ): Promise<Record<string, Object3D>> {
-  //   const parsedConfig: Record<string, any> =
-  //     typeof config === "string" ? JSON.parse(config) : config;
-
-  //   const result: Record<string, Object3D> = {};
-
-  //   const parseMatrix = (matrixData: any): Matrix4 => {
-  //     const mat = new Matrix4();
-  //     if (!matrixData) return mat;
-  //     if (matrixData instanceof Matrix4) {
-  //       mat.copy(matrixData);
-  //     } else if (matrixData && Array.isArray(matrixData.elements)) {
-  //       mat.fromArray(matrixData.elements);
-  //     } else if (Array.isArray(matrixData)) {
-  //       mat.fromArray(matrixData);
-  //     }
-  //     return mat;
-  //   };
-
-  //   const applyMatrix = (obj: Object3D, matrixData: any) => {
-  //     const mat = parseMatrix(matrixData);
-  //     mat.decompose(obj.position, obj.quaternion, obj.scale);
-  //     obj.updateMatrix();
-  //     obj.updateMatrixWorld(true);
-  //   };
-
-  //   for (const [key, rawObj] of Object.entries(parsedConfig)) {
-  //     if (!rawObj || typeof rawObj !== "object") continue;
-
-  //     const objData = rawObj as any;
-  //     const children = Array.isArray(objData.children) ? objData.children : [];
-
-  //     if (children.length === 0) {
-  //       // Object with 0 children: load via loadGLB and apply transformation matrix
-  //       const modelUrl = objData.url || objData.uri;
-  //       if (!modelUrl) {
-  //         console.warn(`[import3DConfig] Skipping '${key}' as no URL/URI was provided.`);
-  //         continue;
-  //       }
-
-  //       // const model = await this.loadModel(modelUrl, undefined, true);
-  //       const model = await this.loadModel(
-  //         modelUrl,
-  //         false,
-  //         undefined,
-  //         undefined,
-  //         undefined,
-  //         true,
-  //         objData.modelData
-  //       );
-
-
-  //       const modelName = objData.name || key;
-  //       model!.name = modelName;
-  //       model!.userData = {
-  //         ...model!.userData,
-  //         isGLBModel: true,
-  //         selectable: SelectableState.TRUE,
-  //         metadata: objData.modelData || {
-  //           id: key,
-  //           name: modelName,
-  //           category: objData.modelData?.category || "",
-  //           price: objData.modelData?.price || "",
-  //           format: objData.modelData?.format || "gltf",
-  //         },
-  //       };
-
-  //       if (!model!.userData.metadata.id) {
-  //         model!.userData.metadata.id = key;
-  //       }
-  //       if (!model!.userData.metadata.name) {
-  //         model!.userData.metadata.name = modelName;
-  //       }
-
-  //       this.scene.add(model!);
-  //       applyMatrix(model!, objData.matrix);
-
-  //       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
-  //       this.modelRoot = model;
-
-  //       // @ts-ignore
-  //       result[key] = model;
-  //     } else {
-  //       // Object with children: load all child objects via loadGLB, group them with createPermanentGroup,
-  //       // and apply transformation matrix relative to immediate parent for all loaded objects
-  //       const loadedChildren: Array<{
-  //         childObj: Object3D;
-  //         childData: any;
-  //         childId: string;
-  //       }> = [];
-
-  //       for (const childEntry of children) {
-  //         if (!childEntry || typeof childEntry !== "object") continue;
-
-  //         let childId = "";
-  //         let childData: any = null;
-
-  //         const entryKeys = Object.keys(childEntry);
-  //         if (
-  //           entryKeys.length === 1 &&
-  //           typeof childEntry[entryKeys[0]] === "object" &&
-  //           (childEntry[entryKeys[0]]?.url ||
-  //             childEntry[entryKeys[0]]?.uri ||
-  //             childEntry[entryKeys[0]]?.matrix)
-  //         ) {
-  //           childId = entryKeys[0];
-  //           childData = childEntry[entryKeys[0]];
-  //         } else {
-  //           childId = childEntry.id || childEntry.name || `child_${Date.now()}`;
-  //           childData = childEntry;
-  //         }
-
-  //         const childUrl = childData.url || childData.uri;
-  //         if (!childUrl) {
-  //           console.warn(`[import3DConfig] Skipping child '${childId}' in '${key}' - missing url.`);
-  //           continue;
-  //         }
-
-  //         // const childObj = await this.loadModel(childUrl, undefined, false);
-  //         const childObj = await this.loadModel(
-  //           childUrl,
-  //           false,
-  //           undefined,
-  //           undefined,
-  //           undefined,
-  //           false,
-  //           childData.modelData
-  //         );
-
-  //         const childName = childData.name || childId;
-  //         childObj!.name = childName;
-  //         childObj!.userData = {
-  //           ...childObj!.userData,
-  //           isGLBModel: true,
-  //           selectable: SelectableState.FALSE,
-  //           metadata: childData.modelData || {
-  //             id: childId,
-  //             name: childName,
-  //             category: childData.modelData?.category || "",
-  //             price: childData.modelData?.price || "",
-  //             format: childData.modelData?.format || "gltf",
-  //           },
-  //         };
-
-  //         if (!childObj!.userData.metadata.id) {
-  //           childObj!.userData.metadata.id = childId;
-  //         }
-  //         if (!childObj!.userData.metadata.name) {
-  //           childObj!.userData.metadata.name = childName;
-  //         }
-
-  //         loadedChildren.push({
-  //           // @ts-ignore
-  //           childObj,
-  //           childData,
-  //           childId,
-  //         });
-  //       }
-
-  //       if (loadedChildren.length === 0) {
-  //         console.warn(`[import3DConfig] Group '${key}' has no valid children loaded.`);
-  //         continue;
-  //       }
-
-  //       const groupName = objData.name || `Group ${Math.floor(Math.random() * 1000)}`;
-
-  //       // Attach loaded children to furnitureGroup and set modelRoot so createPermanentGroup can group them
-  //       this.furnitureGroup.clear();
-  //       this.furnitureGroup.position.set(0, 0, 0);
-  //       this.furnitureGroup.quaternion.identity();
-  //       this.furnitureGroup.scale.set(1, 1, 1);
-  //       this.furnitureGroup.updateMatrixWorld(true);
-
-  //       for (const item of loadedChildren) {
-  //         this.scene.add(item.childObj);
-  //         this.furnitureGroup.attach(item.childObj);
-  //       }
-  //       this.modelRoot = this.furnitureGroup;
-
-  //       let group: Group | null = null;
-  //       let created = false;
-
-  //       if (loadedChildren.length >= 2) {
-  //         created = this.createPermanentGroup(groupName);
-  //         if (created && this.modelRoot instanceof Group) {
-  //           group = this.modelRoot;
-  //         }
-  //       }
-
-  //       if (!group) {
-  //         // Fallback if children count < 2 or createPermanentGroup did not return a Group
-  //         group = new Group();
-  //         group.name = groupName;
-  //         for (const item of loadedChildren) {
-  //           group.add(item.childObj);
-  //           if (!item.childObj.userData) item.childObj.userData = {};
-  //           item.childObj.userData.selectable = SelectableState.FALSE;
-  //         }
-  //         this.scene.add(group);
-  //         this.modelRoot = group;
-  //       }
-
-  //       // Configure group userData and metadata
-  //       const groupId = objData.modelData?.id || key;
-  //       group.name = groupName;
-  //       group.userData = {
-  //         ...group.userData,
-  //         isGroup: true,
-  //         isGLBModel: true,
-  //         selectable: SelectableState.TRUE,
-  //         metadata: {
-  //           ...(group.userData?.metadata || {}),
-  //           id: groupId,
-  //           name: groupName,
-  //           isGroup: true,
-  //           price: objData.modelData?.price ?? 0,
-  //           format: objData.modelData?.format ?? "Group",
-  //         },
-  //       };
-
-  //       // 1. Apply transformation matrix to the group (relative to scene, its immediate parent)
-  //       applyMatrix(group, objData.matrix);
-
-  //       // 2. Apply transformation matrix relative to immediate parent (the group) for each loaded child
-  //       for (const item of loadedChildren) {
-  //         applyMatrix(item.childObj, item.childData.matrix);
-  //       }
-
-  //       // 3. Update world transformation matrix of the group and all its descendants
-  //       group.updateMatrixWorld(true);
-
-  //       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
-  //       this.modelRoot = group;
-
-  //       result[key] = group;
-  //     }
-  //   }
-
-  //   // Emit events so frontend and hierarchy update
-  //   Events.emit(ConfiguratorEventType.HIERARCHY_CHANGED);
-  //   Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
-
-  //   return result;
-  // }
-
-  public async import3DConfig(
-    config: Record<string, any> | string
-  ): Promise<Record<string, Object3D>> {
-    const parsedConfig: Record<string, any> =
-      typeof config === "string" ? JSON.parse(config) : config;
-
-    const result: Record<string, Object3D> = {};
-
-    /**
-     * Parse a Matrix4 from different possible JSON representations.
-     */
-    const parseMatrix = (matrixData: any): Matrix4 => {
-      const mat = new Matrix4();
-
-      if (!matrixData) {
-        return mat;
       }
 
-      if (matrixData instanceof Matrix4) {
-        mat.copy(matrixData);
-      } else if (
-        matrixData &&
-        Array.isArray(matrixData.elements)
-      ) {
-        mat.fromArray(matrixData.elements);
-      } else if (Array.isArray(matrixData)) {
-        mat.fromArray(matrixData);
-      }
-
-      return mat;
+      return false;
     };
 
-    /**
-     * Apply a transformation matrix to an Object3D.
-     *
-     * The matrix is assumed to be relative to the object's
-     * immediate parent.
-     */
-    const applyMatrix = (
-      obj: Object3D,
-      matrixData: any
-    ): void => {
-      if (!obj || !matrixData) {
-        return;
-      }
+    visit(this.scene);
 
-      const mat = parseMatrix(matrixData);
-
-      mat.decompose(
-        obj.position,
-        obj.quaternion,
-        obj.scale
-      );
-
-      obj.updateMatrix();
-      obj.updateMatrixWorld(true);
+    return {
+      door: { width: doorWidth, height: doorHeight },
+      window: { width: windowWidth, height: windowHeight, windowFloorDistance: windowFloorDistance },
     };
-
-    for (const [key, rawObj] of Object.entries(parsedConfig)) {
-      if (!rawObj || typeof rawObj !== "object") {
-        continue;
-      }
-
-      if (key === "walls") {
-        await this.processObjectMaterials(rawObj);
-        continue;
-      }
-
-      if (key === "floor") {
-        if (rawObj.url) {
-          if (rawObj.url.startsWith("#")) {
-            this.applyColorToAllFloors?.(rawObj.url, rawObj.floorId);
-          }
-          else {
-            console.log("Floor URL : ", rawObj.url);
-            this.applyTextureToAllFloors({ url: rawObj.url, id: rawObj.floorId, repeatX: rawObj.repeatX, repeatY: rawObj.repeatY });
-            continue;
-          }
-        }
-        // else {
-        continue;
-        // }
-      }
-
-      const objData = rawObj as any;
-
-      const children = Array.isArray(objData.children)
-        ? objData.children
-        : [];
-
-      // ============================================================
-      // CASE 1: NORMAL / SINGLE MODEL
-      // ============================================================
-
-      if (children.length === 0) {
-        const modelUrl = objData.url || objData.uri;
-        const textureUrl = objData.textureUrl;
-        const textureId = objData.textureId;
-
-        if (!modelUrl) {
-          console.warn(
-            `[import3DConfig] Skipping '${key}' as no URL/URI was provided.`
-          );
-          continue;
-        }
-
-        const model = await this.loadModel(
-          modelUrl,
-          false,
-          undefined,
-          undefined,
-          undefined,
-          true,
-          objData.modelData
-        );
-
-
-        if (!model) {
-          console.warn(
-            `[import3DConfig] Failed to load model '${key}'.`
-          );
-          continue;
-        }
-
-        const modelName = objData.name || key;
-
-        model.name = modelName;
-
-        model.userData = {
-          ...model.userData,
-          isGLBModel: true,
-          selectable: SelectableState.TRUE,
-          metadata:
-            objData.modelData || {
-              id: key,
-              name: modelName,
-              category:
-                objData.modelData?.category || "",
-              price:
-                objData.modelData?.price || "",
-              format:
-                objData.modelData?.format || "gltf",
-            },
-        };
-
-        if (!model.userData.metadata.id) {
-          model.userData.metadata.id = key;
-        }
-
-        if (!model.userData.metadata.name) {
-          model.userData.metadata.name = modelName;
-        }
-
-        if (textureUrl && textureId) {
-          this.applyTextureToModel(textureUrl, textureId, undefined, model);
-        }
-
-        // Add model to scene first.
-        this.scene.add(model);
-
-        // Apply saved matrix.
-        //
-        // Since the model is directly under scene,
-        // this matrix is relative to the scene.
-        applyMatrix(model, objData.matrix);
-
-        model.updateMatrixWorld(true);
-
-        this.prevModelRoot =
-          this.isModelRootEqualToRoomModel()
-            ? null
-            : this.modelRoot;
-
-        this.modelRoot = model;
-
-        // @ts-ignore
-        result[key] = model;
-
-        continue;
-      }
-
-      // ============================================================
-      // CASE 2: GROUP
-      // ============================================================
-
-      const loadedChildren: Array<{
-        childObj: Object3D;
-        childData: any;
-        childId: string;
-      }> = [];
-
-      // ------------------------------------------------------------
-      // Load all children
-      // ------------------------------------------------------------
-
-      for (const childEntry of children) {
-        if (
-          !childEntry ||
-          typeof childEntry !== "object"
-        ) {
-          continue;
-        }
-
-        let childId = "";
-        let childData: any = null;
-
-        const entryKeys = Object.keys(childEntry);
-
-        if (
-          entryKeys.length === 1 &&
-          typeof childEntry[entryKeys[0]] === "object" &&
-          (
-            childEntry[entryKeys[0]]?.url ||
-            childEntry[entryKeys[0]]?.uri ||
-            childEntry[entryKeys[0]]?.matrix
-          )
-        ) {
-          childId = entryKeys[0];
-          childData = childEntry[entryKeys[0]];
-        } else {
-          childId =
-            childEntry.id ||
-            childEntry.name ||
-            `child_${Date.now()}`;
-
-          childData = childEntry;
-        }
-
-        const childUrl =
-          childData.url || childData.uri;
-
-        const textureUrl = childData.textureUrl || (childEntry as any).textureUrl;
-        const textureId = childData.textureId || (childEntry as any).textureId;
-
-
-        if (!childUrl) {
-          console.warn(
-            `[import3DConfig] Skipping child '${childId}' in '${key}' - missing url.`
-          );
-          continue;
-        }
-
-        const childObj = await this.loadModel(
-          childUrl,
-          false,
-          undefined,
-          undefined,
-          undefined,
-          false,
-          childData.modelData
-        );
-
-
-
-        if (!childObj) {
-          console.warn(
-            `[import3DConfig] Failed to load child '${childId}' in group '${key}'.`
-          );
-          continue;
-        }
-
-        const childName =
-          childData.name || childId;
-
-        childObj.name = childName;
-
-        childObj.userData = {
-          ...childObj.userData,
-          isGLBModel: true,
-          selectable: SelectableState.FALSE,
-          metadata:
-            childData.modelData || {
-              id: childId,
-              name: childName,
-              category:
-                childData.modelData?.category || "",
-              price:
-                childData.modelData?.price || "",
-              format:
-                childData.modelData?.format || "gltf",
-            },
-        };
-
-        if (!childObj.userData.metadata.id) {
-          childObj.userData.metadata.id = childId;
-        }
-
-        if (!childObj.userData.metadata.name) {
-          childObj.userData.metadata.name = childName;
-        }
-
-        if (textureUrl && textureId) {
-          this.applyTextureToModel(textureUrl, textureId, undefined, childObj);
-        }
-
-        loadedChildren.push({
-          childObj,
-          childData,
-          childId,
-        });
-      }
-
-      // ------------------------------------------------------------
-      // Make sure at least one child was loaded
-      // ------------------------------------------------------------
-
-      if (loadedChildren.length === 0) {
-        console.warn(
-          `[import3DConfig] Group '${key}' has no valid children loaded.`
-        );
-        continue;
-      }
-
-      const groupName =
-        objData.name ||
-        `Group ${Math.floor(Math.random() * 1000)}`;
-
-      // ------------------------------------------------------------
-      // Reset furnitureGroup
-      // ------------------------------------------------------------
-
-      this.furnitureGroup.clear();
-
-      this.furnitureGroup.position.set(
-        0,
-        0,
-        0
-      );
-
-      this.furnitureGroup.quaternion.identity();
-
-      this.furnitureGroup.scale.set(
-        1,
-        1,
-        1
-      );
-
-      this.furnitureGroup.updateMatrix();
-
-      this.furnitureGroup.updateMatrixWorld(
-        true
-      );
-
-      // ------------------------------------------------------------
-      // IMPORTANT:
-      //
-      // Add each child and apply its saved LOCAL matrix BEFORE
-      // createPermanentGroup().
-      //
-      // This is the important change.
-      // ------------------------------------------------------------
-
-      for (const item of loadedChildren) {
-        const child = item.childObj;
-
-        // Add to scene first.
-        this.scene.add(child);
-
-        // Attach to furnitureGroup while preserving its
-        // current world transform.
-        this.furnitureGroup.attach(child);
-
-        /**
-         * Apply the child's saved transformation.
-         *
-         * IMPORTANT:
-         * At this point furnitureGroup has identity transform,
-         * so the child's matrix is interpreted relative to
-         * furnitureGroup.
-         */
-        applyMatrix(
-          child,
-          item.childData.matrix
-        );
-
-        child.updateMatrixWorld(true);
-
-        // Children inside a group are not selectable individually.
-        child.userData.selectable =
-          SelectableState.FALSE;
-      }
-
-      // Make absolutely sure all children have their
-      // final transformations before group creation.
-      this.furnitureGroup.updateMatrixWorld(
-        true
-      );
-
-      // ------------------------------------------------------------
-      // Set modelRoot before createPermanentGroup()
-      // ------------------------------------------------------------
-
-      this.modelRoot = this.furnitureGroup;
-
-      // ------------------------------------------------------------
-      // Create permanent group
-      // ------------------------------------------------------------
-
-      let group: Group | null = null;
-      let created = false;
-
-      if (loadedChildren.length >= 2) {
-        created =
-          this.createPermanentGroup(
-            groupName
-          );
-
-        if (
-          created &&
-          this.modelRoot instanceof Group
-        ) {
-          group = this.modelRoot;
-        }
-      }
-
-      // ------------------------------------------------------------
-      // Fallback group
-      // ------------------------------------------------------------
-
-      if (!group) {
-        group = new Group();
-
-        group.name = groupName;
-
-        /**
-         * Move children from furnitureGroup into
-         * the fallback group while preserving
-         * their world transformations.
-         */
-        for (const item of loadedChildren) {
-          const child = item.childObj;
-
-          group.attach(child);
-
-          child.userData.selectable =
-            SelectableState.FALSE;
-        }
-
-        this.scene.add(group);
-
-        this.modelRoot = group;
-      }
-
-      // ------------------------------------------------------------
-      // Configure group metadata
-      // ------------------------------------------------------------
-
-      const groupId =
-        objData.modelData?.id || key;
-
-      group.name = groupName;
-
-      group.userData = {
-        ...group.userData,
-
-        isGroup: true,
-        isGLBModel: true,
-        selectable: SelectableState.TRUE,
-
-        metadata: {
-          ...(group.userData?.metadata || {}),
-
-          id: groupId,
-          name: groupName,
-          isGroup: true,
-
-          price:
-            objData.modelData?.price ?? 0,
-
-          format:
-            objData.modelData?.format ??
-            "Group",
-        },
-      };
-
-      // ------------------------------------------------------------
-      // Apply GROUP transformation
-      // ------------------------------------------------------------
-
-      /**
-       * The group's matrix is relative to its
-       * immediate parent.
-       *
-       * Since group is directly under scene,
-       * this is effectively a scene/world matrix.
-       */
-      applyMatrix(
-        group,
-        objData.matrix
-      );
-
-      // ------------------------------------------------------------
-      // Final matrix update
-      // ------------------------------------------------------------
-
-      group.updateMatrixWorld(true);
-
-      // ------------------------------------------------------------
-      // IMPORTANT:
-      //
-      // If createPermanentGroup() or your selection system
-      // maintains/caches a bounding box, this is the point
-      // where the group has its FINAL transformations.
-      //
-      // A Box3 should therefore be calculated here if needed.
-      // ------------------------------------------------------------
-
-      /*
-      const groupBox = new Box3().setFromObject(group);
-  
-      console.log(
-        `[import3DConfig] Group '${groupName}' bounding box:`,
-        groupBox
-      );
-      */
-
-      // ------------------------------------------------------------
-      // Update model root
-      // ------------------------------------------------------------
-
-      this.prevModelRoot =
-        this.isModelRootEqualToRoomModel()
-          ? null
-          : this.modelRoot;
-
-      this.modelRoot = group;
-
-      // Store imported group in result.
-      result[key] = group;
+  }
+
+/**
+   * Updates the height of all doors in the 3D viewer to the specified value.
+   *
+   * @param {number} height - The new door height in design units.
+   * @returns {boolean} `true` if successful, or `false` if the specified height violates boundary constraints relative to wall height.
+   * @description Updates the height of all doors in the 3D viewer to the specified height.
+   * @public
+   */
+  public updateDoorHeight(height: number): boolean {
+    const wallHeight = this.getWallHeight();
+    if (height < 0 || height > wallHeight - 10) {
+      return false;
     }
-
-    // ============================================================
-    // Notify frontend / hierarchy
-    // ============================================================
-
-    Events.emit(
-      ConfiguratorEventType.HIERARCHY_CHANGED
-    );
-
-    Events.emit(
-      ConfiguratorEventType.MODELS_SUMMARY_UPDATED,
-      this.getModelsSummary()
-    );
-
-    return result;
+    this.recreateWalls(undefined, undefined, height);
+    return true;
   }
 
   /**
-   * Alias for import3DConfig.
+   * Updates the width of all doors in the 3D viewer to the specified value.
+   *
+   * @param {number} width - The new door width in design units.
+   * @returns {boolean} `true` if successful, or `false` if the width is less than 0 or exceeds `Opening3DConstraints.MAX_DOOR_WIDTH`.
+   * @description Updates the width of all doors in the 3D viewer to the specified width.
+   * @public
    */
-  public async load3DConfig(
-    config: Record<string, any> | string
-  ): Promise<Record<string, Object3D>> {
-    return this.import3DConfig(config);
+  public updateDoorWidth(width: number): boolean {
+    if(width < 0 || width > (Opening3DConstraints.MAX_DOOR_WIDTH as number) ){
+      return false;
+    }
+    this.recreateWalls(undefined, width);
+    return true;
   }
 
   /**
-   * Alias for import3DConfig.
+   * Updates the height of all windows in the 3D viewer to the specified value.
+   *
+   * @param {number} height - The new window height in design units.
+   * @returns {boolean} `true` if successful, or `false` if the height violates boundary constraints relative to wall height.
+   * @description Updates the height of all windows in the 3D viewer to the specified height.
+   * @public
    */
-  public async apply3DConfig(
-    config: Record<string, any> | string
-  ): Promise<Record<string, Object3D>> {
-    return this.import3DConfig(config);
-  }
-
-
-
-  public async processObjectMaterials(
-    config: ObjectConfig[]
-  ): Promise<void> {
-
-    console.log("config : ", config);
-
-    for (const object of config) {
-      // 1. Call API for the main object
-      const wallMesh = this.getWallById(object.id);
-
-      // 2. Call API for each material of the object
-      for (const material of object.materials) {
-        // await callMaterialApi(
-        //   object.id,
-        //   material.index,
-        //   material.finishId
-        // );
-
-        if (wallMesh) {
-
-
-          if (material.url.startsWith("#")) {
-            console.log("String starts with #");
-
-            if (!(wallMesh as any)._wallFacesPrepared) {
-              //@ts-ignore
-              this.groupFacesByNormal(wallMesh);
-            }
-
-            const targetColor = new Color(material.url);
-
-            //@ts-ignore
-            this.splitWallFace(wallMesh, material.index, [1], [targetColor], material.finishId);
-          }
-          else {
-
-            const loader = new TextureLoader();
-            loader.load(material.url, (tex) => {
-              tex.wrapS = MirroredRepeatWrapping;
-              tex.wrapT = MirroredRepeatWrapping;
-              tex.colorSpace = SRGBColorSpace;
-
-              //@ts-ignore
-              wallMesh.geometry.computeBoundingBox();
-              //@ts-ignore
-              const bbox = wallMesh.geometry.boundingBox;
-              const size = new Vector3();
-              if (bbox) {
-                bbox.getSize(size);
-              }
-
-              const wallTex = tex.clone();
-              const repeatX = (0.5) * (size.x > 0 ? size.x : 1);
-              const repeatY = (0.5) * (size.y > 0 ? size.y : 1);
-
-              wallTex.repeat.set(repeatX, repeatY);
-              wallTex.needsUpdate = true;
-
-              // this.groupFacesByNormal(wallMesh);
-              if (!(wallMesh as any)._wallFacesPrepared) {
-                //@ts-ignore
-                this.groupFacesByNormal(wallMesh);
-              }
-
-              // @ts-ignore
-              this.splitWallFace(wallMesh, material.index, [1], [wallTex], material.finishId);
-            });
-          }
-        }
-      }
+  public updateWindowHeight(height: number): boolean {
+    const wallHeight=this.getWallHeight();
+    if (height < 0 || height >= wallHeight - 10) {
+      return false;
     }
+
+    this.recreateWalls(undefined, undefined, undefined, undefined, height);
+    return true;
+  }
+  /**
+   * Updates the width of all windows in the 3D viewer to the specified value.
+   *
+   * @param {number} width - The new window width in design units.
+   * @returns {boolean} `true` if successful, or `false` if the width is less than 0 or exceeds `Opening3DConstraints.MAX_WINDOW_WIDTH`.
+   * @description Updates the width of all windows in the 3D viewer to the specified width.
+   * @public
+   */
+  public updateWindowWidth(width: number): boolean {
+    if(width < 0 || width > (Opening3DConstraints.MAX_WINDOW_WIDTH as number) ){
+      return false;
+    }
+    this.recreateWalls(undefined, undefined, undefined, width);
+    return true;
   }
 
-  private getWallById(
-    wallId: string
-  ): Object3D | undefined {
-    return this.scene.getObjectByProperty("wall_id", wallId);
+  /**
+   * Updates the distance between the floor and the bottom edge of all windows.
+   *
+   * @param {number} distance - The new distance between the floor and the bottom edge of the windows in design units.
+   * @returns {boolean} `true` if successful, or `false` if the distance is negative or causes the top of the window to exceed wall height constraints.
+   * @description Updates the vertical position of all windows by setting their distance from the floor to the specified value in design units.
+   * @public
+   */
+  public updateWindowFloorDistance(distance: number): boolean {
+    const wallHeight = this.getWallHeight();
+    const windowHeight  = this.getCurrentOpeningDimensions().window.height;
+
+    const maxDistance = wallHeight - windowHeight - 10;
+
+    if (distance < 0 || distance > maxDistance) {
+      return false;
+    }
+
+    this.recreateWalls(undefined,undefined,undefined,undefined,undefined,distance);
+    return true;
   }
-}
 
-interface MaterialConfig {
-  index: number;
-  finishId: string;
-  url: string
-}
+  /**
+   * Updates the height of all 3D wall meshes in the 3D viewer.
+   *
+   * @param {number} height - The new wall height in design units.
+   * @returns {boolean} `true` if the height was successfully updated, or `false` if the height is invalid (e.g., non-positive or insufficient for current door/window dimensions).
+   * @description Updates the height of all walls in the 3D viewer to the specified height. The existing wall configuration, including wall metadata, doors, windows, and boundary information, is preserved while the wall geometry is rebuilt and trimmed.
+   * @public
+   */
+  public updateWallHeight(height: number): boolean {
+    if (height <= 0) {
+      return false;
+    }
 
-interface ObjectConfig {
-  id: string;
-  materials: MaterialConfig[];
+    const openingDimensions = this.getCurrentOpeningDimensions();
+
+    const maxOpeningHeight = Math.max(
+      openingDimensions.door.height,
+      openingDimensions.window.height + openingDimensions.window.windowFloorDistance
+    );
+    if (height < maxOpeningHeight + 10) {
+      return false;
+    }
+
+    this.recreateWalls(height);
+    this.roomAnnotationManager.refreshAnnotationByWallHeight(height);
+    return true;
+  }
+
+  /**
+   * Sets the room annotation display mode.
+   *
+   * @param {AnnotationMode} mode The room annotation display mode.
+   * @returns {void}
+   */
+  public setRoomAnnotationMode(mode: AnnotationMode): void {
+    this.roomAnnotationManager.setMode(mode);
+  }
+
+  /**
+   * Gets the current room annotation display mode.
+   *
+   * @returns {AnnotationMode} The active annotation mode.
+   */
+  public getRoomAnnotationMode(): AnnotationMode {
+    return this.roomAnnotationManager.mode;
+  }
+
 }

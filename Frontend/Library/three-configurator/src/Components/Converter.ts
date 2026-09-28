@@ -7,6 +7,15 @@ export interface Wall3DData {
     doors?: any[];
 }
 
+export interface Room3DData {
+    id: string;
+    roomName: string;
+    vertices: { x: number; y: number }[];
+    walls?: any[];
+    isCostomRoom?: boolean;
+    lablePosition: { x: number; y: number };
+}
+
 /**
  * Converter class handles the transformation of 2D floorplan data into 3D-compatible structures.
  */
@@ -44,5 +53,37 @@ export class Converter {
             });
         }
         return walls;
+    }
+
+    /**
+     * Converts 2D floorplan data to a 3D wall data representation.
+     *
+     * @param data - The 2D floorplan data object containing node and line group properties.
+     * @returns An array of Wall3DData objects.
+     */
+    public convertRoom2dto3d(data: any): Room3DData[] {
+
+        if(data == null) return[];
+
+        const rooms: Room3DData[] = [];
+
+        if (data && data.children) {
+            // Iterate through children of the layer which are Groups
+            data.children.forEach((group: any) => {
+                if (group.attrs && group.attrs.name === NodeName.ROOM) {
+                  const userData = group.attrs || {};
+                  const room = {
+                    id: userData.id,
+                    roomName: userData.roomName,
+                    vertices: userData.points,
+                    walls: userData.walls,
+                    isCostomRoom: userData.isCostomRoom,
+                    lablePosition: userData.lablePosition,
+                  };
+                  rooms.push(room);
+                }
+            });
+        }
+        return rooms;
     }
 }

@@ -47,18 +47,18 @@ export class AssetLoader {
    */
   private mtlLoader: MTLLoader = new MTLLoader();
 
-  /**
-   *  Initializes the AssetLoader with Draco, KTX2, and GLTF loaders.
-   */
-  constructor() {
-    // Set up Draco loader
-    this.dracoLoader = new DRACOLoader();
-    this.dracoLoader.setDecoderPath(LoaderPaths.DRACO_DECODER);
-    this.dracoLoader.setDecoderConfig({ type: LoaderPaths.WASM_TYPE });
-    this.dracoLoader.preload();
+    /**
+     *  Initializes the AssetLoader with Draco, KTX2, and GLTF loaders.
+     */
+    constructor() {
+        // Set up Draco loader
+        this.dracoLoader = new DRACOLoader();
+        this.dracoLoader.setDecoderPath(LoaderPaths.DRACO_DECODER);
+        this.dracoLoader.setDecoderConfig({ type: LoaderPaths.WASM_TYPE });
+        this.dracoLoader.preload();
 
-    this.ktx2Loader = new KTX2Loader();
-    this.ktx2Loader.setTranscoderPath(LoaderPaths.BASIS_TRANSCODER);
+        this.ktx2Loader = new KTX2Loader();
+        this.ktx2Loader.setTranscoderPath(LoaderPaths.BASIS_TRANSCODER);
 
     // Set up GLTF loader with Draco, Meshopt, and KTX2 texture compression decoders.
     this.gltfLoader = new GLTFLoader();
@@ -84,7 +84,7 @@ export class AssetLoader {
    * @param selectable Optional flag to set the model as selectable (defaults to false)
    * @returns Promise resolving to THREE.Object3D
    */
-  public async loadGLB(url: string, callbacks?: ModelLoadCallbacks, selectable: boolean = false): Promise<THREE.Object3D> {
+    public async loadGLB(url: string, callbacks?: ModelLoadCallbacks, selectable: boolean = false): Promise<THREE.Object3D> {
     if (this.glbCache.has(url)) {
       return this.cloneGLTF(this.glbCache.get(url)!, selectable);
     }
@@ -124,29 +124,23 @@ export class AssetLoader {
    * @returns A new THREE.Object3D copy
    */
   private cloneGLTF(gltf: GLTF, selectable: boolean): THREE.Object3D {
-    // Clone the scene FIRST so we don't mutate the cached original
-    const clonedScene = gltf.scene.clone(true);
-
     const box = new THREE.Box3();
-    box.setFromObject(clonedScene);
+    box.setFromObject(gltf.scene);
     const center = new THREE.Vector3();
     box.getCenter(center);
-    
     let modelWrapper = new THREE.Group();
     modelWrapper.position.copy(center);
-    modelWrapper.attach(clonedScene);
+    modelWrapper.attach(gltf.scene);
 
-    modelWrapper.rotateX(Math.PI / 2);
+    const clone = modelWrapper.clone(true);
 
-    const clone = modelWrapper;
-
-    // for room configurator to check if the model is selectable or not
-    if (selectable) {
-      clone.userData.selectable = SelectableState.TRUE;
-    }
-    else {
-      clone.userData.selectable = SelectableState.FALSE;
-    }
+        // for room configurator to check if the model is selectable or not
+        if (selectable) {
+            clone.userData.selectable = SelectableState.TRUE;
+        }
+        else {
+            clone.userData.selectable = SelectableState.FALSE;
+        }
 
     clone.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
@@ -176,15 +170,15 @@ export class AssetLoader {
   private cloneMaterial(mat: THREE.Material): THREE.Material {
     const cloned = mat.clone();
 
-    const mapsToClone = [
-      TextureMapKeys.MAP,
-      TextureMapKeys.NORMAL_MAP,
-      TextureMapKeys.ROUGHNESS_MAP,
-      TextureMapKeys.METALNESS_MAP,
-      TextureMapKeys.AO_MAP,
-      TextureMapKeys.EMISSIVE_MAP,
-      TextureMapKeys.ALPHA_MAP
-    ];
+        const mapsToClone = [
+            TextureMapKeys.MAP,
+            TextureMapKeys.NORMAL_MAP,
+            TextureMapKeys.ROUGHNESS_MAP,
+            TextureMapKeys.METALNESS_MAP,
+            TextureMapKeys.AO_MAP,
+            TextureMapKeys.EMISSIVE_MAP,
+            TextureMapKeys.ALPHA_MAP
+        ];
 
     for (const key of mapsToClone) {
       const tex = (mat as any)[key];
@@ -311,12 +305,12 @@ export class AssetLoader {
   private cloneObject(original: THREE.Object3D): THREE.Object3D {
     const clone = original.clone(true);
 
-    clone.traverse((obj) => {
-      if (ThreeProperties.IS_MESH in obj && obj.isMesh) {
-        obj.castShadow = true;
-        obj.receiveShadow = true;
-      }
-    });
+        clone.traverse((obj) => {
+            if (ThreeProperties.IS_MESH in obj && obj.isMesh) {
+                obj.castShadow = true;
+                obj.receiveShadow = true;
+            }
+        });
 
     return clone;
   }

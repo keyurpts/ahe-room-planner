@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import { ConfiguratorCore } from "../ConfiguratorCore";
 import { Converter } from "./Converter";
-import type { Wall3DData } from "./Converter";
-import { Config, ImageAssets, FixtureType } from "../Constants";
-import { WallCutter, type DoorWindowData } from "./WallCutter";
+import type { Room3DData, Wall3DData } from "./Converter";
+import { Config, ImageAssets } from "../Constants";
+import { WallCutter } from "./WallCutter";
 import { DoorWindowHelper } from "./DoorWindowHelper";
+import {RoomAnnotationManager } from "./RoomAnnotationManager";
+
 
 /**
  * Design3D class handles the 3D representation of the floorplan.
@@ -57,6 +59,12 @@ export class Design3D {
   private wallCutter: WallCutter;
 
   /**
+   * LabelManager helper instance for managing labels.
+   */
+  private roomAnnotationManager: RoomAnnotationManager;
+
+
+  /**
    * Retrieves the current unit conversion scale factor.
    * @returns The unit conversion factor as a number.
    */
@@ -78,7 +86,8 @@ export class Design3D {
     });
     // Instantiate the converter
     this.converter = new Converter();
-    this.wallCutter = new WallCutter();
+    this.wallCutter = WallCutter.getInstance();
+    this.roomAnnotationManager = RoomAnnotationManager.getInstance();
   }
 
   /**
@@ -170,14 +179,22 @@ export class Design3D {
           wallThickness,
         );
 
-        const material = new THREE.MeshStandardMaterial({
-          color: 0xaaaaaa,
-          roughness: 0.4,
-        });
+
+        const material = new Array(6)
+          .fill(null)
+          .map(
+            () =>
+              new THREE.MeshStandardMaterial({
+                color: 0xaaaaaa,
+                roughness: 0.4,
+              }),
+          );
 
         const mesh = new THREE.Mesh(geometry, material);
         //Add material as user data into the mesh used to restore it
         mesh.userData.defaultMaterial = material;
+        // Persist the unit conversion factor so height updates can read it back.
+        mesh.userData.unitConversionFactor = this.unit_conversion_factor;
         // Position wall at midpoint
         mesh.position.set(
           startPoint.x + dx / 2,
@@ -192,6 +209,7 @@ export class Design3D {
         (mesh as any).startPointWallIds = startPointWallIds;
         (mesh as any).endPointWallIds = endPointWallIds;
         (mesh as any).wall_id = wall.id;
+        (mesh as any).currentHeight = wallHeight;
         (mesh as any).windows = wall.windows || [];
         (mesh as any).doors = wall.doors || [];
 
@@ -248,82 +266,24 @@ export class Design3D {
     const placements = this.wallCutter.getPlacements();
 
     if (this.roomGroup) {
-      this.addDoorAndWindow(placements, wallThickness);
+      DoorWindowHelper.addDoorAndWindow(this.active3DWallGroup, placements, wallThickness);
     }
   }
 
-  /**
-   * Helper method to add the door and windows to the roomGroup by creating them.
-   * @param doorWindows - Array of door and window data.
-   * @param wallThickness - Thickness of the walls.
-   */
-  private addDoorAndWindow(doorWindows: DoorWindowData[], wallThickness: number): void {
-    if (!this.active3DWallGroup) {
-      return;
-    }
-  for (const doorWindow of doorWindows) {
-      let model: THREE.Group;
-      if (doorWindow.type === FixtureType.DOOR) {
-        model = DoorWindowHelper.createDoor(doorWindow.width, doorWindow.height, wallThickness);
-      } else {
-        model = DoorWindowHelper.createWindow(doorWindow.width, doorWindow.height, wallThickness);
-      }
-
-      const bbox = new THREE.Box3().setFromObject(model);
-      const center = bbox.getCenter(new THREE.Vector3());
-
-      const wrapper = new THREE.Group();
-      wrapper.name = `${doorWindow.type}_${doorWindow.id}`;
-      model.position.set(-center.x, -center.y, -center.z);
-      wrapper.add(model);
-
-      wrapper.userData = {
-        id: doorWindow.id,
-        type: doorWindow.type,
-        selectable: "false",
-        wallId: doorWindow.wallId
-      };
-
-      // Find the parent wall this door/window belongs to
-      const wallMesh = this.active3DWallGroup.children.find(
-        (child: THREE.Object3D) => (child as any).wall_id === doorWindow.wallId
-      ) as THREE.Mesh | undefined;
-
-      if (wallMesh) {
-        // Convert world transform to wall-local transform
-        const localPos = doorWindow.position.clone();
-        wallMesh.worldToLocal(localPos);
-        wrapper.position.copy(localPos);
-
-        const wallWorldQuaternion = new THREE.Quaternion();
-        wallMesh.getWorldQuaternion(wallWorldQuaternion);
-        wrapper.quaternion
-          .copy(wallWorldQuaternion)
-          .invert()
-          .multiply(doorWindow.quaternion);
-
-        // Add as child of the wall mesh
-        wallMesh.add(wrapper);
-      } else if (this.roomGroup) {
-        wrapper.position.copy(doorWindow.position);
-        wrapper.quaternion.copy(doorWindow.quaternion);
-        this.roomGroup.add(wrapper);
-      }
-    }
-  }
 
   /**
    * Converts 2D data to 3D walls and floors and renders them.
    * @param data - The JSON dataset containing layout information.
    */
   public loadFromJson(data: any): void {
-    const json = data.layer || data;
-    const rooms = data.rooms || [];
+    const wallLayer = data.layer || data;
+    const roomsLayer = data.roomsLayer || null;
     const houseBoundary = data.houseBoundary || null;
     this.unit_conversion_factor = data.unit_conversion_factor || 1;
     this.wallCutter.setUnitConversionFactor(this.unit_conversion_factor);
 
-    const walls = this.converter.convert2dto3d(json);
+    const walls = this.converter.convert2dto3d(wallLayer);
+    const rooms = this.converter.convertRoom2dto3d(roomsLayer);
 
     this.clearWalls();
     this.roomGroup = new THREE.Group();
@@ -331,7 +291,16 @@ export class Design3D {
     this.make3DMesh(walls, houseBoundary);
 
     if (rooms.length > 0) {
-      this.makeFloorMesh(rooms);
+      this.roomGroup.updateMatrixWorld(true);
+
+      // 2. Calculate the bounding box of the entire group
+      const box = new THREE.Box3().setFromObject(this.roomGroup);
+
+      // 3. Get the bounding sphere (contains both center and radius)
+      const boundingSphere = new THREE.Sphere();
+      box.getBoundingSphere(boundingSphere);
+
+      this.makeFloorMesh(rooms, boundingSphere);
       this.makeFloorMeshTrimmer(rooms);
     }
 
@@ -345,8 +314,12 @@ export class Design3D {
    * Creates 3D floors for each room based on room layout.
    * @param rooms - Array of room objects containing vertices.
    */
-  private makeFloorMesh(rooms: { vertices: { x: number; y: number }[] }[]): void {
+  private makeFloorMesh(rooms: Room3DData[], boundingSphere: THREE.Sphere): void {
     const floorGroup = new THREE.Group();
+    this.roomAnnotationManager.registerRootGroup(floorGroup);
+    const center = boundingSphere.center; // THREE.Vector3 { x, y, z }
+    const radius = boundingSphere.radius;
+    const wallHight = Math.round(((this.sourceWallGroup?.children[0] as any)?.currentHeight ?? 0) / (Config.WORLD_SCALE as number));
 
     rooms.forEach((room) => {
       const shape = new THREE.Shape();
@@ -398,10 +371,43 @@ export class Design3D {
       floorMesh.material.polygonOffset = true;
       floorMesh.material.polygonOffsetFactor = -1;
       floorMesh.material.polygonOffsetUnits = -1;
+      let lable = this.roomAnnotationManager.createLabel({
+        id: room.id,
+        roomName: room.roomName,
+        startPosition: new THREE.Vector3(
+          room.lablePosition.x *
+          (Config.WORLD_SCALE as number) *
+          this.getUnitScaleFactor(),
+
+          0.1,
+
+          room.lablePosition.y *
+          (Config.WORLD_SCALE as number) *
+          this.getUnitScaleFactor()
+        ),
+        wallHeight : wallHight,
+        center,
+        radius,
+      });
+      
+      // Counter-rotate the label so it remains upright despite the floorMesh's rotation
+      lable.rotation.x = -Math.PI / 2;
+      
+      floorMesh.add(lable);
       floorGroup.add(floorMesh);
     });
 
     this.floorGroup = floorGroup;
+
+    // Set the panning boundary on OrbitControls to floor + tiny buffer
+    if (this.core && (this.core as any).controlsManager) {
+      const orbitControls = (this.core as any).controlsManager.getControl("orbit");
+      if (orbitControls) {
+        (orbitControls as any).minPanY = 0.01 * (Config.WORLD_SCALE as number) + 0.1;
+      }
+    }
+
+
     if (this.roomGroup && this.floorGroup) {
       this.roomGroup.add(this.floorGroup);
     }
@@ -587,6 +593,7 @@ export class Design3D {
    */
   public enter3DView(): void {
     if (!this.core) return;
+    this.core?.enableWallHiding(false);
     this.core.resumeRenderer();
 
     requestAnimationFrame(() => {
@@ -600,6 +607,7 @@ export class Design3D {
   public exit3DView(): void {
     this.core?.clearScene();
     this.core?.pauseRenderer();
+    this.core?.enableWallHiding(false);
   }
 
   /**

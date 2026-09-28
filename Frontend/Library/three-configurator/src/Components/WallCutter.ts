@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
+import { SUBTRACTION, Brush, Evaluator } from "three-bvh-csg";
 import { Config, FixtureType } from "../Constants";
 
 export interface DoorWindowData {
@@ -36,6 +36,14 @@ export class WallCutter {
    * Box geometry representing the trimmer bounds.
    */
   private trimmerGeom: THREE.BoxGeometry;
+  
+  /**
+   * Common material used for all cutting brushes  
+  */ 
+  private CUT_BRUSH_MATERIAL = new THREE.MeshStandardMaterial({
+    color: 0xaaaaaa,
+    roughness: 0.4,
+  });
 
   /**
    * Container group holding all post-trimmed wall meshes.
@@ -53,14 +61,34 @@ export class WallCutter {
   private doorWindows: DoorWindowData[] = [];
 
   /**
+   * Singleton instance of WallCutter to ensure only one instance is used throughout the application.
+   */
+  private static instance: WallCutter;
+
+  /**
    * Initializes the WallCutter instance, setting up the CSG evaluator and default trimmer dimensions.
    */
-  constructor() {
+  private constructor() {
     this.evaluator = new Evaluator();
 
     // Scale the trimmer size as well
     this.trimmerSize = 2000 * (Config.WORLD_SCALE as number);
-    this.trimmerGeom = new THREE.BoxGeometry(this.trimmerSize, this.trimmerSize, this.trimmerSize);
+    this.trimmerGeom = new THREE.BoxGeometry(
+      this.trimmerSize,
+      this.trimmerSize,
+      this.trimmerSize,
+    );
+  }
+
+  /**
+   * Provides access to the singleton instance of WallCutter.
+   * @returns The WallCutter instance.
+   */
+  public static getInstance(): WallCutter {
+    if (!WallCutter.instance) {
+      WallCutter.instance = new WallCutter();
+    }
+    return WallCutter.instance;
   }
 
   /**
@@ -86,7 +114,10 @@ export class WallCutter {
    * @param wallToAlign - The wall mesh to measure.
    * @returns The farthest face position vector.
    */
-  private getFarthestFacePosition(tail: THREE.Vector3, wallToAlign: THREE.Mesh): THREE.Vector3 {
+  private getFarthestFacePosition(
+    tail: THREE.Vector3,
+    wallToAlign: THREE.Mesh,
+  ): THREE.Vector3 {
     const geomAlign = wallToAlign.geometry as THREE.BoxGeometry;
 
     // In our BoxGeometry creation (Design3D), length is X, height is Y, and thickness is always Z.
@@ -94,14 +125,26 @@ export class WallCutter {
     const halfThickness = geomAlign.parameters.depth / 2;
 
     // Calculate the world positions of the two opposite sides of the wall
-    const face1Dir = new THREE.Vector3().copy(thicknessAxis).multiplyScalar(halfThickness).applyQuaternion(wallToAlign.quaternion);
-    const face2Dir = new THREE.Vector3().copy(thicknessAxis).multiplyScalar(-halfThickness).applyQuaternion(wallToAlign.quaternion);
+    const face1Dir = new THREE.Vector3()
+      .copy(thicknessAxis)
+      .multiplyScalar(halfThickness)
+      .applyQuaternion(wallToAlign.quaternion);
+    const face2Dir = new THREE.Vector3()
+      .copy(thicknessAxis)
+      .multiplyScalar(-halfThickness)
+      .applyQuaternion(wallToAlign.quaternion);
 
-    const face1Pos = new THREE.Vector3().copy(wallToAlign.position).add(face1Dir);
-    const face2Pos = new THREE.Vector3().copy(wallToAlign.position).add(face2Dir);
+    const face1Pos = new THREE.Vector3()
+      .copy(wallToAlign.position)
+      .add(face1Dir);
+    const face2Pos = new THREE.Vector3()
+      .copy(wallToAlign.position)
+      .add(face2Dir);
 
     // Return the side that is further from the tail point
-    return face1Pos.distanceTo(tail) > face2Pos.distanceTo(tail) ? face1Pos : face2Pos;
+    return face1Pos.distanceTo(tail) > face2Pos.distanceTo(tail)
+      ? face1Pos
+      : face2Pos;
   }
 
   /**
@@ -116,41 +159,47 @@ export class WallCutter {
     tail: THREE.Vector3,
     intersectionPoint: THREE.Vector3,
     wallToAlign: THREE.Mesh,
-    currentWall: THREE.Mesh
+    currentWall: THREE.Mesh,
   ) {
     const geomAlign = wallToAlign.geometry as THREE.BoxGeometry;
     const halfThickness = geomAlign.parameters.depth / 2;
 
     // Handle collinear walls
     if (this.areWallsCollinear(currentWall, wallToAlign)) {
-      const cutDir = new THREE.Vector3().subVectors(intersectionPoint, tail).normalize();
-      const trimmerCenter = new THREE.Vector3().copy(intersectionPoint)
+      const cutDir = new THREE.Vector3()
+        .subVectors(intersectionPoint, tail)
+        .normalize();
+      const trimmerCenter = new THREE.Vector3()
+        .copy(intersectionPoint)
         .add(cutDir.multiplyScalar(this.trimmerSize / 2));
       return {
         position: trimmerCenter,
-        quaternion: currentWall.quaternion.clone()
+        quaternion: currentWall.quaternion.clone(),
       };
     }
 
     const targetFacePos = this.getFarthestFacePosition(tail, wallToAlign);
 
     //  Calculate the "outward" direction from the wall's center to that face.
-    const faceToOuterDir = new THREE.Vector3().subVectors(targetFacePos, wallToAlign.position).normalize();
+    const faceToOuterDir = new THREE.Vector3()
+      .subVectors(targetFacePos, wallToAlign.position)
+      .normalize();
     const quaternion = wallToAlign.quaternion.clone();
 
-    // Instead of centering the trimmer at the face center (targetFacePos), 
+    // Instead of centering the trimmer at the face center (targetFacePos),
     // we center it at the actual intersection point, but offset it "outward"
     // so its face perfectly aligns with the target face plane.
 
     // We move from the intersection point outward by half the other wall's thickness to reach its far face,
     // then move another half-trimmer-size to center the huge cutting box.
-    const trimmerCenter = new THREE.Vector3().copy(intersectionPoint)
+    const trimmerCenter = new THREE.Vector3()
+      .copy(intersectionPoint)
       .add(faceToOuterDir.clone().multiplyScalar(halfThickness))
       .add(faceToOuterDir.clone().multiplyScalar(this.trimmerSize / 2));
 
     return {
       position: trimmerCenter,
-      quaternion
+      quaternion,
     };
   }
 
@@ -159,235 +208,224 @@ export class WallCutter {
    * @returns A new THREE.Group containing the trimmed wall meshes.
    */
   public cutWalls(): THREE.Group {
-    // Initialize the result group
-    this.trimmedWallGroup = new THREE.Group();
-    this.doorWindows = [];
+  // Initialize the result group
+  this.trimmedWallGroup = new THREE.Group();
+  this.doorWindows = [];
 
-    // Examine every mesh in our group
-    if (this.wallGroup) {
-      this.wallGroup.traverse((wallMesh) => {
-        if (wallMesh instanceof THREE.Mesh && !(wallMesh instanceof THREE.Group)) {
-          // Prepare a "Brush" (a CSG-capable object) from our current wall
-          // We convert the original mesh to a Brush once and then perform all cuts on it sequentially.
-          let wallBrush = new Brush(wallMesh.geometry, new THREE.MeshStandardMaterial({
-            color: 0xaaaaaa,
-            roughness: 0.4,
-          }));
-          wallBrush.position.copy(wallMesh.position);
-          wallBrush.quaternion.copy(wallMesh.quaternion);
-          wallBrush.scale.copy(wallMesh.scale);
-          wallBrush.updateMatrixWorld();
+  // Ensure CSG preserves material group indices across all boolean cuts
+  this.evaluator.useGroups = true;
 
-          // Handle start point intersections
-          if ((wallMesh as any).startPointWallIds && (wallMesh as any).startPointWallIds.length > 0) {
-            (wallMesh as any).startPointWallIds.forEach((id: string) => {
-              const intersectingMesh = this.wallGroup!.children.find(child => (child as any).wall_id === id);
-              if (intersectingMesh) {
-                let tailVector = new THREE.Vector3((wallMesh as any).endPoint.x, 0, (wallMesh as any).endPoint.z);
-                let intersectionPoint = new THREE.Vector3((wallMesh as any).startPoint.x, 0, (wallMesh as any).startPoint.z);
-                const trimmer_transform = this.getFarthestFaceTransform(tailVector, intersectionPoint, intersectingMesh as THREE.Mesh, wallMesh as THREE.Mesh);
+  // Examine every mesh in our group
+  if (this.wallGroup) {
+    this.wallGroup.traverse((wallMesh) => {
+      if (wallMesh instanceof THREE.Mesh && !(wallMesh instanceof THREE.Group)) {
+        // Preserve original face materials by passing wallMesh.material directly
+        let wallBrush = new Brush(wallMesh.geometry, wallMesh.material);
+        wallBrush.position.copy(wallMesh.position);
+        wallBrush.quaternion.copy(wallMesh.quaternion);
+        wallBrush.scale.copy(wallMesh.scale);
+        wallBrush.updateMatrixWorld();
 
-                const trimmerBrush = new Brush(this.trimmerGeom);
-                trimmerBrush.position.copy(trimmer_transform.position);
-                trimmerBrush.quaternion.copy(trimmer_transform.quaternion);
-                trimmerBrush.updateMatrixWorld();
+        // Handle start point intersections
+        if ((wallMesh as any).startPointWallIds && (wallMesh as any).startPointWallIds.length > 0) {
+          (wallMesh as any).startPointWallIds.forEach((id: string) => {
+            const intersectingMesh = this.wallGroup!.children.find(child => (child as any).wall_id === id);
+            if (intersectingMesh) {
+              let tailVector = new THREE.Vector3((wallMesh as any).endPoint.x, 0, (wallMesh as any).endPoint.z);
+              let intersectionPoint = new THREE.Vector3((wallMesh as any).startPoint.x, 0, (wallMesh as any).startPoint.z);
+              const trimmer_transform = this.getFarthestFaceTransform(tailVector, intersectionPoint, intersectingMesh as THREE.Mesh, wallMesh as THREE.Mesh);
 
-                // Evaluate subtraction and update wallBrush
-                wallBrush = this.evaluator.evaluate(wallBrush, trimmerBrush, SUBTRACTION);
-                wallBrush.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
-              }
-            });
-          } else {
-            // Flush cut start point
-            const start = (wallMesh as any).startPoint;
-            const end = (wallMesh as any).endPoint;
-            if (start && end) {
-              const dir = new THREE.Vector3(start.x - end.x, 0, start.z - end.z).normalize();
-              const trimmerCenter = new THREE.Vector3(start.x, 0, start.z).add(dir.clone().multiplyScalar(this.trimmerSize / 2));
-
-              const trimmerBrush = new Brush(this.trimmerGeom);
-              trimmerBrush.position.copy(trimmerCenter);
-              trimmerBrush.quaternion.copy(wallMesh.quaternion);
+              const trimmerBrush = new Brush(this.trimmerGeom, this.CUT_BRUSH_MATERIAL);
+              trimmerBrush.position.copy(trimmer_transform.position);
+              trimmerBrush.quaternion.copy(trimmer_transform.quaternion);
               trimmerBrush.updateMatrixWorld();
 
               wallBrush = this.evaluator.evaluate(wallBrush, trimmerBrush, SUBTRACTION);
-              wallBrush.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
             }
+          });
+        } else {
+          // Flush cut start point
+          const start = (wallMesh as any).startPoint;
+          const end = (wallMesh as any).endPoint;
+          if (start && end) {
+            const dir = new THREE.Vector3(start.x - end.x, 0, start.z - end.z).normalize();
+            const trimmerCenter = new THREE.Vector3(start.x, 0, start.z).add(dir.clone().multiplyScalar(this.trimmerSize / 2));
+
+            const trimmerBrush = new Brush(this.trimmerGeom, this.CUT_BRUSH_MATERIAL);
+            trimmerBrush.position.copy(trimmerCenter);
+            trimmerBrush.quaternion.copy(wallMesh.quaternion);
+            trimmerBrush.updateMatrixWorld();
+
+            wallBrush = this.evaluator.evaluate(wallBrush, trimmerBrush, SUBTRACTION);
           }
+        }
 
-          // Handle end point intersections
-          if ((wallMesh as any).endPointWallIds && (wallMesh as any).endPointWallIds.length > 0) {
-            (wallMesh as any).endPointWallIds.forEach((id: string) => {
-              const intersectingMesh = this.wallGroup!.children.find(child => (child as any).wall_id === id);
-              if (intersectingMesh) {
-                let tailVector = new THREE.Vector3((wallMesh as any).startPoint.x, 0, (wallMesh as any).startPoint.z);
-                let intersectionPoint = new THREE.Vector3((wallMesh as any).endPoint.x, 0, (wallMesh as any).endPoint.z);
-                const trimmer_transform = this.getFarthestFaceTransform(tailVector, intersectionPoint, intersectingMesh as THREE.Mesh, wallMesh as THREE.Mesh);
+        // Handle end point intersections
+        if ((wallMesh as any).endPointWallIds && (wallMesh as any).endPointWallIds.length > 0) {
+          (wallMesh as any).endPointWallIds.forEach((id: string) => {
+            const intersectingMesh = this.wallGroup!.children.find(child => (child as any).wall_id === id);
+            if (intersectingMesh) {
+              let tailVector = new THREE.Vector3((wallMesh as any).startPoint.x, 0, (wallMesh as any).startPoint.z);
+              let intersectionPoint = new THREE.Vector3((wallMesh as any).endPoint.x, 0, (wallMesh as any).endPoint.z);
+              const trimmer_transform = this.getFarthestFaceTransform(tailVector, intersectionPoint, intersectingMesh as THREE.Mesh, wallMesh as THREE.Mesh);
 
-                const trimmerBrush = new Brush(this.trimmerGeom);
-                trimmerBrush.position.copy(trimmer_transform.position);
-                trimmerBrush.quaternion.copy(trimmer_transform.quaternion);
-                trimmerBrush.updateMatrixWorld();
-
-                wallBrush = this.evaluator.evaluate(wallBrush, trimmerBrush, SUBTRACTION);
-                wallBrush.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
-              }
-            });
-          } else {
-            // Flush cut end point
-            const start = (wallMesh as any).startPoint;
-            const end = (wallMesh as any).endPoint;
-            if (start && end) {
-              const dir = new THREE.Vector3(end.x - start.x, 0, end.z - start.z).normalize();
-              const trimmerCenter = new THREE.Vector3(end.x, 0, end.z).add(dir.clone().multiplyScalar(this.trimmerSize / 2));
-
-              const trimmerBrush = new Brush(this.trimmerGeom);
-              trimmerBrush.position.copy(trimmerCenter);
-              trimmerBrush.quaternion.copy(wallMesh.quaternion);
+              const trimmerBrush = new Brush(this.trimmerGeom, this.CUT_BRUSH_MATERIAL);
+              trimmerBrush.position.copy(trimmer_transform.position);
+              trimmerBrush.quaternion.copy(trimmer_transform.quaternion);
               trimmerBrush.updateMatrixWorld();
 
               wallBrush = this.evaluator.evaluate(wallBrush, trimmerBrush, SUBTRACTION);
-              wallBrush.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
             }
+          });
+        } else {
+          // Flush cut end point
+          const start = (wallMesh as any).startPoint;
+          const end = (wallMesh as any).endPoint;
+          if (start && end) {
+            const dir = new THREE.Vector3(end.x - start.x, 0, end.z - start.z).normalize();
+            const trimmerCenter = new THREE.Vector3(end.x, 0, end.z).add(dir.clone().multiplyScalar(this.trimmerSize / 2));
+
+            const trimmerBrush = new Brush(this.trimmerGeom, this.CUT_BRUSH_MATERIAL);
+            trimmerBrush.position.copy(trimmerCenter);
+            trimmerBrush.quaternion.copy(wallMesh.quaternion);
+            trimmerBrush.updateMatrixWorld();
+
+            wallBrush = this.evaluator.evaluate(wallBrush, trimmerBrush, SUBTRACTION);
           }
+        }
 
           // Handle windows
           if ((wallMesh as any).windows && (wallMesh as any).windows.length > 0) {
             (wallMesh as any).windows.forEach((window: any) => {
               const windowWidth = window.width * (Config.WORLD_SCALE as number);
-              const windowHeight = 120 * (Config.WORLD_SCALE as number);
-              const windowY = 140 * (Config.WORLD_SCALE as number);
+              const windowHeight = window.height * (Config.WORLD_SCALE as number);
+              const windowBottom = window.windowFloorDistance ?? Config.DEFAULT_WINDOW_FLOOR_DISTANCE;
+              const windowY = (windowBottom + window.height / 2) * (Config.WORLD_SCALE as number)
               const trimmerDepth = 100 * (Config.WORLD_SCALE as number);
 
-              const windowGeom = new THREE.BoxGeometry(windowWidth, windowHeight, trimmerDepth);
-              const windowBrush = new Brush(windowGeom);
+            const windowGeom = new THREE.BoxGeometry(windowWidth, windowHeight, trimmerDepth);
+            const windowBrush = new Brush(windowGeom,this.CUT_BRUSH_MATERIAL);
 
-              const start = (wallMesh as any).startPoint;
-              const end = (wallMesh as any).endPoint;
-              const dx = end.x - start.x;
-              const dz = end.z - start.z;
-              const length = Math.sqrt(dx * dx + dz * dz);
+            const start = (wallMesh as any).startPoint;
+            const end = (wallMesh as any).endPoint;
+            const dx = end.x - start.x;
+            const dz = end.z - start.z;
+            const length = Math.sqrt(dx * dx + dz * dz);
 
-              if (length > 0) {
-                const halfWidthK = window.width / 2;
-                const halfWidth3D = halfWidthK * (Config.WORLD_SCALE as number);
-                const wallLengthK = length / ((Config.WORLD_SCALE as number) * this.unit_conversion_factor);
+            if (length > 0) {
+              const halfWidthK = window.width / 2;
+              const halfWidth3D = halfWidthK * (Config.WORLD_SCALE as number);
+              const wallLengthK = length / ((Config.WORLD_SCALE as number) * this.unit_conversion_factor);
 
-                // Range Mapping: Map the 2D range [halfWidthK, Lk - halfWidthK] 
-                // to the 3D range [halfWidth3D, L3d - halfWidth3D]
-                let t = 0;
-                const rangeK = wallLengthK - 2 * halfWidthK;
-                if (rangeK > 0) {
-                  t = (window.offset - halfWidthK) / rangeK;
-                } else {
-                // If wall is too short, center the item
-                  t = 0.5;
-                }
-
-                const offset3D = halfWidth3D + t * (length - 2 * halfWidth3D);
-
-                const windowPos = new THREE.Vector3(
-                  start.x + (offset3D / length) * dx,
-                  windowY,
-                  start.z + (offset3D / length) * dz
-                );
-
-                windowBrush.position.copy(windowPos);
-                windowBrush.quaternion.copy(wallMesh.quaternion);
-                windowBrush.updateMatrixWorld();
-
-                this.doorWindows.push({
-                  type: FixtureType.WINDOW,
-                  position: windowPos.clone(),
-                  quaternion: wallMesh.quaternion.clone(),
-                  width: windowWidth,
-                  height: windowHeight,
-                  id: window.id,
-                  wallId: (wallMesh as any).wall_id
-                });
-
-                wallBrush = this.evaluator.evaluate(wallBrush, windowBrush, SUBTRACTION);
-                wallBrush.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
+              let t = 0;
+              const rangeK = wallLengthK - 2 * halfWidthK;
+              if (rangeK > 0) {
+                t = (window.offset - halfWidthK) / rangeK;
+              } else {
+                t = 0.5;
               }
-            });
-          }
+
+              const offset3D = halfWidth3D + t * (length - 2 * halfWidth3D);
+
+              const windowPos = new THREE.Vector3(
+                start.x + (offset3D / length) * dx,
+                windowY,
+                start.z + (offset3D / length) * dz
+              );
+
+              windowBrush.position.copy(windowPos);
+              windowBrush.quaternion.copy(wallMesh.quaternion);
+              windowBrush.updateMatrixWorld();
+
+              this.doorWindows.push({
+                type: FixtureType.WINDOW,
+                position: windowPos.clone(),
+                quaternion: wallMesh.quaternion.clone(),
+                width: windowWidth,
+                height: windowHeight,
+                id: window.id,
+                wallId: (wallMesh as any).wall_id
+              });
+
+              wallBrush = this.evaluator.evaluate(wallBrush, windowBrush, SUBTRACTION);
+            }
+          });
+        }
 
           // Handle doors
           if ((wallMesh as any).doors && (wallMesh as any).doors.length > 0) {
             (wallMesh as any).doors.forEach((door: any) => {
               const doorWidth = door.width * (Config.WORLD_SCALE as number);
-              const doorHeight = 210 * (Config.WORLD_SCALE as number);
-              const doorY = 105 * (Config.WORLD_SCALE as number);
+              const doorHeight = door.height * (Config.WORLD_SCALE as number);
+              const doorY = (door.height / 2) * (Config.WORLD_SCALE as number);
               const trimmerDepth = 100 * (Config.WORLD_SCALE as number);
 
-              const doorGeom = new THREE.BoxGeometry(doorWidth, doorHeight, trimmerDepth);
-              const doorBrush = new Brush(doorGeom);
+            const doorGeom = new THREE.BoxGeometry(doorWidth, doorHeight, trimmerDepth);
+            const doorBrush = new Brush(doorGeom, this.CUT_BRUSH_MATERIAL);
 
-              const start = (wallMesh as any).startPoint;
-              const end = (wallMesh as any).endPoint;
-              const dx = end.x - start.x;
-              const dz = end.z - start.z;
-              const length = Math.sqrt(dx * dx + dz * dz);
+            const start = (wallMesh as any).startPoint;
+            const end = (wallMesh as any).endPoint;
+            const dx = end.x - start.x;
+            const dz = end.z - start.z;
+            const length = Math.sqrt(dx * dx + dz * dz);
 
-                            if (length > 0) {
-                                const halfWidthK = door.width / 2;
-                                const halfWidth3D = halfWidthK * (Config.WORLD_SCALE as number);
-                                const wallLengthK = length / ((Config.WORLD_SCALE as number) * this.unit_conversion_factor);
+            if (length > 0) {
+              const halfWidthK = door.width / 2;
+              const halfWidth3D = halfWidthK * (Config.WORLD_SCALE as number);
+              const wallLengthK = length / ((Config.WORLD_SCALE as number) * this.unit_conversion_factor);
 
-                // Range Mapping: Map the 2D range [halfWidthK, Lk - halfWidthK] 
-                // to the 3D range [halfWidth3D, L3d - halfWidth3D]
-                let t = 0;
-                const rangeK = wallLengthK - 2 * halfWidthK;
-                if (rangeK > 0) {
-                  t = (door.offset - halfWidthK) / rangeK;
-                } else {
-                // If wall is too short, center the item
-                  t = 0.5;
-                }
-
-                const offset3D = halfWidth3D + t * (length - 2 * halfWidth3D);
-
-                const doorPos = new THREE.Vector3(
-                  start.x + (offset3D / length) * dx,
-                  doorY,
-                  start.z + (offset3D / length) * dz
-                );
-
-                doorBrush.position.copy(doorPos);
-                doorBrush.quaternion.copy(wallMesh.quaternion);
-                doorBrush.updateMatrixWorld();
-
-                this.doorWindows.push({
-                  type: FixtureType.DOOR,
-                  position: doorPos.clone(),
-                  quaternion: wallMesh.quaternion.clone(),
-                  width: doorWidth,
-                  height: doorHeight,
-                  id: door.id,
-                  wallId: (wallMesh as any).wall_id
-                });
-
-                wallBrush = this.evaluator.evaluate(wallBrush, doorBrush, SUBTRACTION);
-                wallBrush.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
+              let t = 0;
+              const rangeK = wallLengthK - 2 * halfWidthK;
+              if (rangeK > 0) {
+                t = (door.offset - halfWidthK) / rangeK;
+              } else {
+                t = 0.5;
               }
-            });
-          }
 
-          // Preserve metadata
-          (wallBrush as any).startPoint = (wallMesh as any).startPoint;
-          (wallBrush as any).endPoint = (wallMesh as any).endPoint;
-          (wallBrush as any).startPointWallIds = (wallMesh as any).startPointWallIds;
-          (wallBrush as any).endPointWallIds = (wallMesh as any).endPointWallIds;
-          (wallBrush as any).wall_id = (wallMesh as any).wall_id;
-          wallBrush.userData = { ...wallMesh.userData };
-          wallBrush.userData.defaultMaterial = wallBrush.material;
-          this.trimmedWallGroup.add(wallBrush);
+              const offset3D = halfWidth3D + t * (length - 2 * halfWidth3D);
+
+              const doorPos = new THREE.Vector3(
+                start.x + (offset3D / length) * dx,
+                doorY,
+                start.z + (offset3D / length) * dz
+              );
+
+              doorBrush.position.copy(doorPos);
+              doorBrush.quaternion.copy(wallMesh.quaternion);
+              doorBrush.updateMatrixWorld();
+
+              this.doorWindows.push({
+                type: FixtureType.DOOR,
+                position: doorPos.clone(),
+                quaternion: wallMesh.quaternion.clone(),
+                width: doorWidth,
+                height: doorHeight,
+                id: door.id,
+                wallId: (wallMesh as any).wall_id
+              });
+
+              wallBrush = this.evaluator.evaluate(wallBrush, doorBrush, SUBTRACTION);
+            }
+          });
         }
-      });
-    }
 
-    return this.trimmedWallGroup;
+        // Preserve metadata
+        (wallBrush as any).startPoint = (wallMesh as any).startPoint;
+        (wallBrush as any).endPoint = (wallMesh as any).endPoint;
+        (wallBrush as any).startPointWallIds = (wallMesh as any).startPointWallIds;
+        (wallBrush as any).endPointWallIds = (wallMesh as any).endPointWallIds;
+        (wallBrush as any).wall_id = (wallMesh as any).wall_id;
+        (wallBrush as any).windows = (wallMesh as any).windows;
+        (wallBrush as any).doors = (wallMesh as any).doors;
+        (wallBrush as any).currentHeight = (wallMesh as any).currentHeight;
+        wallBrush.userData = { ...wallMesh.userData };
+        this.trimmedWallGroup.add(wallBrush);
+      }
+    });
   }
+
+  return this.trimmedWallGroup;
+}
 
   /**
    * Retrieves the list of parsed door and window placements.
@@ -438,7 +476,7 @@ export class WallCutter {
    */
   public subtractGroupFromMesh(
     meshA: THREE.Mesh,
-    group: THREE.Group
+    group: THREE.Group,
   ): THREE.Mesh {
     meshA.updateMatrixWorld(true);
     group.updateMatrixWorld(true);
@@ -470,14 +508,11 @@ export class WallCutter {
       currentBrush = evaluator.evaluate(
         currentBrush,
         subtractBrush,
-        SUBTRACTION
+        SUBTRACTION,
       );
     }
 
-    const resultMesh = new THREE.Mesh(
-      currentBrush.geometry,
-      meshA.material
-    );
+    const resultMesh = new THREE.Mesh(currentBrush.geometry, meshA.material);
 
     resultMesh.geometry.computeVertexNormals();
 

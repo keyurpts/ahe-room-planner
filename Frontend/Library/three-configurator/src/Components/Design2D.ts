@@ -1,7 +1,7 @@
 import Konva from "konva";
 import { v4 as uuidv4 } from 'uuid';
 import { Floorplan } from "../Model/Floorplan";
-import { NodeName, VisualStyle, Config, RoomEditorMode, LengthUnit, normalizeLengthUnit } from "../Constants";
+import { NodeName, VisualStyle, Config, RoomEditorMode } from "../Constants";
 import { RoomDetector } from "../utils/RoomDetector";
 import type { Room } from "../utils/RoomDetector";
 import type { Predefined2DShapes } from "../shapeTemplates";
@@ -28,6 +28,8 @@ export interface WindowData {
   id: string;
   offset: number;
   width: number;
+  height: number;
+  windowFloorDistance: number;
   isInvalid?: boolean;
 }
 
@@ -35,6 +37,7 @@ export interface DoorData {
   id: string;
   offset: number;
   width: number;
+  height: number,
   isInvalid?: boolean;
 }
 
@@ -112,12 +115,6 @@ export class Design2D {
   private unit_conversion_factor: number = 1;
 
   /**
-   * Current unit for displaying wall lengths ('mm', 'cm', 'inch', 'foot').
-   * Default is 'mm' (millimeters).
-   */
-  private currentUnit: LengthUnit = LengthUnit.MM;
-
-  /**
    * Stores the last placed point while drawing walls
    */
   private lastPoint: { x: number; y: number } | null = null;
@@ -178,6 +175,11 @@ export class Design2D {
   private isAxisSnappingEnabled: boolean = true;
 
   /**
+   * Flag to track if wall dimensions/measurements are visible globally
+   */
+  private areDimensionsVisible: boolean = true;
+
+  /**
    * Currently selected wall groups in EDIT mode
    */
   private selectedWallGroups: Konva.Group[] = [];
@@ -225,6 +227,7 @@ export class Design2D {
    * Preview group container for rendering layout preview shapes
    */
   private previewGroup: Konva.Group | null = null;
+
 
   /**
    * When non-null, walls in their default (unselected/unhovered) state
@@ -541,6 +544,23 @@ export class Design2D {
   }
 
   /**
+   * Cancels any active predefined shape placement.
+   */
+  private cancelPredefinedShapePlacement() {
+    if (this.previewGroup) {
+      this.previewGroup.destroy();
+      this.previewGroup = null;
+
+      this.stage.off(".preview");
+      const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+      if (floorplanLayer) {
+        floorplanLayer.draw();
+      }
+      this.detectRooms();
+    }
+  }
+
+  /**
    * Listener for mousedown events on the stage.
    */
   private handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -554,17 +574,7 @@ export class Design2D {
       this.lastPanPointerPosition = this.stage.getPointerPosition();
 
       // discard predefined shape placement on right click
-      if (this.previewGroup) {
-        this.previewGroup.destroy();
-        this.previewGroup = null;
-
-        this.stage.off(".preview");
-        const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
-        if (floorplanLayer) {
-          floorplanLayer.draw();
-        }
-        this.detectRooms();
-      }
+      this.cancelPredefinedShapePlacement();
     } else if (e.evt.button === 0) {
       // Interaction Logic on left click
       this.mouseMoved = false;
@@ -855,9 +865,8 @@ export class Design2D {
 
   /**
    * Handles placing a point or creating a wall in DRAW mode.
-   * Automatically exits draw mode when a closed room is completed.
    */
-  private async handleDrawMode(worldPos: { x: number; y: number }, isDoubleClick: boolean = false) {
+  private handleDrawMode(worldPos: { x: number; y: number }, isDoubleClick: boolean = false) {
     if (!this.lastPoint && !this.isDrawModeExplicitlyEnabled && !isDoubleClick) {
       return;
     }
@@ -907,6 +916,12 @@ export class Design2D {
 
     // If there was a previous point, create a wall between them.
     if (this.lastPoint) {
+      // Prevent creating zero-length walls or extremely short walls
+      const distance = Math.hypot(finalX - this.lastPoint.x, finalY - this.lastPoint.y);
+      if (distance < 0.1) {
+        return;
+      }
+
       // Check for overlap before creating (collinear segments) or check whether the wall is getting passed through doors and windows
       if (this.isWallOverlapping(this.lastPoint.x, this.lastPoint.y, finalX, finalY) ||
         this.isWallThroughOpening(this.lastPoint.x, this.lastPoint.y, finalX, finalY)
@@ -914,10 +929,6 @@ export class Design2D {
         // Block creation and return without updating lastPoint or finishing the line
         return;
       }
-
-      // Capture room count before creating the new wall
-      const roomsBefore = await this.detectRooms();
-      const roomCountBefore = roomsBefore.length;
 
       const wallGroup = this.floorplan.newWall(
         this.lastPoint.x,
@@ -939,16 +950,7 @@ export class Design2D {
       }
 
       this.draw(); // Ensure walls are rendered before detection
-      const roomsAfter = await this.detectRooms();
-      const roomCountAfter = roomsAfter.length;
-
-      // If a new closed room was formed, exit draw mode automatically
-      if (roomCountAfter > roomCountBefore) {
-        this.lastPoint = null;
-        this.setMode(RoomEditorMode.DRAW, false);
-        this.draw();
-        return;
-      }
+      this.detectRooms();
     }
 
     this.lastPoint = { x: finalX, y: finalY };
@@ -964,6 +966,7 @@ export class Design2D {
 
     const shape = this.stage.getIntersection(pointerPos as any);
     if (shape && shape.name() === NodeName.DIMENSION_TEXT) {
+      if (this.mode === RoomEditorMode.DRAW || this.mode === RoomEditorMode.WINDOW || this.mode === RoomEditorMode.DOOR) return;
       const textNode = shape as Konva.Text;
       const currentValue = textNode.text();
       const dimensionGroup = textNode.getParent() as Konva.Group;
@@ -976,12 +979,43 @@ export class Design2D {
           isVertical,
           clientX: e.evt.clientX,
           clientY: e.evt.clientY,
-          unit: this.currentUnit,
           setNewWallDimension: (newValue: number, pointToChange: string) => {
             this.editWallDimensions(wallGroup, newValue, pointToChange);
           }
         }
       )
+      return;
+    }
+    if (shape && shape.name() === NodeName.ROOM_LABEL) {
+      const label = shape as Konva.Text;
+
+      const roomId = label.getAttr("roomId");
+
+      if (!roomId) {
+        return;
+      }
+
+      const fillLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
+      if (!fillLayer) return;
+
+      const roomGroup = fillLayer.findOne(`#${roomId}`) as Konva.Group | undefined;
+
+      if (!roomGroup) {
+        return;
+      }
+
+      const currentName = roomGroup.getAttr("roomName");
+
+      Events.emit(ConfiguratorEventType.EDIT_ROOM_NAME, {
+        currentValue: currentName,
+        clientX: e.evt.clientX,
+        clientY: e.evt.clientY,
+
+        setNewRoomName: (newName: string) => {
+          this.setRoomName(roomGroup, label, newName);
+        },
+      });
+
       return;
     }
     if (e.evt.button === 0) {
@@ -1052,11 +1086,8 @@ export class Design2D {
     const ux = dx / currentLength;
     const uy = dy / currentLength;
 
-    // Convert input newLength (in currentUnit) to cm first
-    const lengthInCm = this.convertToCm(newLength, this.currentUnit);
-
-    // Convert to konva unit (1 konva unit = 1 cm)
-    newLength = lengthInCm / ((Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor);
+    // Convert to konva unit
+    newLength = newLength / ((Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor);
     // Final wall coordinates
     let startX = x1;
     let startY = y1;
@@ -1167,6 +1198,40 @@ export class Design2D {
   }
 
   /**
+   * Edits the room name based on the new name.
+   * @param roomGroup - The Konva group representing the room.
+   * @param label - The new name in physical units.
+   * @param newName - The edit reference point.
+   * @returns Void.
+   */
+  private setRoomName(
+    roomGroup: Konva.Group,
+    label: Konva.Text,
+    newName: string
+  ): void {
+    const trimmedName = newName.trim();
+
+    if (!trimmedName) {
+      return;
+    }
+
+    // Update label
+    label.text(trimmedName);
+
+    // Keep label centered
+    label.offsetX(label.width() / 2);
+    label.offsetY(label.height() / 2);
+
+    roomGroup.setAttr("roomName", trimmedName);
+    roomGroup.setAttr('isCustomRoom', true);
+
+    label.setAttr("roomName", trimmedName);
+
+    this.stage.batchDraw();
+    this.detectRooms()
+  }
+
+  /**
    * Handle window mode.
    *
    * @param {{ x} worldPos - Parameter description.
@@ -1213,6 +1278,8 @@ export class Design2D {
           id: uuidv4(),
           offset: offset,
           width: windowWidth,
+          height: Config.DEFAULT_WINDOW_HEIGHT as number,
+          windowFloorDistance: Config.DEFAULT_WINDOW_FLOOR_DISTANCE as number,
         });
 
         this.renderWindows(wallGroup, userData);
@@ -1267,6 +1334,7 @@ export class Design2D {
           id: uuidv4(),
           offset: offset,
           width: doorWidth,
+          height: Config.DEFAULT_DOOR_HEIGHT as number
         });
 
         this.renderDoors(wallGroup, userData);
@@ -2558,7 +2626,7 @@ export class Design2D {
     const text = new Konva.Text({
       x: midX,
       y: midY,
-      text: this.formatWallLength(length),
+      text: (length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor).toFixed(1) + " " + "cm", //scaled and with dynamic unit suffix
       fontSize: VisualStyle.DIMENSION_FONT_SIZE as number,
       fontFamily: VisualStyle.DIMENSION_FONT_FAMILY as string,
       fill: color,
@@ -2742,6 +2810,8 @@ export class Design2D {
    * @param active Whether to activate or deactivate the mode
    */
   public setMode(mode: RoomEditorMode, active: boolean, isExplicit: boolean = false) {
+    this.cancelPredefinedShapePlacement();
+
     if (active) {
       this.mode = mode;
       if (mode === RoomEditorMode.DRAW) {
@@ -2852,6 +2922,7 @@ export class Design2D {
    * @param cmValue The number of centimeters represented by one grid.
    */
   public setKonvaUnitScale(cmValue: number): void {
+    this.cancelPredefinedShapePlacement();
 
 
     this.unit_conversion_factor = cmValue / 30;    // 30 cm is the default grid size
@@ -2875,84 +2946,6 @@ export class Design2D {
     this.refreshDoors();
     this.refreshPreviewWindow();
     this.refreshPreviewDoor();
-  }
-
-  /**
-   * Sets the unit for displaying wall lengths and dimensions on the 2D canvas.
-   * @param unit The unit to display ('mm', 'cm', 'inch', 'foot').
-   */
-  public setLengthUnit(unit: LengthUnit | string): void {
-    this.currentUnit = normalizeLengthUnit(unit);
-    this.refreshDimensions();
-    this.refreshWindows();
-    this.refreshDoors();
-  }
-
-  /**
-   * Gets the current display length unit.
-   */
-  public getLengthUnit(): LengthUnit {
-    return this.currentUnit;
-  }
-
-  /**
-   * Alias for setLengthUnit.
-   */
-  public setUnit(unit: LengthUnit | string): void {
-    this.setLengthUnit(unit);
-  }
-
-  /**
-   * Alias for getLengthUnit.
-   */
-  public getUnit(): LengthUnit {
-    return this.getLengthUnit();
-  }
-
-  /**
-   * Converts a length in cm to the specified or current display unit.
-   * 1 Konva unit = 1 cm.
-   */
-  public convertFromCm(lengthInCm: number, unit: LengthUnit = this.currentUnit): { value: number; suffix: string } {
-    switch (unit) {
-      case LengthUnit.MM:
-        return { value: lengthInCm * 10, suffix: "mm" };
-      case LengthUnit.CM:
-        return { value: lengthInCm, suffix: "cm" };
-      case LengthUnit.INCH:
-        return { value: lengthInCm / 2.54, suffix: "inch" };
-      case LengthUnit.FOOT:
-        return { value: lengthInCm / 30.48, suffix: "foot" };
-      default:
-        return { value: lengthInCm * 10, suffix: "mm" };
-    }
-  }
-
-  /**
-   * Converts a value in the specified or current display unit back to cm.
-   */
-  public convertToCm(value: number, unit: LengthUnit = this.currentUnit): number {
-    switch (unit) {
-      case LengthUnit.MM:
-        return value / 10;
-      case LengthUnit.CM:
-        return value;
-      case LengthUnit.INCH:
-        return value * 2.54;
-      case LengthUnit.FOOT:
-        return value * 30.48;
-      default:
-        return value / 10;
-    }
-  }
-
-  /**
-   * Formats a raw Konva length into the current display unit string.
-   */
-  public formatWallLength(length: number): string {
-    const lengthInCm = length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor;
-    const { value, suffix } = this.convertFromCm(lengthInCm, this.currentUnit);
-    return `${value.toFixed(1)} ${suffix}`;
   }
 
   /**
@@ -3103,29 +3096,11 @@ export class Design2D {
         const length = Math.sqrt(dx * dx + dy * dy);
 
         // update the text with new unit
-        node.text(this.formatWallLength(length));
+        node.text((length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor).toFixed(1) + " " + "cm");
 
         // Adjust offset if text width changed
         node.offsetX(node.width() / 2);
         node.offsetY(node.height() / 2);
-
-        // Adjust gap for dimension lines if present
-        const textPadding = Config.DIMENSION_TEXT_PADDING as number;
-        const gap = node.width() + textPadding;
-        const leftLine = dimensionGroup.findOne(`.${NodeName.DIMENSION_LEFT_LINE}`) as Konva.Line;
-        const rightLine = dimensionGroup.findOne(`.${NodeName.DIMENSION_RIGHT_LINE}`) as Konva.Line;
-
-        if (leftLine && rightLine && length > gap) {
-          const dimData = this.calculateDimensionData(x1, y1, x2, y2);
-          if (dimData) {
-            const ux = dx / length;
-            const uy = dy / length;
-            const gapStartDist = (length - gap) / 2;
-            const gapEndDist = (length + gap) / 2;
-            leftLine.points([dimData.sx, dimData.sy, dimData.sx + ux * gapStartDist, dimData.sy + uy * gapStartDist]);
-            rightLine.points([dimData.sx + ux * gapEndDist, dimData.sy + uy * gapEndDist, dimData.ex, dimData.ey]);
-          }
-        }
       }
     });
 
@@ -3136,6 +3111,7 @@ export class Design2D {
    * Restores visibility for all wall dimensions in the floorplan layer.
    */
   private restoreWallDimensions() {
+    if (!this.areDimensionsVisible) return;
     this.getLayer(NodeName.FLOORPLAN_LAYER)?.find(`.${NodeName.DIMENSION_GROUP}`).forEach(node => {
       node.visible(true);
     });
@@ -3265,6 +3241,7 @@ export class Design2D {
    * @returns The current state of grid visibility
    */
   public enableGrid(visible: boolean): boolean {
+    this.cancelPredefinedShapePlacement();
     this.gridGroup.visible(visible);
     // If grid is enabled, hide the background image to avoid visual clutter
     if (visible) this.backgroundRect.visible(false);
@@ -3279,6 +3256,7 @@ export class Design2D {
    * @returns The current state of axis snapping
    */
   public activeSnapping(enabled: boolean): boolean {
+    this.cancelPredefinedShapePlacement();
     this.isAxisSnappingEnabled = enabled;
     return this.isAxisSnappingEnabled;
   }
@@ -3289,6 +3267,8 @@ export class Design2D {
    * @returns The new visibility state of the dimensions.
    */
   public toggleDimensions(visible: boolean): boolean {
+    this.cancelPredefinedShapePlacement();
+    this.areDimensionsVisible = visible;
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     floorplanLayer?.find(`.${NodeName.DIMENSION_GROUP}`).forEach((node) => {
       node.visible(visible);
@@ -3320,8 +3300,7 @@ export class Design2D {
     const fillLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
     const labelLayer = this.getLayer(NodeName.ROOM_LABEL_LAYER);
 
-    if (fillLayer) RoomDetector.updateRoomFills(rooms, fillLayer);
-    if (labelLayer) RoomDetector.updateRoomLabels(rooms, labelLayer);
+    if (fillLayer && labelLayer) RoomDetector.updateRoomFills(rooms, fillLayer, labelLayer);
 
     return rooms;
   }
@@ -3342,19 +3321,22 @@ export class Design2D {
    * Exports the 2D floorplan layout, detected rooms, house boundaries, and unit scale.
    * @returns A promise resolving to the floorplan data.
    */
-  public async get2ddata(): Promise<{ layer: any, rooms: any[], houseBoundary: Room | null, unit_conversion_factor: number }> {
+  public async get2ddata(): Promise<{ layer: any, roomsLayer: any, houseBoundary: Room | null, unit_conversion_factor: number }> {
+    this.cancelPredefinedShapePlacement();
     const layer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    const roomsLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
     if (!layer) {
-      return { layer: null, rooms: [], houseBoundary: null, unit_conversion_factor: this.unit_conversion_factor };
+      return { layer: null, roomsLayer: null, houseBoundary: null, unit_conversion_factor: this.unit_conversion_factor };
     } else {
-      const rooms = await this.detectRooms();
+      await this.detectRooms();
       const houseBoundary = await this.getHouseBoundary();
 
       const jsonString = layer.toJSON();
+      const roomsJson = roomsLayer ? roomsLayer.toJSON() : "{}";
 
       return {
         layer: JSON.parse(jsonString),
-        rooms: rooms,
+        roomsLayer: roomsLayer ? JSON.parse(roomsJson) : {},
         houseBoundary: houseBoundary,
         unit_conversion_factor: this.unit_conversion_factor
       };
@@ -4145,10 +4127,10 @@ export class Design2D {
           if (!isOverlapping) {
             if (detection.label === "Window") {
               if (!userData.windows) userData.windows = [];
-              userData.windows.push({ id: uuidv4(), offset: offset, width: itemWidth });
+              userData.windows.push({ id: uuidv4(), offset: offset, width: itemWidth, height: Config.DEFAULT_WINDOW_HEIGHT as number, windowFloorDistance: Config.DEFAULT_WINDOW_FLOOR_DISTANCE as number });
             } else if (detection.label === "Door") {
               if (!userData.doors) userData.doors = [];
-              userData.doors.push({ id: uuidv4(), offset: offset, width: itemWidth });
+              userData.doors.push({ id: uuidv4(), offset: offset, width: itemWidth, height: Config.DEFAULT_DOOR_HEIGHT as number });
             }
           }
         }
@@ -4166,6 +4148,7 @@ export class Design2D {
    * Automatically scales and centers the drawing to fit the canvas view.
    */
   public fitLayout() {
+    this.cancelPredefinedShapePlacement();
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (!floorplanLayer || floorplanLayer.children.length === 0) return;
 
@@ -4269,7 +4252,9 @@ export class Design2D {
           }
         }
       }
-      wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+      if (this.areDimensionsVisible) {
+        wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+      }
 
       group.destroy();
       this.selectedOpening = null;
@@ -4385,7 +4370,9 @@ export class Design2D {
     group.findOne(`.${NodeName.OPENING_DIMENSION_GROUP}`)?.hide();
 
     const wallGroup = this.getWallGroupForOpening(group, type);
-    wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+    if (this.areDimensionsVisible) {
+      wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+    }
 
     this.selectedOpening = null;
     this.stage.batchDraw();
@@ -4876,7 +4863,7 @@ export class Design2D {
   /**
    * Exports the current Konva stage as a JSON file download.
    */
-  public exportJson(): any {
+  public exportJson(): void {
     const json = this.stage.toJSON();
 
     const blob = new Blob([json], { type: "application/json" });
@@ -4885,11 +4872,9 @@ export class Design2D {
     const a = document.createElement("a");
     a.href = url;
     a.download = "floorplan.json";
-    // a.click();
+    a.click();
 
     URL.revokeObjectURL(url);
-
-    return json
   }
 
   /**
@@ -4930,7 +4915,13 @@ export class Design2D {
       this.previewWindow = interactionLayer.findOne(`.${NodeName.WINDOW_GROUP}`) as Konva.Group;
       this.previewDoor = interactionLayer.findOne(`.${NodeName.DOOR_GROUP}`) as Konva.Group;
     }
-    this.refreshDimensions();
+
+    this.stage.find<Konva.Group>(`.${NodeName.ROOM}`).forEach(group => {
+      const poly = group.findOne<Konva.Line>('Line');
+      if (poly && !poly.fillPatternImage() && !poly.fill()) {
+        RoomDetector.applyFloorTexture(poly);
+      }
+    });
     this.stage.draw();
 
     this.fitLayout();
@@ -4947,7 +4938,9 @@ export class Design2D {
       | Predefined2DShapes.RECTANGLE
       | Predefined2DShapes.TRIANGLE
       | Predefined2DShapes.SQUARE
-  ) {
+  ): void {
+    this.cancelPredefinedShapePlacement();
+
     const jsonData = JSON.parse(shapeType);
     const layerJson = Konva.Node.create(jsonData) as Konva.Layer;
 
@@ -4983,6 +4976,7 @@ export class Design2D {
 
     // Begin dragging immediately
     preview.startDrag();
+
     preview.on("dragstart", () => {
     });
 
@@ -4990,9 +4984,16 @@ export class Design2D {
 
     });
 
-    preview.on("dragend", () => {
-      this.placePreview();
-      preview.stopDrag();
+    preview.on("dragend", (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+      if (this.stage && e.evt?.target && this.stage.container().contains(e.evt.target as Node)) {
+        //Valid drop place the shape permanently on the canvas
+        this.placePreview();
+      } else {
+        // Clicked over Overlay UI keep the shape active on cursor
+        if (this.previewGroup) {
+          this.previewGroup.startDrag();
+        }
+      }
     });
   }
 
