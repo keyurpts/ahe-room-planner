@@ -57,7 +57,6 @@
     "three": "^0.176.0",
     "three-bvh-csg": "^0.0.18",
     "three-mesh-bvh": "^0.9.8",
-    "troika-three-text": "^0.52.5",
     "uuid": "^11.1.0",
     "zod": "^3.25.47"
   }

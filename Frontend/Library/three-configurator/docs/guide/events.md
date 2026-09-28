@@ -43,12 +43,5 @@ The 3D viewer (controlled via the [ConfiguratorCore](./configuratorCore.md) clas
 ### Double Click
 * **Camera Focus**: Double-clicking on any placed model (such as furniture, cabinets, etc.) automatically rotates and fits the camera to frame and focus directly on that object.
 
-## 3. Keyboard Shortcuts (Enabled by Default)
-* **Duplicate Model (`Ctrl + C` / `Cmd + C`)**: Press `Ctrl+C` (or `Cmd+C` on macOS) while a model is selected in the 3D viewer to duplicate it. The duplicated model will float in placement preview mode following the cursor.
-* **Delete Model (`Delete`)**: Press the `Delete` key while a model is selected in the 3D viewer to delete it from the viewer.
-* **Toggle Keyboard Shortcuts**: Keyboard shortcuts are enabled by default on initialization. You can dynamically enable or disable them at runtime using **[`enableKeyboardShortcuts`](./configuratorCore.md#enablekeyboardshortcuts)** 
-
-
-
 
 

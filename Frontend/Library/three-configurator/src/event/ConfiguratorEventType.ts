@@ -2,12 +2,6 @@
  * Defines the types of events dispatched by the configurator.
  */
 export enum ConfiguratorEventType {
-
-  /**
-   * Fired when a Room Name are edited.
-   */
-  EDIT_ROOM_NAME = "editRoomName",
-
   /**
    * Fired when a wall's dimensions are edited.
    */
@@ -64,7 +58,7 @@ export enum ConfiguratorEventType {
   ROTATION_CHANGED = "rotationChanged",
 
   /**
-   * Fired when a 3D model is deleted.
+   * Fired when the distance between measured objects is updated.
    */
-  DELETE = "delete"
+  OBJECT_DISTANCE_UPDATED = "objectDistanceUpdated"
 }

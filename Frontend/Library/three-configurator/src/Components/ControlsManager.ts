@@ -136,18 +136,6 @@ export class ControlsManager {
         orbit.update();
       };
       animate();
-      //event is triggered whenever the controls modify
-      orbit.addEventListener("change", () => {
-        // Use the dynamic minPanY set by the application, or default to 0.1
-        const limitY = (orbit as any).minPanY ?? 0.1;
-        
-        //Checking whether the target went below the ground plane or not
-        if (orbit.target.y < limitY) {
-          const delta = limitY - orbit.target.y; //Calculating how far it went below the limit
-          orbit.target.y = limitY;
-          camera.position.y += delta;
-        }
-      });
 
       control = orbit;
     } else if (type === ControlTypes.TRACKBALL) {

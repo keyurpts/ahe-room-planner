@@ -83,10 +83,6 @@ export class CollisionSystem {
                 });
                 if (isSelf || node === preview) return;
 
-                // Skip room-label content (leader lines, dot, callout/floor cards),
-                // regardless of which mode built them.
-                if (this.isLabelMesh(node)) return;
-
                 // Only consider meshes that have a valid BVH tree
                 if ((node.geometry as any).boundsTree) {
                     collidableMeshes.push(node);
@@ -121,23 +117,6 @@ export class CollisionSystem {
         }
         return colliding;
     }
-
-    /**
-     * True if `node` is part of a room-label (leader lines, dot, or text card),
-     * in any annotation mode. Labels shouldn't count as physical colliders.
-     */
-    private isLabelMesh(node: THREE.Object3D): boolean {
-        let current: THREE.Object3D | null = node;
-        while (current) {
-            if (current.userData?.type === "room-label") {
-                return true;
-            }
-            current = current.parent;
-        }
-        return false;
-    }
-
-
     /**
      * Determines whether a given mesh is considered part of the floor.
      *

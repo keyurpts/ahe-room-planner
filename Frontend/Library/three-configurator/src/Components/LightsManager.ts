@@ -564,7 +564,7 @@ export class LightsManager {
     this.scene.environment = envMap;
     this.scene.environmentIntensity = intensity;
 
-    this.scene.background = hdr;
+    // this.scene.background = hdr;
     this.scene.backgroundIntensity = 0.08;
     this.scene.backgroundBlurriness = 0.65;
 
