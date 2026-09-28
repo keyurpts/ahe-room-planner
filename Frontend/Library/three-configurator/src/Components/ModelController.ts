@@ -590,28 +590,63 @@ export class ModelController {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
+          const W = 1024;
+          const H = 1024;
+
+          // ── Diffuse canvas (full quality, SRGB) ──
           const canvas = document.createElement('canvas');
-          canvas.width = 512;
-          canvas.height = 512;
-          const ctx = canvas.getContext('2d');
-          ctx!.drawImage(img, 0, 0, 512, 512);
+          canvas.width = W;
+          canvas.height = H;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, W, H);
 
-          // Auto-generate Grayscale Bump Map
-          const bumpCanvas = document.createElement('canvas');
-          bumpCanvas.width = 512;
-          bumpCanvas.height = 512;
-          const bumpCtx = bumpCanvas.getContext('2d');
-          bumpCtx!.drawImage(img, 0, 0, 512, 512);
-          const imgData = bumpCtx!.getImageData(0, 0, 512, 512);
-          for (let i = 0; i < imgData.data.length; i += 4) {
-            const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-            imgData.data[i] = avg;
-            imgData.data[i + 1] = avg;
-            imgData.data[i + 2] = avg;
+          // ── Grayscale pass (for Sobel) ──
+          const grayCanvas = document.createElement('canvas');
+          grayCanvas.width = W;
+          grayCanvas.height = H;
+          const grayCtx = grayCanvas.getContext('2d')!;
+          grayCtx.drawImage(img, 0, 0, W, H);
+          const grayData = grayCtx.getImageData(0, 0, W, H);
+          const gray = new Float32Array(W * H);
+          for (let i = 0; i < grayData.data.length; i += 4) {
+            // Luminance-weighted grayscale for perceptually correct bump
+            gray[i / 4] =
+              grayData.data[i] * 0.299 +
+              grayData.data[i + 1] * 0.587 +
+              grayData.data[i + 2] * 0.114;
           }
-          bumpCtx!.putImageData(imgData, 0, 0);
 
-          // Sync 2D source preview
+          // ── Sobel edge-detection bump map ──
+          // Highlights the wood grain grooves as surface depth detail.
+          const bumpCanvas = document.createElement('canvas');
+          bumpCanvas.width = W;
+          bumpCanvas.height = H;
+          const bumpCtx = bumpCanvas.getContext('2d')!;
+          const bumpData = bumpCtx.createImageData(W, H);
+          for (let y = 1; y < H - 1; y++) {
+            for (let x = 1; x < W - 1; x++) {
+              const idx = y * W + x;
+              // Sobel X kernel
+              const gx =
+                -gray[(y - 1) * W + (x - 1)] + gray[(y - 1) * W + (x + 1)] +
+                -2 * gray[y * W + (x - 1)] + 2 * gray[y * W + (x + 1)] +
+                -gray[(y + 1) * W + (x - 1)] + gray[(y + 1) * W + (x + 1)];
+              // Sobel Y kernel
+              const gy =
+                -gray[(y - 1) * W + (x - 1)] - 2 * gray[(y - 1) * W + x] - gray[(y - 1) * W + (x + 1)] +
+                gray[(y + 1) * W + (x - 1)] + 2 * gray[(y + 1) * W + x] + gray[(y + 1) * W + (x + 1)];
+              // Edge magnitude → bump height (clamped to 0-255)
+              const magnitude = Math.min(255, Math.sqrt(gx * gx + gy * gy));
+              const pi = idx * 4;
+              bumpData.data[pi] = magnitude;
+              bumpData.data[pi + 1] = magnitude;
+              bumpData.data[pi + 2] = magnitude;
+              bumpData.data[pi + 3] = 255;
+            }
+          }
+          bumpCtx.putImageData(bumpData, 0, 0);
+
+          // ── Sync 2D source preview ──
           const previewCanvas = document.getElementById('texture-2d-canvas');
           if (previewCanvas) {
             // @ts-ignore
@@ -622,57 +657,55 @@ export class ModelController {
           const activeTextureMap = new THREE.CanvasTexture(canvas);
           const activeBumpMap = new THREE.CanvasTexture(bumpCanvas);
 
-          // applyTextureTransforms(activeTextureMap);
+          // ── Texture map settings ──
+          // Must use SRGBColorSpace so colors match the source image exactly.
+          activeTextureMap.colorSpace = THREE.SRGBColorSpace;
           activeTextureMap.wrapS = THREE.RepeatWrapping;
           activeTextureMap.wrapT = THREE.RepeatWrapping;
           activeTextureMap.repeat.set(1, 1);
           activeTextureMap.offset.set(0, 0);
-          activeTextureMap.center.set(0.5, 0.5); // Rotate around center
-          activeTextureMap.rotation = 0 * (Math.PI / 180);
+          activeTextureMap.center.set(0.5, 0.5);
+          activeTextureMap.rotation = 0;
           activeTextureMap.minFilter = THREE.LinearMipmapLinearFilter;
+          activeTextureMap.magFilter = THREE.LinearFilter;
+          activeTextureMap.anisotropy = 16; // Sharper at grazing angles
           activeTextureMap.needsUpdate = true;
 
-
-          // applyTextureTransforms(activeBumpMap);
+          // ── Bump map settings ──
           activeBumpMap.wrapS = THREE.RepeatWrapping;
           activeBumpMap.wrapT = THREE.RepeatWrapping;
           activeBumpMap.repeat.set(1, 1);
           activeBumpMap.offset.set(0, 0);
-          activeBumpMap.center.set(0.5, 0.5); // Rotate around center
-          activeBumpMap.rotation = 0 * (Math.PI / 180);
+          activeBumpMap.center.set(0.5, 0.5);
+          activeBumpMap.rotation = 0;
           activeBumpMap.minFilter = THREE.LinearMipmapLinearFilter;
+          activeBumpMap.magFilter = THREE.LinearFilter;
           activeBumpMap.needsUpdate = true;
 
-          node.material.map = activeTextureMap;
-          node.material.bumpMap = activeBumpMap;
-          node.material.needsUpdate = true;
+          // ── Ensure material supports bump map ──
+          // MeshBasicMaterial does NOT support bumpMap.
+          // Upgrade to MeshStandardMaterial if needed.
+          let mat = node.material as THREE.Material;
+          if (!(mat instanceof THREE.MeshStandardMaterial)) {
+            const newMat = new THREE.MeshStandardMaterial();
+            if ('color' in mat && (mat as any).color) {
+              newMat.color.copy((mat as any).color);
+            }
+            node.material = newMat;
+            mat = newMat;
+          }
 
-          // showToast(`Applied texture: ${file.name}`);
-          // updateCodeSnippet();
+          const stdMat = mat as THREE.MeshStandardMaterial;
+          stdMat.map = activeTextureMap;
+          stdMat.bumpMap = activeBumpMap;
+          // Subtle grain depth — increase for more pronounced grooves
+          stdMat.bumpScale = 0.1;
+          // Wood is non-metallic, semi-rough — gives realistic sheen
+          stdMat.roughness = 0.75;
+          stdMat.metalness = 0.0;
+          stdMat.needsUpdate = true;
         };
-        // img.src = texUrl;
         img.src = localTextureUrl;
-
-
-        // ////////////////////
-
-        // const textureLoader = new THREE.TextureLoader();
-        // textureLoader.load(texUrl, (tex) => {
-        //   tex.wrapS = THREE.RepeatWrapping;
-        //   tex.wrapT = THREE.RepeatWrapping;
-        //   tex.repeat.set(2, 2);
-        //   tex.anisotropy = 16;
-        //   tex.needsUpdate = true;
-
-        //   if (
-        //     node.material instanceof THREE.MeshBasicMaterial ||
-        //     node.material instanceof THREE.MeshStandardMaterial ||
-        //     node.material instanceof THREE.MeshPhongMaterial
-        //   ) {
-        //     node.material.map = tex;
-        //     node.material.needsUpdate = true;
-        //   }
-        // });
       }
     });
   }

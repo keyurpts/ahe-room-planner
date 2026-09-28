@@ -42,6 +42,11 @@ export class Design3D {
   private floorGroupTrimmer: THREE.Group | null = null;
 
   /**
+   * Group containing the ceiling plane meshes — one per room polygon.
+   */
+  private ceilingGroup: THREE.Group | null = null;
+
+  /**
    * Main container group for rooms, walls, and floors.
    */
   private roomGroup: THREE.Group | null = null;
@@ -333,11 +338,21 @@ export class Design3D {
     if (rooms.length > 0) {
       this.makeFloorMesh(rooms);
       this.makeFloorMeshTrimmer(rooms);
+      this.makeCeilingMesh(rooms);
     }
 
     if (this.roomGroup) {
       let groundPlane = this.addGroundPlane(this.roomGroup);
       this.core?.load2DTo3DMesh(this.roomGroup, groundPlane);
+
+      // After the room is in the scene compute its bounds and place ceiling lights
+      const roomBounds = new THREE.Box3().setFromObject(this.roomGroup);
+      if (!roomBounds.isEmpty()) {
+        const lightsManager = this.core?.getLightsManager();
+        if (lightsManager) {
+          lightsManager.setupCeilingLights(roomBounds);
+        }
+      }
     }
   }
 
@@ -483,6 +498,72 @@ export class Design3D {
   }
 
   /**
+   * Creates flat ceiling planes for each room at wall height.
+   * The ceiling mesh is white / slightly off-white to receive the downward spotlights
+   * and give the room a fully enclosed, realistic interior feel.
+   * @param rooms - Array of room objects containing 2D vertices.
+   */
+  private makeCeilingMesh(rooms: { vertices: { x: number; y: number }[] }[]): void {
+    const ceilingGroup = new THREE.Group();
+    const wallHeight = (Config.WALL_HEIGHT as number) * (Config.WORLD_SCALE as number);
+
+    rooms.forEach((room) => {
+      const shape = new THREE.Shape();
+      const points = room.vertices;
+
+      if (points.length < 3) return;
+
+      shape.moveTo(
+        points[0].x * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
+        points[0].y * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor()
+      );
+      for (let i = 1; i < points.length; i++) {
+        shape.lineTo(
+          points[i].x * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
+          points[i].y * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor()
+        );
+      }
+      shape.closePath();
+
+      const geometry = new THREE.ShapeGeometry(shape);
+      geometry.computeVertexNormals();
+
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xf2f2f2,      // off-white ceiling
+        roughness: 0.85,
+        metalness: 0.0,
+        // rotation.x = +PI/2 rotates the ShapeGeometry normal from +Z → -Y (downward).
+        // FrontSide renders faces whose normal points TOWARD the camera.
+        // Camera below ceiling (inside room): normal (-Y) faces the camera → VISIBLE ✓
+        // Camera above ceiling (outside):     normal (-Y) faces away      → HIDDEN  ✓
+        side: THREE.FrontSide,
+      });
+
+      const ceilingMesh = new THREE.Mesh(geometry, material);
+      ceilingMesh.name = "ceiling_mesh";
+      (ceilingMesh as any).isCeiling = true;
+      ceilingMesh.userData.defaultMaterial = material;
+
+      // rotation.x = +PI/2: ShapeGeometry (XY plane, normal +Z) → XZ plane, normal -Y (downward)
+      // FrontSide + downward normal = visible from inside, hidden from outside
+      ceilingMesh.rotation.x = Math.PI / 2;
+      ceilingMesh.position.y = wallHeight;
+
+      ceilingMesh.receiveShadow = true;
+      ceilingMesh.renderOrder = 1;
+
+      ceilingGroup.add(ceilingMesh);
+    });
+
+    ceilingGroup.name = "ceiling_group";
+    this.ceilingGroup = ceilingGroup;
+
+    if (this.roomGroup && this.ceilingGroup) {
+      this.roomGroup.add(this.ceilingGroup);
+    }
+  }
+
+  /**
    * Adds a textured ground plane underneath the model based on its bounding box size and center.
    * @param model - The 3D model object to reference for positioning and scaling.
    * @returns The generated ground plane THREE.Object3D.
@@ -566,6 +647,12 @@ export class Design3D {
    * Removes all 3D wall meshes from the scene.
    */
   public clearWalls(): void {
+    // Remove ceiling lights from the scene before rebuilding
+    const lightsManager = this.core?.getLightsManager();
+    if (lightsManager) {
+      lightsManager.removeCeilingLights();
+    }
+
     if (this.roomGroup) {
       this.core?.remove2DTo3DMesh(this.roomGroup);
       this.roomGroup = null;
@@ -578,6 +665,9 @@ export class Design3D {
     this.sourceWallGroup = null;
     if (this.floorGroup) {
       this.floorGroup = null;
+    }
+    if (this.ceilingGroup) {
+      this.ceilingGroup = null;
     }
   }
 

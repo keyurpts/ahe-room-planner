@@ -521,7 +521,7 @@ export class ConfiguratorCore {
       case CameraTypes.PERSPECTIVE:
         this.cameraManager.addPerspectiveCamera(
           CameraNames.PERSPECTIVE_CAMERA,
-          75,
+          50,
           width / height,
           0.1,
           10000
@@ -549,7 +549,7 @@ export class ConfiguratorCore {
       default:
         this.cameraManager.addPerspectiveCamera(
           CameraNames.PERSPECTIVE_CAMERA,
-          75,
+          50,
           width / height,
           0.1,
           10000
@@ -730,36 +730,19 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Sets up default lighting for the scene
+   * Sets up default lighting for the scene.
+   * Ambient and directional are kept soft so the dynamic ceiling SpotLights
+   * (added per-room in Design3D) read as the primary indoor light source.
    *
    * @private
    * @returns {void}
    */
   private setupLighting(): void {
+    // A strong ambient light ensures all walls are illuminated equally,
+    // avoiding the issue where walls facing different directions have different brightness.
     this.lightsManager.AddLight("Ambient", {
       color: 0xffffff,
-      intensity: 0.4,
-    });
-
-    this.lightsManager.AddLight("Directional", {
-      color: 0xfffaf0,
       intensity: 1.2,
-      position: { x: 5, y: 10, z: 7.5 },
-      castShadow: true,
-      shadow: {
-        mapSize: { width: 4096, height: 4096 },
-        bias: -0.0005,
-        normalBias: 0.05,
-        radius: 2,
-        camera: {
-          left: -8,
-          right: 8,
-          top: 8,
-          bottom: -8,
-          near: 0.1,
-          far: 30,
-        },
-      },
     });
   }
 
@@ -4953,6 +4936,17 @@ export class ConfiguratorCore {
    */
   public setBackgroundColor(backgroundColor: number): void {
     this.scene.background = new Color(backgroundColor);
+  }
+
+  /**
+   * Returns the LightsManager instance so external components (e.g. Design3D)
+   * can add or remove scene lights without going through ConfiguratorCore.
+   *
+   * @returns {LightsManager} The active LightsManager.
+   * @public
+   */
+  public getLightsManager() {
+    return this.lightsManager;
   }
 
   /**

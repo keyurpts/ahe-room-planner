@@ -164,6 +164,12 @@ export class LightsManager {
   private shadowPlane?: THREE.Mesh;
 
   /**
+   * IDs of ceiling SpotLights spawned by setupCeilingLights().
+   * Kept separate so they can be cleaned up on room reload.
+   */
+  private ceilingLightIds: string[] = [];
+
+  /**
    * Sets the main model of the scene, which is used for skybox positioning.
    * @param model - The main 3D model object to reference.
    */
@@ -626,5 +632,133 @@ export class LightsManager {
     this.shadowPlane.receiveShadow = true;
 
     this.scene.add(this.shadowPlane);
+  }
+
+  /**
+   * Removes any ceiling SpotLights that were created by a previous call to setupCeilingLights().
+   * Call this before reloading a room so old lights don't accumulate.
+   */
+  public removeCeilingLights(): void {
+    for (const id of this.ceilingLightIds) {
+      this.removeLight(id);
+    }
+    this.ceilingLightIds = [];
+  }
+
+  /**
+   * Spawns a grid of warm SpotLights just below the ceiling of the given room bounding box.
+   * Lights point straight down, their cone angle and shadow frustum are derived from the
+   * room dimensions so they work correctly for any room size.
+   *
+   * @param roomBounds - THREE.Box3 of the fully built room group.
+   * @param options.cols     - Columns of lights across the room width (default: auto from width).
+   * @param options.rows     - Rows of lights along the room depth (default: auto from depth).
+   * @param options.color    - Hex color of the spotlight (default: 0xfff5e0 – warm white).
+   * @param options.intensity - Luminous intensity of each light (default: 80).
+   * @param options.penumbra - Soft edge factor 0–1 (default: 0.45).
+   * @param options.ceilingOffset - Distance below roomBounds.max.y to position each light (default: 0.05).
+   * @returns Array of light IDs so the caller can manage them if needed.
+   */
+  public setupCeilingLights(
+    roomBounds: THREE.Box3,
+    options: {
+      cols?: number;
+      rows?: number;
+      color?: number;
+      intensity?: number;
+      penumbra?: number;
+      ceilingOffset?: number;
+    } = {}
+  ): string[] {
+    // Clear any previously spawned ceiling lights first
+    this.removeCeilingLights();
+
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    roomBounds.getSize(size);
+    roomBounds.getCenter(center);
+
+    const roomWidth = size.x;
+    const roomDepth = size.z;
+    const ceilingY = roomBounds.max.y - (options.ceilingOffset ?? 0.05);
+    const floorY = roomBounds.min.y;
+    const lightHeight = ceilingY - floorY;
+
+    // For a soft, diffuse global wash matching the first reference image, 
+    // use a less dense grid of wider, softer spotlights.
+    const cols = options.cols ?? Math.max(2, Math.ceil(roomWidth / 2.5));
+    const rows = options.rows ?? Math.max(2, Math.ceil(roomDepth / 2.5));
+
+    const color = options.color ?? 0xfffaf0; // very slight warm/neutral white
+    const intensity = options.intensity ?? 5;       // lower intensity for wider cones
+    const penumbra = options.penumbra ?? 1.0;      // maximum soft edge to blend the light
+
+    const cellW = roomWidth / cols;
+    const cellD = roomDepth / rows;
+
+    // Wider cone angle to create a global wash and eliminate distinct scallops on the walls
+    const spotAngle = Math.PI / 2.5;
+
+    // Shadow frustum reaches past the floor with some margin
+    const shadowFar = lightHeight + 1.0;
+    const shadowNear = 0.05;
+
+    const startX = center.x - roomWidth / 2 + cellW / 2;
+    const startZ = center.z - roomDepth / 2 + cellD / 2;
+
+    const newIds: string[] = [];
+
+    // -----------------------------------------------------------------------
+    // WebGL texture-unit budget: MeshStandardMaterial already uses ~8 slots.
+    // Each castShadow light adds 1 slot.  Cap at 2 shadow-casters so we
+    // stay within 16 even with fully-textured walls, floors, and furniture.
+    // -----------------------------------------------------------------------
+    const MAX_SHADOW_LIGHTS = 2;
+    let shadowCount = 0;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const lx = startX + c * cellW;
+        const lz = startZ + r * cellD;
+
+        const castsShadow = shadowCount < MAX_SHADOW_LIGHTS;
+
+        const id = this.AddLight("Spot", {
+          color,
+          intensity,
+          position: { x: lx, y: ceilingY, z: lz },
+          target: { x: lx, y: floorY, z: lz }, // straight down
+          angle: spotAngle,
+          penumbra,
+          decay: 2,
+          distance: lightHeight * 3.0, // reach the floor and beyond for gentle falloff
+          castShadow: castsShadow,
+          ...(castsShadow && {
+            shadow: {
+              mapSize: { width: 1024, height: 1024 },
+              bias: -0.001,
+              normalBias: 0.02,
+              radius: 8,   // softer, blurred shadow edges
+              camera: { near: shadowNear, far: shadowFar },
+            },
+          }),
+        });
+
+        if (castsShadow) shadowCount++;
+        newIds.push(id);
+      }
+    }
+
+    // Add a HemisphereLight to provide ambient fill light and soften shadows further
+    // const hemiId = this.AddLight("Hemisphere", {
+    //   skyColor: 0xffffff,
+    //   groundColor: 0x444444,
+    //   intensity: 0.8,
+    //   position: { x: center.x, y: roomBounds.max.y, z: center.z }
+    // });
+    // newIds.push(hemiId);
+
+    this.ceilingLightIds = newIds;
+    return newIds;
   }
 }
