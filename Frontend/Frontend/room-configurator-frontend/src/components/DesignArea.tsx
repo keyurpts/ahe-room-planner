@@ -8,13 +8,14 @@ import {
   DropdownTrigger,
   Slider,
   Tooltip,
+  DropdownSection,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Icons from "../icons";
 import { useEffect, useState, useRef } from "react";
 import { useTheme } from "../ThemeContext";
 import TextureAndColorPanel from "./TextureAndColorPanel";
-import { ConfiguratorCore, ConfiguratorEventType, Events } from "three-configurator";
+import { ConfiguratorCore, ConfiguratorEventType, Events, FloorplanManager, LengthUnit } from "three-configurator";
 import { ToolbarAction, KEYBOARD_SHORTCUTS } from "../constant";
 import { TOAST_MESSAGES } from "../toastMessages";
 
@@ -50,6 +51,7 @@ type DesignAreaProps = {
   wallHidingActive: boolean;
   setWallHidingActive: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPriceSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  manager: FloorplanManager
 };
 
 export default function DesignArea({
@@ -83,6 +85,7 @@ export default function DesignArea({
   wallHidingActive,
   setWallHidingActive,
   setIsPriceSummaryOpen,
+  manager
 }: DesignAreaProps) {
   const { theme } = useTheme();
   const [isModelSelected, setIsModelSelected] = useState(false);
@@ -111,6 +114,17 @@ export default function DesignArea({
 
   const [isBgMenuOpen, setIsBgMenuOpen] = useState(false);
   const [bgColor, setBgColor] = useState<number>(0xffffff);
+
+  const [selectedUnit, setSelectedUnit] = useState<string>(LengthUnit.MM);
+
+
+  const handleUnitChange = (unit: string) => {
+    setSelectedUnit(unit);
+    if (manager) {
+      manager.setLengthUnit(unit);
+      console.log(`Unit changed to ${unit}`);
+    }
+  };
 
   const sampleInput3DConfig = {
     "chair-1": {
@@ -1557,9 +1571,9 @@ export default function DesignArea({
                 <DropdownItem key="custom" className={`${theme === "dark" ? "hover:bg-zinc-800" : "hover:bg-zinc-100"}`} closeOnSelect={false}>
                   <div className="flex items-center justify-between w-full">
                     <span className={theme === "dark" ? "text-zinc-200" : "text-zinc-700"}>Custom...</span>
-                    <input 
-                      type="color" 
-                      value={`#${bgColor.toString(16).padStart(6, '0')}`} 
+                    <input
+                      type="color"
+                      value={`#${bgColor.toString(16).padStart(6, '0')}`}
                       onChange={(e) => {
                         const color = parseInt(e.target.value.replace('#', ''), 16);
                         handleBgColorChange(color);
@@ -1626,6 +1640,44 @@ export default function DesignArea({
             </Dropdown>
           </div>
 
+            {/* Measurement Unit Dropdown */}
+            <Tooltip content="Unit" placement="top" closeDelay={50}>
+              <div className="inline-block">
+                <Dropdown placement="top" className="bg-zinc-950 border border-zinc-800 text-white">
+                  <DropdownTrigger>
+                    <Button
+                      size="sm"
+                      className="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white font-bold text-xs min-w-unit-12 h-8 rounded-full px-3 uppercase"
+                    >
+                      {selectedUnit}
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    aria-label="Measurement Unit Options"
+                    selectedKeys={new Set([selectedUnit])}
+                    selectionMode="single"
+                    onAction={(key) => handleUnitChange(key as string)}
+                  >
+                    <DropdownSection title="Metric" className="text-zinc-400">
+                      <DropdownItem key="mm" className="text-zinc-200 hover:bg-zinc-800">
+                        mm (Millimeter)
+                      </DropdownItem>
+                      <DropdownItem key="cm" className="text-zinc-200 hover:bg-zinc-800">
+                        cm (Centimeter)
+                      </DropdownItem>
+                    </DropdownSection>
+                    <DropdownSection title="Imperial" className="text-zinc-400">
+                      <DropdownItem key="inch" className="text-zinc-200 hover:bg-zinc-800">
+                        inch (Inches)
+                      </DropdownItem>
+                      <DropdownItem key="foot" className="text-zinc-200 hover:bg-zinc-800">
+                        foot (Feet)
+                      </DropdownItem>
+                    </DropdownSection>
+                  </DropdownMenu>
+                </Dropdown>
+              </div>
+            </Tooltip>
         </div>
       )}
     </div>

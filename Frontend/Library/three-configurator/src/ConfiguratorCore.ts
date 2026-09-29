@@ -79,7 +79,7 @@ import { PostProcessingManager } from "./Components/PostProcessingManager";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
-import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle } from "./Constants";
+import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
 
 /**
@@ -487,6 +487,12 @@ export class ConfiguratorCore {
   private isPreviewDragging = false;
 
   /**
+     * Current unit for displaying wall lengths ('mm', 'cm', 'inch', 'foot').
+     * Default is 'mm' (millimeters).
+     */
+  private currentUnit: LengthUnit = LengthUnit.MM;
+
+  /**
    * Creates a new ConfiguratorCore instance
    *
    * @param options - Configuration options
@@ -727,6 +733,11 @@ export class ConfiguratorCore {
     this.furnitureGroup.name = RequiredStrings.FURNITURE_GROUP;
     this.scene.add(this.furnitureGroup);
 
+  }
+
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.currentUnit = normalizeLengthUnit(unit);
+    this.toggleMeasurement();
   }
 
   /**
@@ -2109,8 +2120,10 @@ export class ConfiguratorCore {
     this.measurementGroup?.add(startArrow);
     this.measurementGroup?.add(endArrow);
 
-    const labelSprite = this.createTextSprite(`${distance.toFixed(2)} unit`);
-    labelSprite.userData.text = `${distance.toFixed(2)} unit`;
+    const distance_in_unit = this.convertLength(distance, this.currentUnit);
+
+    const labelSprite = this.createTextSprite(`${distance_in_unit.toFixed(2)} ${this.currentUnit}`);
+    labelSprite.userData.text = `${distance_in_unit.toFixed(2)} ${this.currentUnit}`;
     //for object to move to new position after updating distance
     labelSprite.userData.direction = direction.clone().normalize();
     labelSprite.userData.distance = distance;
@@ -2123,6 +2136,28 @@ export class ConfiguratorCore {
     labelSprite.position.copy(mid);
 
     this.measurementGroup?.add(labelSprite);
+  }
+
+  private convertLength(value: number, unit: LengthUnit): number {
+    // 1 input unit = 100 cm
+    const valueInCm = value * 100;
+
+    switch (unit) {
+      case LengthUnit.MM:
+        return valueInCm * 10;
+
+      case LengthUnit.CM:
+        return valueInCm;
+
+      case LengthUnit.INCH:
+        return valueInCm / 2.54;
+
+      case LengthUnit.FOOT:
+        return valueInCm / 30.48;
+
+      default:
+        return valueInCm;
+    }
   }
 
   /**
@@ -4570,7 +4605,8 @@ export class ConfiguratorCore {
         await this.handlePreviewMode(baseModel);
 
         return null;
-      } else {
+      }
+      else {
         this.checkTransform();
         const result = this.addModel(this.mainModel, position, rotation);
 

@@ -37,6 +37,7 @@ export class FloorplanManager {
     this.design2D = new Design2D(container2D);
     this.design2D.setLengthUnit(this.initialUnit);
     this.design3D = new Design3D(container3D);
+    this.design3D.setLengthUnit(this.initialUnit);
   }
 
   /**
@@ -277,6 +278,8 @@ export class FloorplanManager {
   public setLengthUnit(unit: LengthUnit | string): void {
     this.initialUnit = normalizeLengthUnit(unit);
     this.design2D?.setLengthUnit(this.initialUnit);
+    this.design3D?.setLengthUnit(this.initialUnit);
+
   }
 
   /**
@@ -286,24 +289,6 @@ export class FloorplanManager {
    */
   public getLengthUnit(): LengthUnit {
     return this.design2D?.getLengthUnit() ?? this.initialUnit;
-  }
-
-  /**
-   * Alias for setLengthUnit.
-   *
-   * @param {LengthUnit | string} unit
-   */
-  public setUnit(unit: LengthUnit | string): void {
-    this.setLengthUnit(unit);
-  }
-
-  /**
-   * Alias for getLengthUnit.
-   *
-   * @returns {LengthUnit}
-   */
-  public getUnit(): LengthUnit {
-    return this.getLengthUnit();
   }
 
   /**

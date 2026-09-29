@@ -2896,24 +2896,10 @@ export class Design2D {
   }
 
   /**
-   * Alias for setLengthUnit.
-   */
-  public setUnit(unit: LengthUnit | string): void {
-    this.setLengthUnit(unit);
-  }
-
-  /**
-   * Alias for getLengthUnit.
-   */
-  public getUnit(): LengthUnit {
-    return this.getLengthUnit();
-  }
-
-  /**
    * Converts a length in cm to the specified or current display unit.
    * 1 Konva unit = 1 cm.
    */
-  public convertFromCm(lengthInCm: number, unit: LengthUnit = this.currentUnit): { value: number; suffix: string } {
+  private convertFromCm(lengthInCm: number, unit: LengthUnit = this.currentUnit): { value: number; suffix: string } {
     switch (unit) {
       case LengthUnit.MM:
         return { value: lengthInCm * 10, suffix: "mm" };
@@ -2931,7 +2917,7 @@ export class Design2D {
   /**
    * Converts a value in the specified or current display unit back to cm.
    */
-  public convertToCm(value: number, unit: LengthUnit = this.currentUnit): number {
+  private convertToCm(value: number, unit: LengthUnit = this.currentUnit): number {
     switch (unit) {
       case LengthUnit.MM:
         return value / 10;
@@ -2949,7 +2935,7 @@ export class Design2D {
   /**
    * Formats a raw Konva length into the current display unit string.
    */
-  public formatWallLength(length: number): string {
+  private formatWallLength(length: number): string {
     const lengthInCm = length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor;
     const { value, suffix } = this.convertFromCm(lengthInCm, this.currentUnit);
     return `${value.toFixed(1)} ${suffix}`;

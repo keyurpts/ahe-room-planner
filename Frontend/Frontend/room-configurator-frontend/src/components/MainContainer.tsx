@@ -227,6 +227,7 @@ const MainContainer = ({
         wallHidingActive={wallHidingActive}
         setWallHidingActive={setWallHidingActive}
         setIsPriceSummaryOpen={setIsPriceSummaryOpen}
+        manager={floorPlanManager}
       />
     </div>
   );
