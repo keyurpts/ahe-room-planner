@@ -490,8 +490,8 @@ export default function DesignArea({
       console.log(data.message);
       closeAll();
       addToast({
-        title: data.message,
-        description: "Please enter valid distance",
+        title: data.title ?? data.message,
+        description: data.title ? data.message : "Please enter valid distance",
         timeout: 3000,
         color: "warning",
         shouldShowTimeoutProgress: true,

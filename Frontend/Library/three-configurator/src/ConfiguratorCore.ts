@@ -40,8 +40,7 @@ import {
   PlaneGeometry,
   TextureLoader,
   RepeatWrapping,
-  SRGBColorSpace,
-  BoxGeometry
+  SRGBColorSpace
 } from "three";
 import {
   Tween,
@@ -56,6 +55,7 @@ import type {
   ProjectConfig,
   HierarchyNode
 } from "./types/types";
+import { findAutomaticPlacement, physicalBox, meshFootprint, physicalFootprint, type PlacementWall } from "./Components/AutomaticPlacement";
 import { AssetLoader } from "./Components/AssetLoader";
 import { RendererManager } from "./Components/RendererManager";
 import { LightsManager } from "./Components/LightsManager";
@@ -80,7 +80,7 @@ import { PostProcessingManager } from "./Components/PostProcessingManager";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
-import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit, Config } from "./Constants";
+import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
 
 /**
@@ -4571,6 +4571,8 @@ export class ConfiguratorCore {
     if (this.isPreviewActive || this.isReplacingModel) return null;
     const baseModel = ModelController.GetRoomModel(this.scene);
 
+    const previousMainModel = this.mainModel;
+
     try {
       this.mainModel = await this.assetLoader.loadGLB(
         url,
@@ -4598,88 +4600,30 @@ export class ConfiguratorCore {
         }
       }
 
-      let xCoord, zCoord, yCoord;
-
-      // continuous run alignment
-      if (this.modelRoot && this.modelRoot.name !== "room_model") {
-        let maxX = this.getPositiveXCoordinate(this.modelRoot)
-        let distX = this.getDistanceFromNegativeXCoordinate(this.mainModel)
-
-        let distZprev = this.getDistanceFromNegativeZCoordinate(this.modelRoot);
-        let distZCurrent = this.getDistanceFromNegativeZCoordinate(this.mainModel);
-        let zFinal = distZCurrent - distZprev;
-
-
-        xCoord = maxX + distX;
-        zCoord = this.modelRoot.position.z + zFinal;
-
-        const box = new Box3().setFromObject(this.mainModel, true);
-        yCoord = this.mainModel.position.y - box.min.y;
-
-        position = new Vector3(xCoord, yCoord, zCoord);
-
-      }
-      else {
-
-        // get the roomModel ans first walll mesh
-        let room = this.scene.getObjectByName("room_model");
-        let wallGroup = room!.children[0];
-        let firstWall = wallGroup.children[0];
-        // @ts-ignore
-        let firstWallStartPoint = firstWall.startPoint;
-        let BoxGeom = new BoxGeometry(1, 1, 1);
-        let BoxMaterial = new MeshStandardMaterial();
-        // BoxMaterial.color = new Color( 0xffffff );
-        let Box = new Mesh(BoxGeom, BoxMaterial);
-        // this.scene.add(Box);
-        // Box.position.set(firstWallStartPoint.x, 0, firstWallStartPoint.z);
-        // position = new Vector3(targetX, yCoord, targetZ);
-
-
-        // @ts-ignore
-        let connecting_wall_id = firstWall.startPointWallIds[0];
-        let second_wall = this.scene.getObjectByProperty("wall_id", connecting_wall_id);
-
-        console.log("second wall : ", second_wall);
-
-        let conncetionPoint = new Vector3(firstWallStartPoint.x, 0, firstWallStartPoint.z)
-        // @ts-ignore
-        let wall1OtherPoint = new Vector3(firstWall.endPoint.x, 0, firstWall.endPoint.z);
-        let wall2OtherPoint = new Vector3();
-        // @ts-ignore
-        if (firstWall.startPoint.x === second_wall!.startPoint.x && firstWall.startPoint.z === second_wall!.startPoint.z) {
-          // @ts-ignore
-          wall2OtherPoint = new Vector3(second_wall!.endPoint.x, 0, second_wall!.endPoint.z);
+      // Explicit transforms, previews and replacements have their own placement lifecycle.
+      if (baseModel && !isPreview && !position && !this.modelPendingReplacement) {
+        if (rotation) this.mainModel.rotation.copy(rotation);
+        const placement = this.findModelPlacement(this.mainModel, baseModel);
+        if (!placement) {
+          // GLB clones share cached geometry; release only private materials.
+          this.mainModel.traverse(node => {
+            if (node instanceof Mesh) {
+              const materials = Array.isArray(node.material) ? node.material : [node.material];
+              materials.forEach(material => material.dispose());
+            }
+          });
+          this.mainModel = previousMainModel;
+          this.lightsManager.mainModel = previousMainModel;
+          Events.emit(ConfiguratorEventType.COLLISION, {
+            title: "No space available",
+            message: "There is no space left in the room to place this model. Move or remove a model and try again.",
+            color: "warning",
+          });
+          return null;
         }
-        else {
-          // @ts-ignore
-          wall2OtherPoint = new Vector3(second_wall!.startPoint.x, 0, second_wall!.startPoint.z);
-        }
-
-        const wallThickness = (Config.WALL_THICKNESS as number) * (Config.WORLD_SCALE as number);
-        let innerIntersectionPoint = this.getInnerWallFaceIntersection(conncetionPoint, wall1OtherPoint, wall2OtherPoint, wallThickness);
-        console.log("innerIntersectionPoint : ", innerIntersectionPoint);
-        // Box.position.set(innerIntersectionPoint!.x, 0, innerIntersectionPoint!.z);
-        Box.position.set(0, 0, 0);
-
-
-        // let dist = this.getDistanceFromModelOriginToBoundingBoxMin(this.mainModel);
-        // Bounding box in world coordinates
-        const boundingBox = new Box3().setFromObject(this.mainModel);
-
-        // Current minimum corner of the bounding box
-        const currentMin = boundingBox.min.clone();
-
-        // Translation required in world coordinates
-        const worldOffset = innerIntersectionPoint!.clone().sub(currentMin);
-
-        this.mainModel.position.add(worldOffset);
-        position = this.mainModel.position.clone();
-
-
+        position = placement.position;
+        rotation = placement.rotation;
       }
-
-
       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
 
       this.modelController.removeBoundingBoxHelper();
@@ -4745,93 +4689,57 @@ export class ConfiguratorCore {
     return Math.abs(object.position.z - box.min.z);
   }
 
-  private getInnerWallFaceIntersection(
-    connectionPoint: Vector3,
-    wall1OtherPoint: Vector3,
-    wall2OtherPoint: Vector3,
-    wallThickness: number
-  ): Vector3 | null {
-    const p = connectionPoint.clone();
-
-    // Both wall directions are considered from the common point outward
-    const d1 = wall1OtherPoint.clone().sub(p);
-    const d2 = wall2OtherPoint.clone().sub(p);
-
-    // Work only in XZ plane
-    d1.y = 0;
-    d2.y = 0;
-
-    if (d1.lengthSq() === 0 || d2.lengthSq() === 0) {
-      return null;
-    }
-
-    d1.normalize();
-    d2.normalize();
-
-    // Cross product in XZ plane
-    const cross = d1.x * d2.z - d1.z * d2.x;
-
-    // Walls are parallel or nearly parallel
-    if (Math.abs(cross) < 1e-8) {
-      return null;
-    }
-
-    // Perpendicular normals
-    // +normal represents one side of the wall
-    const n1 = new Vector3(-d1.z, 0, d1.x);
-    const n2 = new Vector3(-d2.z, 0, d2.x);
-
-    let side1: number;
-    let side2: number;
-
-    // Select the faces bounding the smaller angle between the walls
-    if (cross > 0) {
-      side1 = 1;
-      side2 = -1;
-    } else {
-      side1 = -1;
-      side2 = 1;
-    }
-
-    const halfThickness = wallThickness / 2;
-
-    // A point lying on Wall 1 inner face
-    const face1Point = p.clone().add(
-      n1.clone().multiplyScalar(halfThickness * side1)
-    );
-
-    // A point lying on Wall 2 inner face
-    const face2Point = p.clone().add(
-      n2.clone().multiplyScalar(halfThickness * side2)
-    );
-
-    const cross2D = (
-      a: Vector3,
-      b: Vector3
-    ): number => {
-      return a.x * b.z - a.z * b.x;
-    };
-
-    const denominator = cross2D(d1, d2);
-
-    if (Math.abs(denominator) < 1e-8) {
-      return null;
-    }
-
-    const diff = face2Point.clone().sub(face1Point);
-
-    const t = cross2D(diff, d2) / denominator;
-
-    const intersection = face1Point
-      .clone()
-      .add(d1.clone().multiplyScalar(t));
-
-    // Keep same elevation as connection point
-    intersection.y = connectionPoint.y;
-
-    return intersection;
+  private findModelPlacement(model: Object3D, room: Object3D): { position: Vector3; rotation: Euler } | null {
+    this.scene.updateMatrixWorld(true);
+    const bounds = new Box3();
+    const obstacles: Vector2[][] = [];
+    const walls: PlacementWall[] = [];
+    const seenWalls = new Set<string>();
+    const floors: Mesh[] = [];
+    room.traverse(node => {
+      if (!(node instanceof Mesh)) return;
+      if ((node as any).isFloor || node.name.toLowerCase().includes(FloorNames.FLOOR)) {
+        floors.push(node);
+        bounds.union(physicalBox(node));
+      }
+    });
+    if (bounds.isEmpty()) bounds.copy(physicalBox(room));
+    if (bounds.isEmpty()) return null;
+    const floorY = floors.length ? Math.max(...floors.map(floor => physicalBox(floor).max.y)) : bounds.min.y;
+    const height = physicalBox(model).getSize(new Vector3()).y;
+    room.traverse(node => {
+      if (!(node instanceof Mesh) || floors.includes(node)) return;
+      if (/helper|gizmo|control/i.test(node.name) || ["Box", "BoxFront", "BoxBack", "BoxLeft", "BoxRight"].includes(node.name)) return;
+      const box = physicalBox(node);
+      if (box.max.y <= floorY + 1e-6 || box.min.y >= floorY + height) return;
+      obstacles.push(meshFootprint(node));
+      const wall = node as Mesh & { startPoint?: { x: number; z: number }; endPoint?: { x: number; z: number }; wall_id?: string };
+      if (!wall.startPoint || !wall.endPoint || seenWalls.has(wall.wall_id ?? node.uuid)) return;
+      seenWalls.add(wall.wall_id ?? node.uuid);
+      const start = new Vector3(wall.startPoint.x, 0, wall.startPoint.z);
+      const end = new Vector3(wall.endPoint.x, 0, wall.endPoint.z);
+      if (node.parent) { node.parent.localToWorld(start); node.parent.localToWorld(end); }
+      if (start.distanceToSquared(end) > 1e-12) {
+        const a = new Vector2(start.x, start.z), b = new Vector2(end.x, end.z);
+        const direction = b.clone().sub(a).normalize();
+        const normal = new Vector2(-direction.y, direction.x);
+        const halfThickness = Math.max(...meshFootprint(node).map(p => Math.abs(p.clone().sub(a).dot(normal))));
+        walls.push({ start: a, end: b, halfThickness });
+      }
+    });
+    this.scene.traverse(node => {
+      if (node === room || node === model || !node.userData.isGLBModel) return;
+      let nested = false;
+      node.traverseAncestors(parent => { if (parent === room || parent.userData.isGLBModel) nested = true; });
+      if (!nested) {
+        const box = physicalBox(node);
+        if (!box.isEmpty()) obstacles.push(physicalFootprint(node));
+      }
+    });
+    const selected = this.modelRoot && this.modelRoot !== room ? this.modelRoot : null;
+    return findAutomaticPlacement(model, bounds, obstacles, walls, selected, floorY,
+      () => this.collisionSystem.isModelInsideFloorBounds(model, physicalFootprint(model)));
   }
-
   /**
    * Duplicates the currently selected 3D model in the workspace.
    *
