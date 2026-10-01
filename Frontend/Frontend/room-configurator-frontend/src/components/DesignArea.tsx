@@ -51,7 +51,9 @@ type DesignAreaProps = {
   wallHidingActive: boolean;
   setWallHidingActive: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPriceSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  manager: FloorplanManager
+  manager: FloorplanManager,
+  collisionActive: any,
+  setCollisionActive: any
 };
 
 export default function DesignArea({
@@ -85,7 +87,9 @@ export default function DesignArea({
   wallHidingActive,
   setWallHidingActive,
   setIsPriceSummaryOpen,
-  manager
+  manager,
+  collisionActive,
+  setCollisionActive
 }: DesignAreaProps) {
   const { theme } = useTheme();
   const [isModelSelected, setIsModelSelected] = useState(false);
@@ -123,6 +127,11 @@ export default function DesignArea({
     if (manager) {
       manager.setLengthUnit(unit);
       console.log(`Unit changed to ${unit}`);
+
+      if (allMeasurementsActive) {
+        setAllMeasurementsActive(true);
+        configuratorInstance?.showAllMeasurements();
+      }
     }
   };
 
@@ -1029,6 +1038,13 @@ export default function DesignArea({
     configuratorInstance?.enableWallHiding(newState);
   };
 
+  const handleCollisionToggle = () => {
+    setIsRightSidebarOpen(false);
+    const newState = !collisionActive;
+    setCollisionActive(newState);
+    configuratorInstance?.setCollisionStatus(newState);
+  };
+
   useEffect(() => {
 
     const onRotationChanged = (angle: number) => {
@@ -1454,8 +1470,8 @@ export default function DesignArea({
             </button>
           </Tooltip>
 
-          <div className="w-px h-5 bg-zinc-800 mx-3"></div>
-          <Tooltip content="Export 3D Scene (.glb)" closeDelay={50}>
+          {/* <div className="w-px h-5 bg-zinc-800 mx-3"></div> */}
+          {/* <Tooltip content="Export 3D Scene (.glb)" closeDelay={50}>
             <button
               className={`flex items-center gap-2 p-2 rounded-full transition cursor-pointer hover:bg-zinc-800/80 text-zinc-400 hover:text-white`}
               onClick={async () => {
@@ -1472,7 +1488,7 @@ export default function DesignArea({
             >
               <Icon icon={Icons.downloadIcon || Icons.cubeOutline} width={18} height={18} />
             </button>
-          </Tooltip>
+          </Tooltip> */}
 
 
           <div className="w-px h-5 bg-zinc-800 mx-3"></div>
@@ -1640,44 +1656,58 @@ export default function DesignArea({
             </Dropdown>
           </div>
 
-            {/* Measurement Unit Dropdown */}
-            <Tooltip content="Unit" placement="top" closeDelay={50}>
-              <div className="inline-block">
-                <Dropdown placement="top" className="bg-zinc-950 border border-zinc-800 text-white">
-                  <DropdownTrigger>
-                    <Button
-                      size="sm"
-                      className="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white font-bold text-xs min-w-unit-12 h-8 rounded-full px-3 uppercase"
-                    >
-                      {selectedUnit}
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu
-                    aria-label="Measurement Unit Options"
-                    selectedKeys={new Set([selectedUnit])}
-                    selectionMode="single"
-                    onAction={(key) => handleUnitChange(key as string)}
+          <div className="w-px h-5 bg-gray-600 mx-3"></div>
+
+          {/* Measurement Unit Dropdown */}
+          <Tooltip content="Unit" placement="top" closeDelay={50}>
+            <div className="inline-block">
+              <Dropdown placement="top" className="bg-zinc-950 border border-zinc-800 text-white">
+                <DropdownTrigger>
+                  <Button
+                    size="sm"
+                    className="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white font-bold text-xs min-w-unit-12 h-8 rounded-full px-3 uppercase"
                   >
-                    <DropdownSection title="Metric" className="text-zinc-400">
-                      <DropdownItem key="mm" className="text-zinc-200 hover:bg-zinc-800">
-                        mm (Millimeter)
-                      </DropdownItem>
-                      <DropdownItem key="cm" className="text-zinc-200 hover:bg-zinc-800">
-                        cm (Centimeter)
-                      </DropdownItem>
-                    </DropdownSection>
-                    <DropdownSection title="Imperial" className="text-zinc-400">
-                      <DropdownItem key="inch" className="text-zinc-200 hover:bg-zinc-800">
-                        inch (Inches)
-                      </DropdownItem>
-                      <DropdownItem key="foot" className="text-zinc-200 hover:bg-zinc-800">
-                        foot (Feet)
-                      </DropdownItem>
-                    </DropdownSection>
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
-            </Tooltip>
+                    {selectedUnit}
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  aria-label="Measurement Unit Options"
+                  selectedKeys={new Set([selectedUnit])}
+                  selectionMode="single"
+                  onAction={(key) => handleUnitChange(key as string)}
+                >
+                  <DropdownSection title="Metric" className="text-zinc-400">
+                    <DropdownItem key="mm" className="text-zinc-200 hover:bg-zinc-800">
+                      mm (Millimeter)
+                    </DropdownItem>
+                    <DropdownItem key="cm" className="text-zinc-200 hover:bg-zinc-800">
+                      cm (Centimeter)
+                    </DropdownItem>
+                  </DropdownSection>
+                  <DropdownSection title="Imperial" className="text-zinc-400">
+                    <DropdownItem key="inch" className="text-zinc-200 hover:bg-zinc-800">
+                      inch (Inches)
+                    </DropdownItem>
+                    <DropdownItem key="foot" className="text-zinc-200 hover:bg-zinc-800">
+                      foot (Feet)
+                    </DropdownItem>
+                  </DropdownSection>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          </Tooltip>
+
+          <div className="w-px h-5 bg-zinc-800 mx-3"></div>
+
+          <Tooltip content="Enable/Disable Collision" closeDelay={50}>
+            <button
+              className={`flex items-center gap-2 cursor-pointer p-2 rounded-full transition ${collisionActive ? (theme === "dark" ? "bg-amber-400 text-black shadow-md shadow-amber-400/20 font-bold" : "bg-white text-black shadow-md shadow-white/20 font-bold") : "hover:bg-zinc-800/80 text-zinc-400 hover:text-white"}`}
+              onClick={handleCollisionToggle}
+            >
+              {/* <Icon icon={Icons.wallIcon} width={18} height={18} /> */}
+              <Icon icon="lucide:between-horizontal-start" width={18} height={18} />
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

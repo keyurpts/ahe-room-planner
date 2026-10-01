@@ -40,7 +40,8 @@ import {
   PlaneGeometry,
   TextureLoader,
   RepeatWrapping,
-  SRGBColorSpace
+  SRGBColorSpace,
+  BoxGeometry
 } from "three";
 import {
   Tween,
@@ -79,7 +80,7 @@ import { PostProcessingManager } from "./Components/PostProcessingManager";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
-import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit } from "./Constants";
+import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit, Config } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
 
 /**
@@ -492,6 +493,16 @@ export class ConfiguratorCore {
      */
   private currentUnit: LengthUnit = LengthUnit.MM;
 
+  private isCollisionActive: boolean = true;
+
+  public setCollisionStatus(isActive: boolean) {
+    this.isCollisionActive = isActive
+  }
+
+  public getCollisionStatus() {
+    return this.isCollisionActive;
+  }
+
   /**
    * Creates a new ConfiguratorCore instance
    *
@@ -527,7 +538,7 @@ export class ConfiguratorCore {
       case CameraTypes.PERSPECTIVE:
         this.cameraManager.addPerspectiveCamera(
           CameraNames.PERSPECTIVE_CAMERA,
-          75,
+          50,
           width / height,
           0.1,
           10000
@@ -738,6 +749,9 @@ export class ConfiguratorCore {
   public setLengthUnit(unit: LengthUnit | string): void {
     this.currentUnit = normalizeLengthUnit(unit);
     this.toggleMeasurement();
+    // this.refreshDimensions();
+    // this.refreshWindows();
+    // this.refreshDoors();
   }
 
   /**
@@ -2074,7 +2088,7 @@ export class ConfiguratorCore {
     startPoint: Vector3,
     endPoint: Vector3,
     direction: Vector3,
-    distance: number
+    distance: number,
   ) {
     const geometry = new LineGeometry();
     geometry.setPositions([
@@ -2120,6 +2134,7 @@ export class ConfiguratorCore {
     this.measurementGroup?.add(startArrow);
     this.measurementGroup?.add(endArrow);
 
+    console.log("this.currentUnit : ", this.currentUnit);
     const distance_in_unit = this.convertLength(distance, this.currentUnit);
 
     const labelSprite = this.createTextSprite(`${distance_in_unit.toFixed(2)} ${this.currentUnit}`);
@@ -4582,8 +4597,95 @@ export class ConfiguratorCore {
           metadata.id = newNameAndId.id;
         }
       }
+
+      let xCoord, zCoord, yCoord;
+
+      // continuous run alignment
+      if (this.modelRoot && this.modelRoot.name !== "room_model") {
+        let maxX = this.getPositiveXCoordinate(this.modelRoot)
+        let distX = this.getDistanceFromNegativeXCoordinate(this.mainModel)
+
+        let distZprev = this.getDistanceFromNegativeZCoordinate(this.modelRoot);
+        let distZCurrent = this.getDistanceFromNegativeZCoordinate(this.mainModel);
+        let zFinal = distZCurrent - distZprev;
+
+
+        xCoord = maxX + distX;
+        zCoord = this.modelRoot.position.z + zFinal;
+
+        const box = new Box3().setFromObject(this.mainModel, true);
+        yCoord = this.mainModel.position.y - box.min.y;
+
+        position = new Vector3(xCoord, yCoord, zCoord);
+
+      }
+      else {
+
+        // get the roomModel ans first walll mesh
+        let room = this.scene.getObjectByName("room_model");
+        let wallGroup = room!.children[0];
+        let firstWall = wallGroup.children[0];
+        // @ts-ignore
+        let firstWallStartPoint = firstWall.startPoint;
+        let BoxGeom = new BoxGeometry(1, 1, 1);
+        let BoxMaterial = new MeshStandardMaterial();
+        // BoxMaterial.color = new Color( 0xffffff );
+        let Box = new Mesh(BoxGeom, BoxMaterial);
+        // this.scene.add(Box);
+        // Box.position.set(firstWallStartPoint.x, 0, firstWallStartPoint.z);
+        // position = new Vector3(targetX, yCoord, targetZ);
+
+
+        // @ts-ignore
+        let connecting_wall_id = firstWall.startPointWallIds[0];
+        let second_wall = this.scene.getObjectByProperty("wall_id", connecting_wall_id);
+
+        console.log("second wall : ", second_wall);
+
+        let conncetionPoint = new Vector3(firstWallStartPoint.x, 0, firstWallStartPoint.z)
+        // @ts-ignore
+        let wall1OtherPoint = new Vector3(firstWall.endPoint.x, 0, firstWall.endPoint.z);
+        let wall2OtherPoint = new Vector3();
+        // @ts-ignore
+        if (firstWall.startPoint.x === second_wall!.startPoint.x && firstWall.startPoint.z === second_wall!.startPoint.z) {
+          // @ts-ignore
+          wall2OtherPoint = new Vector3(second_wall!.endPoint.x, 0, second_wall!.endPoint.z);
+        }
+        else {
+          // @ts-ignore
+          wall2OtherPoint = new Vector3(second_wall!.startPoint.x, 0, second_wall!.startPoint.z);
+        }
+
+        const wallThickness = (Config.WALL_THICKNESS as number) * (Config.WORLD_SCALE as number);
+        let innerIntersectionPoint = this.getInnerWallFaceIntersection(conncetionPoint, wall1OtherPoint, wall2OtherPoint, wallThickness);
+        console.log("innerIntersectionPoint : ", innerIntersectionPoint);
+        // Box.position.set(innerIntersectionPoint!.x, 0, innerIntersectionPoint!.z);
+        Box.position.set(0, 0, 0);
+
+
+        // let dist = this.getDistanceFromModelOriginToBoundingBoxMin(this.mainModel);
+        // Bounding box in world coordinates
+        const boundingBox = new Box3().setFromObject(this.mainModel);
+
+        // Current minimum corner of the bounding box
+        const currentMin = boundingBox.min.clone();
+
+        // Translation required in world coordinates
+        const worldOffset = innerIntersectionPoint!.clone().sub(currentMin);
+
+        this.mainModel.position.add(worldOffset);
+        position = this.mainModel.position.clone();
+
+
+      }
+
+
       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
+
+      this.modelController.removeBoundingBoxHelper();
       this.modelRoot = this.mainModel;
+      this.modelController.addBoundingBoxHelper(this.modelRoot);
+      this.modelController.placedModels.push(this.modelRoot!);
 
       //store metadata in userData
       this.modelRoot.userData = {
@@ -4625,6 +4727,109 @@ export class ConfiguratorCore {
     } catch (error) {
       throw error;
     }
+  }
+
+  public getPositiveXCoordinate(object: Object3D): number {
+    const box = new Box3().setFromObject(object, true);
+    // +X face is at max.x
+    const x = box.max.x;
+    return x;
+  }
+
+  public getDistanceFromNegativeXCoordinate(object: Object3D): number {
+    const box = new Box3().setFromObject(object, true);
+    return Math.abs(object.position.x - box.min.x);
+  }
+  public getDistanceFromNegativeZCoordinate(object: Object3D): number {
+    const box = new Box3().setFromObject(object, true);
+    return Math.abs(object.position.z - box.min.z);
+  }
+
+  private getInnerWallFaceIntersection(
+    connectionPoint: Vector3,
+    wall1OtherPoint: Vector3,
+    wall2OtherPoint: Vector3,
+    wallThickness: number
+  ): Vector3 | null {
+    const p = connectionPoint.clone();
+
+    // Both wall directions are considered from the common point outward
+    const d1 = wall1OtherPoint.clone().sub(p);
+    const d2 = wall2OtherPoint.clone().sub(p);
+
+    // Work only in XZ plane
+    d1.y = 0;
+    d2.y = 0;
+
+    if (d1.lengthSq() === 0 || d2.lengthSq() === 0) {
+      return null;
+    }
+
+    d1.normalize();
+    d2.normalize();
+
+    // Cross product in XZ plane
+    const cross = d1.x * d2.z - d1.z * d2.x;
+
+    // Walls are parallel or nearly parallel
+    if (Math.abs(cross) < 1e-8) {
+      return null;
+    }
+
+    // Perpendicular normals
+    // +normal represents one side of the wall
+    const n1 = new Vector3(-d1.z, 0, d1.x);
+    const n2 = new Vector3(-d2.z, 0, d2.x);
+
+    let side1: number;
+    let side2: number;
+
+    // Select the faces bounding the smaller angle between the walls
+    if (cross > 0) {
+      side1 = 1;
+      side2 = -1;
+    } else {
+      side1 = -1;
+      side2 = 1;
+    }
+
+    const halfThickness = wallThickness / 2;
+
+    // A point lying on Wall 1 inner face
+    const face1Point = p.clone().add(
+      n1.clone().multiplyScalar(halfThickness * side1)
+    );
+
+    // A point lying on Wall 2 inner face
+    const face2Point = p.clone().add(
+      n2.clone().multiplyScalar(halfThickness * side2)
+    );
+
+    const cross2D = (
+      a: Vector3,
+      b: Vector3
+    ): number => {
+      return a.x * b.z - a.z * b.x;
+    };
+
+    const denominator = cross2D(d1, d2);
+
+    if (Math.abs(denominator) < 1e-8) {
+      return null;
+    }
+
+    const diff = face2Point.clone().sub(face1Point);
+
+    const t = cross2D(diff, d2) / denominator;
+
+    const intersection = face1Point
+      .clone()
+      .add(d1.clone().multiplyScalar(t));
+
+    // Keep same elevation as connection point
+    intersection.y = connectionPoint.y;
+
+    return intersection;
   }
 
   /**
@@ -5557,11 +5762,15 @@ export class ConfiguratorCore {
           this.modelRoot?.updateWorldMatrix(true, true);
           this.scene.updateWorldMatrix(true, true);
 
-          const wasReverted = this.modelController.checkModelCollision(
-            this.modelRoot as Object3D,
-            this.currentSelectedLastValidPosition,
-            this.currentSelectedLastValidRotation
-          );
+
+          let wasReverted = null;
+          if (this.isCollisionActive) {
+            wasReverted = this.modelController.checkModelCollision(
+              this.modelRoot as Object3D,
+              this.currentSelectedLastValidPosition,
+              this.currentSelectedLastValidRotation
+            );
+          }
 
           if (wasReverted && controls instanceof TransformControls) {
             controls.attach(this.modelRoot as Object3D);
@@ -5818,11 +6027,20 @@ export class ConfiguratorCore {
     if (axis === "y") this.modelRoot.rotation.y = rad;
     if (axis === "z") this.modelRoot.rotation.z = rad;
 
-    const wasReverted = this.modelController.checkModelCollision(
-      this.modelRoot,
-      this.currentSelectedLastValidPosition,
-      this.currentSelectedLastValidRotation
-    );
+    // const wasReverted = this.modelController.checkModelCollision(
+    //   this.modelRoot,
+    //   this.currentSelectedLastValidPosition,
+    //   this.currentSelectedLastValidRotation
+    // );
+
+    let wasReverted = null;
+    if (this.isCollisionActive) {
+      wasReverted = this.modelController.checkModelCollision(
+        this.modelRoot as Object3D,
+        this.currentSelectedLastValidPosition,
+        this.currentSelectedLastValidRotation
+      );
+    }
 
     if (!wasReverted) {
       this.modelController.updateHelper();

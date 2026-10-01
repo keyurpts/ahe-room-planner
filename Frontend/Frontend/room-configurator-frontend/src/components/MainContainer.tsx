@@ -1,4 +1,4 @@
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import DesignArea from "./DesignArea";
 import TopPanel from "./TopPanel";
 import { ConfiguratorCore, ConfiguratorEventType, Events } from "three-configurator";
@@ -72,6 +72,7 @@ const MainContainer = ({
   const [wallsOnlyMeasurementActive, setWallsOnlyMeasurementActive] = useState(false);
   const [objectToObjectMeasurementActive, setObjectToObjectMeasurementActive] = useState(false);
   const [wallHidingActive, setWallHidingActive] = useState(false);
+  const [collisionActive, setCollisionActive] = useState(true);
   const [isPriceSummaryOpen, setIsPriceSummaryOpen] = useState(false);
 
   useEffect(() => {
@@ -131,64 +132,62 @@ const MainContainer = ({
         onLogout={onLogout}
         selectedProject={selectedProject}
       />
-      
+
       {/* Floating Action Bar */}
       {isConfigUiOpen && (
-        <div 
+        <div
           className="absolute bottom-4 z-[60] flex flex-col items-end gap-1 drop-shadow-md"
           style={{
             right: isModelPanelOpen || isRightSidebarOpen ? "17.9%" : isPriceSummaryOpen ? "15%" : "0%",
           }}
         >
-        <Tooltip content="Model Hierarchy" placement="left">
-          <button
-            className={`flex items-center justify-center w-3.5 h-12 transition-colors ${
-              isModelPanelOpen
+          <Tooltip content="Model Hierarchy" placement="left">
+            <button
+              className={`flex items-center justify-center w-3.5 h-12 transition-colors ${isModelPanelOpen
                 ? "bg-amber-500 text-white"
                 : (theme === "dark" ? "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white" : "bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900")
-            }`}
-            style={{ clipPath: "polygon(0 10%, 100% 0, 100% 100%, 0 90%)" }}
-            onClick={() => {
-              setIsModelPanelOpen((prev: boolean) => !prev);
-              setIsRightSidebarOpen(false);
-              setIsPriceSummaryOpen(false);
-            }}
-          >
-            <Icon icon="lucide:chevron-left" className="w-4 h-4" />
-          </button>
-        </Tooltip>
+                }`}
+              style={{ clipPath: "polygon(0 10%, 100% 0, 100% 100%, 0 90%)" }}
+              onClick={() => {
+                setIsModelPanelOpen((prev: boolean) => !prev);
+                setIsRightSidebarOpen(false);
+                setIsPriceSummaryOpen(false);
+              }}
+            >
+              <Icon icon="lucide:chevron-left" className="w-4 h-4" />
+            </button>
+          </Tooltip>
 
-        <Tooltip content="Price Summary" placement="left">
-          <button
-            className={`flex items-center justify-center w-3.5 h-12 transition-colors ${
-              isPriceSummaryOpen
+          <Tooltip content="Price Summary" placement="left">
+            <button
+              className={`flex items-center justify-center w-3.5 h-12 transition-colors ${isPriceSummaryOpen
                 ? "bg-amber-500 text-white"
                 : (theme === "dark" ? "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white" : "bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900")
-            }`}
-            style={{ clipPath: "polygon(0 10%, 100% 0, 100% 100%, 0 90%)" }}
-            onClick={() => {
-              if (configuratorInstance?.getModelsSummary()?.models?.length === 0) {
-                addToast({
-                  title: "No Models Found",
-                  description: "Please add a model to the room to view the price summary.",
-                  color: "warning",
-                });
-                return;
-              }
-              setIsPriceSummaryOpen((prev) => !prev);
-              setIsModelPanelOpen(false);
-              setIsRightSidebarOpen(false);
-            }}
-          >
-            <Icon icon="lucide:chevron-left" className="w-4 h-4" />
-          </button>
-        </Tooltip>
-      </div>
+                }`}
+              style={{ clipPath: "polygon(0 10%, 100% 0, 100% 100%, 0 90%)" }}
+              onClick={() => {
+                if (configuratorInstance?.getModelsSummary()?.models?.length === 0) {
+                  addToast({
+                    title: "No Models Found",
+                    description: "Please add a model to the room to view the price summary.",
+                    color: "warning",
+                  });
+                  return;
+                }
+                setIsPriceSummaryOpen((prev) => !prev);
+                setIsModelPanelOpen(false);
+                setIsRightSidebarOpen(false);
+              }}
+            >
+              <Icon icon="lucide:chevron-left" className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        </div>
       )}
 
       {(isConfigUiOpen && isPriceSummaryOpen) && (
-        <PriceSummaryPanel 
-          configuratorInstance={configuratorInstance} 
+        <PriceSummaryPanel
+          configuratorInstance={configuratorInstance}
           isModelPanelOpen={isModelPanelOpen}
           isRightSidebarOpen={isRightSidebarOpen}
         />
@@ -228,6 +227,8 @@ const MainContainer = ({
         setWallHidingActive={setWallHidingActive}
         setIsPriceSummaryOpen={setIsPriceSummaryOpen}
         manager={floorPlanManager}
+        collisionActive={collisionActive}
+        setCollisionActive={setCollisionActive}
       />
     </div>
   );

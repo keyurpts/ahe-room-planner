@@ -78,13 +78,13 @@ const ModelThumbnail = ({
   const [hasError, setHasError] = useState<boolean>(false);
   const [isImgLoading, setIsImgLoading] = useState<boolean>(false);
   const ref = useRef<HTMLDivElement>(null);
-  
+
   const entry = useIntersectionObserver(ref, {
     threshold: 0,
     rootMargin: "200px",
     freezeOnceVisible: true,
   });
-  
+
   const isVisible = !!entry?.isIntersecting;
 
   useEffect(() => {
@@ -700,7 +700,7 @@ export default function FurnitureGrid({
 
       await configuratorInstance.loadModel(
         modelUrlToLoad,
-        true,
+        false,
         undefined,
         undefined,
         callbacks,
@@ -753,10 +753,9 @@ export default function FurnitureGrid({
             }
           }
         }
-        
         if (modelUrlToLoad) {
           modelUrlToLoad = resolveStorageUrl(modelUrlToLoad);
-          configuratorInstance.getAssetLoader().loadGLB(modelUrlToLoad).catch(() => {});
+          configuratorInstance.getAssetLoader().loadGLB(modelUrlToLoad).catch(() => { });
         }
       } catch (err) {
         console.warn("Error prefetching model:", err);
@@ -773,7 +772,7 @@ export default function FurnitureGrid({
   };
 
   return (
-    <div className="flex w-full flex-col h-full">
+    <div className="flex w-full flex-col " style={{ height: "75%" }}>
       <Tabs
         aria-label="Customizations"
         placement="bottom"
