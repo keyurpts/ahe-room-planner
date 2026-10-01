@@ -279,7 +279,7 @@ export class CollisionSystem {
      * @param mobileModel - The model to check.
      * @returns `true` if the model is inside floor bounds, `false` otherwise.
      */
-    private isModelInsideFloorBounds(mobileModel: THREE.Object3D): boolean {
+    public isModelInsideFloorBounds(mobileModel: THREE.Object3D, footprint?: THREE.Vector2[]): boolean {
         const floorMeshes = this.collectFloorMeshes(mobileModel);
         if (floorMeshes.length === 0) return true;
 
@@ -293,7 +293,11 @@ export class CollisionSystem {
         const centerX = (minX + maxX) / 2;
         const centerZ = (minZ + maxZ) / 2;
 
-        const footprintPoints = [
+        const footprintPoints = footprint?.length ? [
+            ...footprint,
+            ...footprint.map((p, i) => p.clone().add(footprint[(i + 1) % footprint.length]).multiplyScalar(0.5)),
+            footprint.reduce((sum, p) => sum.add(p), new THREE.Vector2()).multiplyScalar(1 / footprint.length),
+        ] : [
             new THREE.Vector2(minX, minZ),
             new THREE.Vector2(centerX, minZ),
             new THREE.Vector2(maxX, minZ),

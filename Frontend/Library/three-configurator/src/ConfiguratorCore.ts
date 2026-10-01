@@ -55,6 +55,7 @@ import type {
   ProjectConfig,
   HierarchyNode
 } from "./types/types";
+import { findAutomaticPlacement, physicalBox, meshFootprint, physicalFootprint, type PlacementWall } from "./Components/AutomaticPlacement";
 import { AssetLoader } from "./Components/AssetLoader";
 import { RendererManager } from "./Components/RendererManager";
 import { LightsManager } from "./Components/LightsManager";
@@ -79,7 +80,7 @@ import { PostProcessingManager } from "./Components/PostProcessingManager";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
-import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle } from "./Constants";
+import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
 
 /**
@@ -487,6 +488,22 @@ export class ConfiguratorCore {
   private isPreviewDragging = false;
 
   /**
+     * Current unit for displaying wall lengths ('mm', 'cm', 'inch', 'foot').
+     * Default is 'mm' (millimeters).
+     */
+  private currentUnit: LengthUnit = LengthUnit.MM;
+
+  private isCollisionActive: boolean = true;
+
+  public setCollisionStatus(isActive: boolean) {
+    this.isCollisionActive = isActive
+  }
+
+  public getCollisionStatus() {
+    return this.isCollisionActive;
+  }
+
+  /**
    * Creates a new ConfiguratorCore instance
    *
    * @param options - Configuration options
@@ -727,6 +744,14 @@ export class ConfiguratorCore {
     this.furnitureGroup.name = RequiredStrings.FURNITURE_GROUP;
     this.scene.add(this.furnitureGroup);
 
+  }
+
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.currentUnit = normalizeLengthUnit(unit);
+    this.toggleMeasurement();
+    // this.refreshDimensions();
+    // this.refreshWindows();
+    // this.refreshDoors();
   }
 
   /**
@@ -2046,7 +2071,7 @@ export class ConfiguratorCore {
     startPoint: Vector3,
     endPoint: Vector3,
     direction: Vector3,
-    distance: number
+    distance: number,
   ) {
     const geometry = new LineGeometry();
     geometry.setPositions([
@@ -2092,8 +2117,11 @@ export class ConfiguratorCore {
     this.measurementGroup?.add(startArrow);
     this.measurementGroup?.add(endArrow);
 
-    const labelSprite = this.createTextSprite(`${distance.toFixed(2)} unit`);
-    labelSprite.userData.text = `${distance.toFixed(2)} unit`;
+    console.log("this.currentUnit : ", this.currentUnit);
+    const distance_in_unit = this.convertLength(distance, this.currentUnit);
+
+    const labelSprite = this.createTextSprite(`${distance_in_unit.toFixed(2)} ${this.currentUnit}`);
+    labelSprite.userData.text = `${distance_in_unit.toFixed(2)} ${this.currentUnit}`;
     //for object to move to new position after updating distance
     labelSprite.userData.direction = direction.clone().normalize();
     labelSprite.userData.distance = distance;
@@ -2106,6 +2134,28 @@ export class ConfiguratorCore {
     labelSprite.position.copy(mid);
 
     this.measurementGroup?.add(labelSprite);
+  }
+
+  private convertLength(value: number, unit: LengthUnit): number {
+    // 1 input unit = 100 cm
+    const valueInCm = value * 100;
+
+    switch (unit) {
+      case LengthUnit.MM:
+        return valueInCm * 10;
+
+      case LengthUnit.CM:
+        return valueInCm;
+
+      case LengthUnit.INCH:
+        return valueInCm / 2.54;
+
+      case LengthUnit.FOOT:
+        return valueInCm / 30.48;
+
+      default:
+        return valueInCm;
+    }
   }
 
   /**
@@ -4504,6 +4554,8 @@ export class ConfiguratorCore {
     if (this.isPreviewActive || this.isReplacingModel) return null;
     const baseModel = ModelController.GetRoomModel(this.scene);
 
+    const previousMainModel = this.mainModel;
+
     try {
       this.mainModel = await this.assetLoader.loadGLB(
         url,
@@ -4530,8 +4582,37 @@ export class ConfiguratorCore {
           metadata.id = newNameAndId.id;
         }
       }
+
+      // Explicit transforms, previews and replacements have their own placement lifecycle.
+      if (baseModel && !isPreview && !position && !this.modelPendingReplacement) {
+        if (rotation) this.mainModel.rotation.copy(rotation);
+        const placement = this.findModelPlacement(this.mainModel, baseModel);
+        if (!placement) {
+          // GLB clones share cached geometry; release only private materials.
+          this.mainModel.traverse(node => {
+            if (node instanceof Mesh) {
+              const materials = Array.isArray(node.material) ? node.material : [node.material];
+              materials.forEach(material => material.dispose());
+            }
+          });
+          this.mainModel = previousMainModel;
+          this.lightsManager.mainModel = previousMainModel;
+          Events.emit(ConfiguratorEventType.COLLISION, {
+            title: "No space available",
+            message: "There is no space left in the room to place this model. Move or remove a model and try again.",
+            color: "warning",
+          });
+          return null;
+        }
+        position = placement.position;
+        rotation = placement.rotation;
+      }
       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
+
+      this.modelController.removeBoundingBoxHelper();
       this.modelRoot = this.mainModel;
+      this.modelController.addBoundingBoxHelper(this.modelRoot);
+      this.modelController.placedModels.push(this.modelRoot!);
 
       //store metadata in userData
       this.modelRoot.userData = {
@@ -4553,7 +4634,8 @@ export class ConfiguratorCore {
         await this.handlePreviewMode(baseModel);
 
         return null;
-      } else {
+      }
+      else {
         this.checkTransform();
         const result = this.addModel(this.mainModel, position, rotation);
 
@@ -4574,6 +4656,73 @@ export class ConfiguratorCore {
     }
   }
 
+  public getPositiveXCoordinate(object: Object3D): number {
+    const box = new Box3().setFromObject(object, true);
+    // +X face is at max.x
+    const x = box.max.x;
+    return x;
+  }
+
+  public getDistanceFromNegativeXCoordinate(object: Object3D): number {
+    const box = new Box3().setFromObject(object, true);
+    return Math.abs(object.position.x - box.min.x);
+  }
+  public getDistanceFromNegativeZCoordinate(object: Object3D): number {
+    const box = new Box3().setFromObject(object, true);
+    return Math.abs(object.position.z - box.min.z);
+  }
+
+  private findModelPlacement(model: Object3D, room: Object3D): { position: Vector3; rotation: Euler } | null {
+    this.scene.updateMatrixWorld(true);
+    const bounds = new Box3();
+    const obstacles: Vector2[][] = [];
+    const walls: PlacementWall[] = [];
+    const seenWalls = new Set<string>();
+    const floors: Mesh[] = [];
+    room.traverse(node => {
+      if (!(node instanceof Mesh)) return;
+      if ((node as any).isFloor || node.name.toLowerCase().includes(FloorNames.FLOOR)) {
+        floors.push(node);
+        bounds.union(physicalBox(node));
+      }
+    });
+    if (bounds.isEmpty()) bounds.copy(physicalBox(room));
+    if (bounds.isEmpty()) return null;
+    const floorY = floors.length ? Math.max(...floors.map(floor => physicalBox(floor).max.y)) : bounds.min.y;
+    const height = physicalBox(model).getSize(new Vector3()).y;
+    room.traverse(node => {
+      if (!(node instanceof Mesh) || floors.includes(node)) return;
+      if (/helper|gizmo|control/i.test(node.name) || ["Box", "BoxFront", "BoxBack", "BoxLeft", "BoxRight"].includes(node.name)) return;
+      const box = physicalBox(node);
+      if (box.max.y <= floorY + 1e-6 || box.min.y >= floorY + height) return;
+      obstacles.push(meshFootprint(node));
+      const wall = node as Mesh & { startPoint?: { x: number; z: number }; endPoint?: { x: number; z: number }; wall_id?: string };
+      if (!wall.startPoint || !wall.endPoint || seenWalls.has(wall.wall_id ?? node.uuid)) return;
+      seenWalls.add(wall.wall_id ?? node.uuid);
+      const start = new Vector3(wall.startPoint.x, 0, wall.startPoint.z);
+      const end = new Vector3(wall.endPoint.x, 0, wall.endPoint.z);
+      if (node.parent) { node.parent.localToWorld(start); node.parent.localToWorld(end); }
+      if (start.distanceToSquared(end) > 1e-12) {
+        const a = new Vector2(start.x, start.z), b = new Vector2(end.x, end.z);
+        const direction = b.clone().sub(a).normalize();
+        const normal = new Vector2(-direction.y, direction.x);
+        const halfThickness = Math.max(...meshFootprint(node).map(p => Math.abs(p.clone().sub(a).dot(normal))));
+        walls.push({ start: a, end: b, halfThickness });
+      }
+    });
+    this.scene.traverse(node => {
+      if (node === room || node === model || !node.userData.isGLBModel) return;
+      let nested = false;
+      node.traverseAncestors(parent => { if (parent === room || parent.userData.isGLBModel) nested = true; });
+      if (!nested) {
+        const box = physicalBox(node);
+        if (!box.isEmpty()) obstacles.push(physicalFootprint(node));
+      }
+    });
+    const selected = this.modelRoot && this.modelRoot !== room ? this.modelRoot : null;
+    return findAutomaticPlacement(model, bounds, obstacles, walls, selected, floorY,
+      () => this.collisionSystem.isModelInsideFloorBounds(model, physicalFootprint(model)));
+  }
   /**
    * Duplicates the currently selected 3D model in the workspace.
    *
@@ -5524,11 +5673,15 @@ export class ConfiguratorCore {
           this.modelRoot?.updateWorldMatrix(true, true);
           this.scene.updateWorldMatrix(true, true);
 
-          const wasReverted = this.modelController.checkModelCollision(
-            this.modelRoot as Object3D,
-            this.currentSelectedLastValidPosition,
-            this.currentSelectedLastValidRotation
-          );
+
+          let wasReverted = null;
+          if (this.isCollisionActive) {
+            wasReverted = this.modelController.checkModelCollision(
+              this.modelRoot as Object3D,
+              this.currentSelectedLastValidPosition,
+              this.currentSelectedLastValidRotation
+            );
+          }
 
           if (wasReverted && controls instanceof TransformControls) {
             controls.attach(this.modelRoot as Object3D);
@@ -5785,11 +5938,20 @@ export class ConfiguratorCore {
     if (axis === "y") this.modelRoot.rotation.y = rad;
     if (axis === "z") this.modelRoot.rotation.z = rad;
 
-    const wasReverted = this.modelController.checkModelCollision(
-      this.modelRoot,
-      this.currentSelectedLastValidPosition,
-      this.currentSelectedLastValidRotation
-    );
+    // const wasReverted = this.modelController.checkModelCollision(
+    //   this.modelRoot,
+    //   this.currentSelectedLastValidPosition,
+    //   this.currentSelectedLastValidRotation
+    // );
+
+    let wasReverted = null;
+    if (this.isCollisionActive) {
+      wasReverted = this.modelController.checkModelCollision(
+        this.modelRoot as Object3D,
+        this.currentSelectedLastValidPosition,
+        this.currentSelectedLastValidRotation
+      );
+    }
 
     if (!wasReverted) {
       this.modelController.updateHelper();

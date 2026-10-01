@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { ConfiguratorCore } from "../ConfiguratorCore";
 import { Converter } from "./Converter";
 import type { Wall3DData } from "./Converter";
-import { Config, ImageAssets, FixtureType } from "../Constants";
+import { Config, ImageAssets, FixtureType, LengthUnit } from "../Constants";
 import { WallCutter, type DoorWindowData } from "./WallCutter";
 import { DoorWindowHelper } from "./DoorWindowHelper";
 
@@ -84,6 +84,10 @@ export class Design3D {
     // Instantiate the converter
     this.converter = new Converter();
     this.wallCutter = new WallCutter();
+  }
+
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.core?.setLengthUnit(unit);
   }
 
   /**
@@ -266,7 +270,7 @@ export class Design3D {
     if (!this.active3DWallGroup) {
       return;
     }
-  for (const doorWindow of doorWindows) {
+    for (const doorWindow of doorWindows) {
       let model: THREE.Group;
       if (doorWindow.type === FixtureType.DOOR) {
         model = DoorWindowHelper.createDoor(doorWindow.width, doorWindow.height, wallThickness);

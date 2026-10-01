@@ -15,6 +15,9 @@ obj/
 # Node
 node_modules/
 
+# Configuration
+appsettings.json
+
 # Environment files
 .env
 .env.*

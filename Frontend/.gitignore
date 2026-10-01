@@ -13,6 +13,8 @@ dist-obfuscated
 dist-ssr
 *.local
 
+# Configuration
+appsettings.json
 
 # Editor directories and files
 .vscode/*

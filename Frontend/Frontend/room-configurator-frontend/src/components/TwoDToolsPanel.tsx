@@ -21,7 +21,7 @@ export default function TwoDToolsPanel({
   const [isSnappingEnabled, setIsSnappingEnabled] = useState(true);
   const [isGridEnabled, setIsGridEnabled] = useState(true);
   const [isMeasurementActive, setIsMeasurementActive] = useState(true);
-  const [gridScale, setGridScale] = useState<number>(30);
+  const [gridScale, setGridScale] = useState<number>(50);
   const [selectedUnit, setSelectedUnit] = useState<string>(LengthUnit.MM);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -310,7 +310,7 @@ export default function TwoDToolsPanel({
     }
   };
 
-  const scaleOptions = [30, 40, 50, 60, 70, 80, 90, 100];
+  const scaleOptions = [50, 60, 70, 80, 90, 100];
 
   const handleClear2DLayout = async () => {
     const has2DData = await manager?.is2DDataPresent();
