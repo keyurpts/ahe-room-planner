@@ -5111,11 +5111,14 @@ export class ConfiguratorCore {
       model.traverse((node: any) => {
         if (node instanceof Mesh && !node.userData.hasOriginalMaterial) {
           node.userData.hasOriginalMaterial = true;
-          node.userData.originalMaterial = node.material.clone();
+          node.userData.originalMaterial = Array.isArray(node.material)
+            ? node.material.map((material: MeshStandardMaterial) => material.clone())
+            : node.material.clone();
           node.userData.originalTexture = node.material.map ? node.material.map : null;
         }
       });
-      this.modelController.applyTexture(model, texUrl);
+      // The model finish selector currently offers woodgrain.
+      this.modelController.applyTexture(model, texUrl, { blackFeet: true });
 
       // Save texture price to metadata
       if (!model.userData.metadata) model.userData.metadata = {};
@@ -5227,7 +5230,9 @@ export class ConfiguratorCore {
       selected.traverse((node: any) => {
         if (node instanceof Mesh && !node.userData.hasOriginalMaterial) {
           node.userData.hasOriginalMaterial = true;
-          node.userData.originalMaterial = node.material.clone();
+          node.userData.originalMaterial = Array.isArray(node.material)
+            ? node.material.map((material: MeshStandardMaterial) => material.clone())
+            : node.material.clone();
           node.userData.originalTexture = node.material.map ? node.material.map : null;
         }
       });
@@ -5257,7 +5262,9 @@ export class ConfiguratorCore {
     this.modelRoot.traverse((node: any) => {
       if (node instanceof Mesh && node.userData.originalMaterial) {
         const currentMap = node.material.map;
-        node.material = node.userData.originalMaterial.clone();
+        node.material = Array.isArray(node.userData.originalMaterial)
+          ? node.userData.originalMaterial.map((material: MeshStandardMaterial) => material.clone())
+          : node.userData.originalMaterial.clone();
         node.material.map = currentMap;
         node.material.needsUpdate = true;
       }
@@ -5281,6 +5288,8 @@ export class ConfiguratorCore {
    */
   public resetTexture(): void {
     if (!this.modelRoot) return;
+
+    this.modelController.resetWoodgrainFeet(this.modelRoot);
 
     this.modelRoot.traverse((node: any) => {
       if (node instanceof Mesh && node.userData.originalMaterial) {
