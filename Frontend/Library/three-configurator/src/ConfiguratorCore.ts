@@ -796,18 +796,16 @@ export class ConfiguratorCore {
 
   /**
    * Sets up default lighting for the scene.
-   * Ambient and directional are kept soft so the dynamic ceiling SpotLights
-   * (added per-room in Design3D) read as the primary indoor light source.
+   * Neutral ambient fill complements the room daylight and diffuse bounce.
    *
    * @private
    * @returns {void}
    */
   private setupLighting(): void {
-    // A strong ambient light ensures all walls are illuminated equally,
-    // avoiding the issue where walls facing different directions have different brightness.
+    // Low neutral fill preserves the contrast from the shadow-casting room lights.
     this.lightsManager.AddLight("Ambient", {
       color: 0xffffff,
-      intensity: 1.2,
+      intensity: 0.2,
     });
   }
 
@@ -871,11 +869,8 @@ export class ConfiguratorCore {
       this.worktopSceneSignature = sceneSignature;
       cabinets.forEach(node => {
           ensureWorktop(node);
-          if (sceneChanged && node.userData.worktop?.depthMm === 900 && breakfastBarBlocked(node, this.scene)) {
-            node.userData.worktop.depthMm = 600;
-            ensureWorktop(node);
-            Events.emit(ConfiguratorEventType.COLLISION, { title: 'Worktop depth adjusted', message: 'Worktop changed to 600 mm because rear clearance is blocked.', color: 'warning' });
-          }
+          // Preserve the user's depth choice during unrelated scene edits.
+          // Validate rear clearance when the user requests breakfast-bar mode.
       });
       if (sceneChanged) Events.emit(ConfiguratorEventType.WORKTOP_UPDATED);
     }
@@ -910,6 +905,7 @@ export class ConfiguratorCore {
       });
     }
     this.rendererManager.renderer.sortObjects = true;
+    this.tweenGroup.update(time);
 
     // render scene
     if (this.vrManager.isInVR) {
@@ -921,7 +917,6 @@ export class ConfiguratorCore {
         this.postProcessingManager.render(this.clock.getDelta());
       }
       else {
-        this.tweenGroup.update(time);
         this.rendererManager.renderer.render(this.scene, this.camera);
       }
     }
@@ -3872,7 +3867,13 @@ export class ConfiguratorCore {
   ): void {
     object.traverse((child) => {
       if ((child as Mesh).isMesh) {
-        child.castShadow = cast;
+        const mesh = child as Mesh & { isCeiling?: boolean; isFloor?: boolean; wall_id?: string; wallId?: string };
+        // The cutaway room shell must not occlude the broad presentation light.
+        // Back-facing ceilings and transparent boundary helpers still cast
+        // shadows in Three.js even when absent from the camera's colour image.
+        const roomShell = mesh.isCeiling || mesh.isFloor || mesh.wall_id != null || mesh.wallId != null ||
+          mesh.userData.wallId != null || /^(ceiling_mesh|floor_mesh|boundary_cube_)/i.test(mesh.name);
+        child.castShadow = cast && !roomShell && !mesh.userData.isWorktop;
         child.receiveShadow = receive;
       }
     });

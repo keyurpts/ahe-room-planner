@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import ts from 'typescript';
 import * as THREE from 'three';
 import { OBB } from 'three/examples/jsm/math/OBB.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const source = fs.readFileSync(new URL('../src/Components/WorktopManager.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
@@ -37,6 +38,24 @@ function cabinet() {
   return model;
 }
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6, `${actual} != ${expected}`);
+test('left and right neighbors allow breakfast bars, including merged mesh empty bounds', () => {
+  const scene = new THREE.Scene(), model = cabinet(); scene.add(model);
+  for (const x of [-.8, .8]) {
+    const neighbor = cabinet(); neighbor.position.x = x; scene.add(neighbor);
+    ensureWorktop(neighbor); neighbor.userData.worktop.depthMm = 900; ensureWorktop(neighbor);
+  }
+  assert.equal(breakfastBarBlocked(model, scene), false);
+  const surround = new THREE.Mesh(mergeGeometries([
+    new THREE.BoxGeometry(.1, 2, 2).translate(-1, 1, 0),
+    new THREE.BoxGeometry(.1, 2, 2).translate(1, 1, 0),
+  ]), new THREE.MeshStandardMaterial());
+  surround.name = 'wall'; scene.add(surround);
+  assert.equal(breakfastBarBlocked(model, scene), false);
+  model.userData.worktop.depthMm = 900; ensureWorktop(model);
+  scene.children[1].position.x -= .2;
+  ensureWorktop(model);
+  assert.equal(model.userData.worktop.depthMm, 900);
+});
 test('idle worktops skip mesh traversal and movement reuses geometry', () => {
   const model = cabinet(); ensureWorktop(model); ensureWorktop(model);
   const mesh = model.children.find(node => node.userData.isWorktop);

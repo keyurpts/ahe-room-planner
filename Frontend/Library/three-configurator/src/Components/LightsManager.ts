@@ -646,16 +646,15 @@ export class LightsManager {
   }
 
   /**
-   * Spawns a grid of warm SpotLights just below the ceiling of the given room bounding box.
-   * Lights point straight down, their cone angle and shadow frustum are derived from the
-   * room dimensions so they work correctly for any room size.
+   * Builds broad daylight and diffuse room fill with a room-fitted shadow camera.
+   * The method name and legacy grid options are retained for caller compatibility.
    *
    * @param roomBounds - THREE.Box3 of the fully built room group.
-   * @param options.cols     - Columns of lights across the room width (default: auto from width).
-   * @param options.rows     - Rows of lights along the room depth (default: auto from depth).
-   * @param options.color    - Hex color of the spotlight (default: 0xfff5e0 – warm white).
-   * @param options.intensity - Luminous intensity of each light (default: 80).
-   * @param options.penumbra - Soft edge factor 0–1 (default: 0.45).
+   * @param options.cols     - Legacy grid option; no longer used.
+   * @param options.rows     - Legacy grid option; no longer used.
+   * @param options.color    - Main daylight color (default: warm neutral white).
+   * @param options.intensity - Main directional light intensity (default: 2.4).
+   * @param options.penumbra - Legacy spotlight option; no longer used.
    * @param options.ceilingOffset - Distance below roomBounds.max.y to position each light (default: 0.05).
    * @returns Array of light IDs so the caller can manage them if needed.
    */
@@ -672,6 +671,7 @@ export class LightsManager {
   ): string[] {
     // Clear any previously spawned ceiling lights first
     this.removeCeilingLights();
+    if (roomBounds.isEmpty() || ![...roomBounds.min.toArray(), ...roomBounds.max.toArray()].every(Number.isFinite)) return [];
 
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
@@ -683,81 +683,72 @@ export class LightsManager {
     const ceilingY = roomBounds.max.y - (options.ceilingOffset ?? 0.05);
     const floorY = roomBounds.min.y;
     const lightHeight = ceilingY - floorY;
+    if (roomWidth <= 0 || roomDepth <= 0 || lightHeight <= 0) return [];
 
-    // For a soft, diffuse global wash matching the first reference image, 
-    // use a less dense grid of wider, softer spotlights.
-    const cols = options.cols ?? Math.max(2, Math.ceil(roomWidth / 2.5));
-    const rows = options.rows ?? Math.max(2, Math.ceil(roomDepth / 2.5));
-
-    const color = options.color ?? 0xfffaf0; // very slight warm/neutral white
-    const intensity = options.intensity ?? 5;       // lower intensity for wider cones
-    const penumbra = options.penumbra ?? 1.0;      // maximum soft edge to blend the light
-
-    const cellW = roomWidth / cols;
-    const cellD = roomDepth / rows;
-
-    // Wider cone angle to create a global wash and eliminate distinct scallops on the walls
-    const spotAngle = Math.PI / 2.5;
-
-    // Shadow frustum reaches past the floor with some margin
-    const shadowFar = lightHeight + 1.0;
-    const shadowNear = 0.05;
-
-    const startX = center.x - roomWidth / 2 + cellW / 2;
-    const startZ = center.z - roomDepth / 2 + cellD / 2;
-
+    // Broad daylight has no spotlight cones or distance falloff. A single
+    // shadow direction avoids overlapping theatrical shadows across the room.
+    const span = Math.max(size.length(), 1);
+    const color = options.color ?? 0xfff8ef;
     const newIds: string[] = [];
+    const mainId = this.AddLight("Directional", {
+      color,
+      intensity: options.intensity ?? 2.4,
+      position: {
+        x: center.x + span * 0.55,
+        y: ceilingY + span * 0.8,
+        z: center.z + span * 0.4,
+      },
+      target: { x: center.x, y: floorY + lightHeight * 0.35, z: center.z },
+      castShadow: true,
+      shadow: {
+        mapSize: { width: span > 12 ? 4096 : 2048, height: span > 12 ? 4096 : 2048 },
+        bias: -0.0003,
+        normalBias: 0.015,
+        radius: 2,
+        camera: { near: 0.1, far: span * 4 },
+      },
+    });
+    newIds.push(mainId);
 
-    // -----------------------------------------------------------------------
-    // WebGL texture-unit budget: MeshStandardMaterial already uses ~8 slots.
-    // Each castShadow light adds 1 slot.  Cap at 2 shadow-casters so we
-    // stay within 16 even with fully-textured walls, floors, and furniture.
-    // -----------------------------------------------------------------------
-    const MAX_SHADOW_LIGHTS = 2;
-    let shadowCount = 0;
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const lx = startX + c * cellW;
-        const lz = startZ + r * cellD;
-
-        const castsShadow = shadowCount < MAX_SHADOW_LIGHTS;
-
-        const id = this.AddLight("Spot", {
-          color,
-          intensity,
-          position: { x: lx, y: ceilingY, z: lz },
-          target: { x: lx, y: floorY, z: lz }, // straight down
-          angle: spotAngle,
-          penumbra,
-          decay: 2,
-          distance: lightHeight * 3.0, // reach the floor and beyond for gentle falloff
-          castShadow: castsShadow,
-          ...(castsShadow && {
-            shadow: {
-              mapSize: { width: 1024, height: 1024 },
-              bias: -0.001,
-              normalBias: 0.02,
-              radius: 8,   // softer, blurred shadow edges
-              camera: { near: shadowNear, far: shadowFar },
-            },
-          }),
-        });
-
-        if (castsShadow) shadowCount++;
-        newIds.push(id);
+    // Fit all eight room corners in light space instead of using a fixed
+    // shadow frustum that clips shadows in large or off-centre rooms.
+    const main = this.getLight(mainId) as THREE.DirectionalLight;
+    main.updateWorldMatrix(true, false);
+    main.target.updateWorldMatrix(true, false);
+    main.shadow.updateMatrices(main);
+    const lightBounds = new THREE.Box3();
+    for (const x of [roomBounds.min.x, roomBounds.max.x]) {
+      for (const y of [roomBounds.min.y, roomBounds.max.y]) {
+        for (const z of [roomBounds.min.z, roomBounds.max.z]) {
+          lightBounds.expandByPoint(new THREE.Vector3(x, y, z).applyMatrix4(main.shadow.camera.matrixWorldInverse));
+        }
       }
     }
+    const camera = main.shadow.camera;
+    const margin = 0.3;
+    camera.left = lightBounds.min.x - margin;
+    camera.right = lightBounds.max.x + margin;
+    camera.bottom = lightBounds.min.y - margin;
+    camera.top = lightBounds.max.y + margin;
+    camera.near = Math.max(0.1, -lightBounds.max.z - margin);
+    camera.far = -lightBounds.min.z + margin;
+    camera.updateProjectionMatrix();
 
-    // Add a HemisphereLight to provide ambient fill light and soften shadows further
-    // const hemiId = this.AddLight("Hemisphere", {
-    //   skyColor: 0xffffff,
-    //   groundColor: 0x444444,
-    //   intensity: 0.8,
-    //   position: { x: center.x, y: roomBounds.max.y, z: center.z }
-    // });
-    // newIds.push(hemiId);
-
+    // Modest opposite fill keeps door faces readable without erasing the main
+    // shadows. Hemisphere lighting approximates diffuse ceiling/floor bounce.
+    newIds.push(this.AddLight("Directional", {
+      color: 0xf1f5ff,
+      intensity: 0.3,
+      position: { x: center.x - span * 0.6, y: ceilingY + span * 0.4, z: center.z - span * 0.5 },
+      target: { x: center.x, y: center.y, z: center.z },
+      castShadow: false,
+    }));
+    newIds.push(this.AddLight("Hemisphere", {
+      skyColor: 0xfffaf3,
+      groundColor: 0x8b8175,
+      intensity: 0.4,
+      position: { x: center.x, y: ceilingY, z: center.z },
+    }));
     this.ceilingLightIds = newIds;
     return newIds;
   }

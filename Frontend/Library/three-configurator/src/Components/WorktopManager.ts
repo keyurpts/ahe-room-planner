@@ -1,4 +1,4 @@
-import { Box3, BoxGeometry, Matrix4, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, BoxGeometry, Matrix4, Mesh, MeshStandardMaterial, Object3D, Triangle, Vector3 } from 'three';
 import { OBB } from 'three/examples/jsm/math/OBB.js';
 
 /** Representative solid colors; replace with approved supplier swatches when available. */
@@ -116,7 +116,9 @@ export function ensureWorktop(model: Object3D): void {
   mesh.matrixAutoUpdate = false;
   mesh.matrix.copy(localFrame).multiply(new Matrix4().makeTranslation((bounds.min.x + bounds.max.x) / 2, bounds.max.y + thickness / 2, edge - front * depth / 2));
   mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
-  mesh.castShadow = true;
+  // The thin overhanging slab creates an exaggerated shadow-map band across
+  // the doors. Let the cabinet body cast shadows while the slab receives them.
+  mesh.castShadow = false;
   mesh.receiveShadow = true;
   model.add(mesh);
   worktopUpdates.delete(model);
@@ -140,6 +142,7 @@ export function breakfastBarBlocked(model: Object3D, scene: Object3D): boolean {
   // Ignore edge-to-edge contact.
   extension.expandByScalar(-.001);
   const occupied = new OBB().fromBox3(extension).applyMatrix4(cabinetFrame(model));
+  const inverseFrame = cabinetFrame(model).invert();
   let blocked = false;
   scene.updateMatrixWorld(true);
   scene.traverse(node => {
@@ -154,7 +157,21 @@ export function breakfastBarBlocked(model: Object3D, scene: Object3D): boolean {
     });
     if (wall || furniture || node.userData.isWorktop) {
       if (!node.geometry.boundingBox) node.geometry.computeBoundingBox();
-      if (node.geometry.boundingBox && occupied.intersectsOBB(new OBB().fromBox3(node.geometry.boundingBox).applyMatrix4(node.matrixWorld))) blocked = true;
+      if (!node.geometry.boundingBox || !occupied.intersectsOBB(new OBB().fromBox3(node.geometry.boundingBox).applyMatrix4(node.matrixWorld))) return;
+      // Mesh bounds can enclose empty space beside an irregular cabinet or
+      // merged room mesh. Confirm that actual triangles enter the rear slab.
+      const position = node.geometry.getAttribute('position');
+      if (!position) return;
+      const index = node.geometry.index;
+      const transform = new Matrix4().multiplyMatrices(inverseFrame, node.matrixWorld);
+      const triangle = new Triangle();
+      const count = index ? index.count : position.count;
+      for (let i = 0; i + 2 < count && !blocked; i += 3) {
+        triangle.a.fromBufferAttribute(position, index ? index.getX(i) : i).applyMatrix4(transform);
+        triangle.b.fromBufferAttribute(position, index ? index.getX(i + 1) : i + 1).applyMatrix4(transform);
+        triangle.c.fromBufferAttribute(position, index ? index.getX(i + 2) : i + 2).applyMatrix4(transform);
+        if (extension.intersectsTriangle(triangle)) blocked = true;
+      }
     }
   });
   return blocked;
