@@ -23,7 +23,7 @@ const expandObstacle = (polygon: Point[], footprint: Point[]) =>
 export function physicalFootprint(object: Object3D): Point[] {
   object.updateWorldMatrix(true, true);
   const points: Point[] = [];
-  object.traverse(node => { if (node instanceof Mesh) points.push(...meshFootprint(node)); });
+  object.traverse(node => { if (node instanceof Mesh && !node.userData.isWorktop) points.push(...meshFootprint(node)); });
   return hull(points);
 }
 function clockwiseWalls(walls: PlacementWall[]): PlacementWall[] {
@@ -74,7 +74,7 @@ export function physicalBox(object: Object3D): Box3 {
   object.updateWorldMatrix(true, true);
   const box = new Box3();
   object.traverse(node => {
-    if (node instanceof Mesh) box.union(new Box3().setFromObject(node, true));
+    if (node instanceof Mesh && !node.userData.isWorktop) box.union(new Box3().setFromObject(node, true));
   });
   return box;
 }

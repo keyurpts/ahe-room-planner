@@ -11,6 +11,7 @@ export enum ConfiguratorEventType {
    * Fired when a 3D model is selected.
    */
   MODEL_SELECTED = "modelSelected",
+  WORKTOP_UPDATED = "worktopUpdated",
 
   /**
    * Fired when a collision event is detected.

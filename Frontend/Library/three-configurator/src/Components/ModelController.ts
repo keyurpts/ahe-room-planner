@@ -3,6 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { AssetLoader } from "./AssetLoader";
 import { CollisionSystem } from "./CollisionSystem";
 import { RequiredStrings, CameraViews } from "../Constants";
+import { Events, ConfiguratorEventType } from '../event';
 // import fs from "node:fs/promises";
 // import path from "node:path";
 
@@ -508,7 +509,7 @@ export class ModelController {
     );
 
     if (configurablePart) {
-      this.applyTexture(configurablePart, texUrl);
+      await this.applyTexture(configurablePart, texUrl);
     }
   }
 
@@ -527,6 +528,7 @@ export class ModelController {
 
   // Cache CPU images so model disposal can safely release its GPU textures.
   private prepareTexture(texUrl: string) {
+    if (typeof texUrl !== 'string' || !texUrl.trim()) throw new Error('Texture URL is empty');
     const cached = this.textureCanvases.get(texUrl);
     if (cached) return cached;
     const pending = (async () => {
@@ -647,9 +649,19 @@ export class ModelController {
   }
 
   public async applyTexture(object: THREE.Object3D, texUrl: string, options: { blackFeet?: boolean } = {}): Promise<void> {
+    if (typeof texUrl !== 'string' || !texUrl.trim()) return;
     const request = {};
     object.traverse(node => this.textureRequests.set(node, request));
-    const { canvas, bumpCanvas } = await this.prepareTexture(texUrl);
+    let prepared: Awaited<ReturnType<ModelController['prepareTexture']>>;
+    try {
+      prepared = await this.prepareTexture(texUrl.trim());
+    } catch {
+      if (this.textureRequests.get(object) === request) {
+        Events.emit(ConfiguratorEventType.COLLISION, { title: 'Texture could not be loaded', message: 'The texture image is unavailable or invalid. Select the finish again.', color: 'warning' });
+      }
+      return;
+    }
+    const { canvas, bumpCanvas } = prepared;
     if (this.textureRequests.get(object) !== request) return;
     const activeTextureMap = new THREE.CanvasTexture(canvas);
     const activeBumpMap = new THREE.CanvasTexture(bumpCanvas);
@@ -687,7 +699,7 @@ export class ModelController {
     previewCanvas?.getContext('2d')?.drawImage(canvas, 0, 0, 256, 256);
     // Update all parts together after preparing the maps once.
     object.traverse(node => {
-      if (!(node instanceof THREE.Mesh) || this.textureRequests.get(node) !== request) return;
+      if (!(node instanceof THREE.Mesh) || node.userData.isWorktop || this.textureRequests.get(node) !== request) return;
       const partName = node.parent && node.parent !== object ? node.parent.name : '';
       const footName = `${node.name} ${partName}`.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
       if (options.blackFeet && /(?:^|[^a-z])(foot|feet)(?:[^a-z]|$)/.test(footName)) {
@@ -889,6 +901,7 @@ export class ModelController {
     }
   ): void {
     model.traverse((node: any) => {
+      if (node.userData?.isWorktop) return;
       if (node instanceof THREE.Mesh) {
         let mat = node.material as THREE.Material;
 

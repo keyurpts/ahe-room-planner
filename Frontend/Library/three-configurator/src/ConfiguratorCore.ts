@@ -82,12 +82,52 @@ import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
 import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
+import { ensureWorktop, breakfastBarBlocked, isBaseCabinet, WORKTOP_FINISHES, type WorktopConfig } from './Components/WorktopManager';
 
 /**
  * Core class for the 3D configurator
  * Handles scene setup, model management, and state export
  */
 export class ConfiguratorCore {
+  private worktopSyncTime = 0;
+  private worktopSceneSignature = '';
+  public getWorktopFinish(): string {
+    return this.scene.userData.worktopFinish ?? 'ALABASTER';
+  }
+
+  public setWorktopFinish(finish: string): boolean {
+    if (!WORKTOP_FINISHES.some(option => option.name === finish)) return false;
+    this.scene.userData.worktopFinish = finish;
+    this.scene.traverse(model => {
+      if (isBaseCabinet(model)) {
+        model.userData.worktop = { version: 1, depthMm: 600, thicknessMm: 15, ...model.userData.worktop, finish };
+        ensureWorktop(model);
+      }
+    });
+    Events.emit(ConfiguratorEventType.WORKTOP_UPDATED);
+    return true;
+  }
+
+  public getSelectedWorktop(): (WorktopConfig & { breakfastBarAvailable: boolean; effectiveDepthMm: number }) | null {
+    const model = this.modelRoot;
+    if (!model || !isBaseCabinet(model)) return null;
+    ensureWorktop(model);
+    return { ...model.userData.worktop, effectiveDepthMm: model.children.find(node => node.userData.isWorktop)?.userData.effectiveDepthMm ?? model.userData.worktop.depthMm, breakfastBarAvailable: !breakfastBarBlocked(model, this.scene) };
+  }
+
+  public setSelectedWorktop(update: { depthMm?: 600 | 900; finish?: string }): boolean {
+    const model = this.modelRoot;
+    if (!model || !isBaseCabinet(model)) return false;
+    if (update.depthMm !== undefined && update.depthMm !== 600 && update.depthMm !== 900) return false;
+    if (update.finish !== undefined && !WORKTOP_FINISHES.some(f => f.name === update.finish)) return false;
+    if (update.depthMm === 900 && breakfastBarBlocked(model, this.scene)) return false;
+    if (update.finish !== undefined) this.setWorktopFinish(update.finish);
+    ensureWorktop(model);
+    model.userData.worktop = { ...model.userData.worktop, ...update };
+    ensureWorktop(model);
+    Events.emit(ConfiguratorEventType.MODEL_SELECTED, model.userData.metadata);
+    return true;
+  }
   /**
    * Three.js Scene object
    */
@@ -817,6 +857,28 @@ export class ConfiguratorCore {
    * @returns {void}
    */
   private animate(time: number): void {
+    if (time - this.worktopSyncTime > 250) {
+      this.worktopSyncTime = time;
+      const cabinets: Object3D[] = [];
+      const objects: Object3D[] = [];
+      this.scene.updateMatrixWorld(true);
+      this.scene.traverse(node => {
+        if (node.userData.isGLBModel || (node as any).wall_id) objects.push(node);
+        if (node.userData.isGLBModel && isBaseCabinet(node)) cabinets.push(node);
+      });
+      const sceneSignature = objects.map(node => [node.uuid, ...node.matrixWorld.elements.map(value => Math.round(value * 1e8)), node.userData.worktop?.depthMm].join(':')).join('|');
+      const sceneChanged = sceneSignature !== this.worktopSceneSignature;
+      this.worktopSceneSignature = sceneSignature;
+      cabinets.forEach(node => {
+          ensureWorktop(node);
+          if (sceneChanged && node.userData.worktop?.depthMm === 900 && breakfastBarBlocked(node, this.scene)) {
+            node.userData.worktop.depthMm = 600;
+            ensureWorktop(node);
+            Events.emit(ConfiguratorEventType.COLLISION, { title: 'Worktop depth adjusted', message: 'Worktop changed to 600 mm because rear clearance is blocked.', color: 'warning' });
+          }
+      });
+      if (sceneChanged) Events.emit(ConfiguratorEventType.WORKTOP_UPDATED);
+    }
     let orbitControls = this.controlsManager.getControl(ControlTypes.ORBIT);
     if (orbitControls && !this.controlsManager.isCameraAnimating) {
       orbitControls.update(0.01)
@@ -914,6 +976,7 @@ export class ConfiguratorCore {
     if (scale) {
       model.scale.copy(scale);
     }
+    ensureWorktop(model);
 
     this.enableShadowsOnObject(model);
 
@@ -4558,7 +4621,7 @@ export class ConfiguratorCore {
     rotation?: Euler,
     callbacks?: ModelLoadCallbacks,
     isSelectable?: boolean,
-    metadata?: { category?: string; name?: string; id?: string; price?: string; format?: string }
+    metadata?: { category?: string; categoryName?: string; isBaseCabinet?: boolean; frontDirection?: string; name?: string; id?: string; price?: string; format?: string }
   ): Promise<Object3D | null> {
     if (this.isPreviewActive || this.isReplacingModel) return null;
     const baseModel = ModelController.GetRoomModel(this.scene);
@@ -4629,6 +4692,7 @@ export class ConfiguratorCore {
         isGLBModel: true,
         metadata: metadata ?? {},
       };
+      if (!isPreview) ensureWorktop(this.modelRoot);
 
       if (isPreview && baseModel) {
 
@@ -5250,6 +5314,7 @@ export class ConfiguratorCore {
     price?: string | number,
     targetModel?: Object3D
   ) {
+    if (typeof texUrl !== 'string' || !texUrl.trim()) return;
 
     if (this.previewModel) return;
     console.log(id, "textureid");
@@ -5276,7 +5341,9 @@ export class ConfiguratorCore {
         }
       });
       // The model finish selector currently offers woodgrain.
-      this.modelController.applyTexture(model, texUrl, { blackFeet: true });
+      Promise.resolve(this.modelController.applyTexture(model, texUrl, { blackFeet: true })).catch(() => {
+        Events.emit(ConfiguratorEventType.COLLISION, { title: 'Texture could not be loaded', message: 'The cabinet texture could not be decoded. Please select the finish again.', color: 'warning' });
+      });
 
       // Save texture price to metadata
       if (!model.userData.metadata) model.userData.metadata = {};
@@ -7728,6 +7795,7 @@ export class ConfiguratorCore {
 
   public export3DConfig(): Record<string, any> {
     const config: Record<string, any> = {};
+    if (this.scene.userData.worktopFinish) config.worktopSettings = { finish: this.scene.userData.worktopFinish };
 
     this.scene.children.forEach((child: Object3D) => {
       const isSelectable =
@@ -7748,6 +7816,8 @@ export class ConfiguratorCore {
             matrix: child.matrix.clone(),
             children: [],
             textureUrl: child.userData?.metadata?.appliedTexture?.url,
+            worktop: child.userData.worktop,
+            worktopCabinet: { isBaseCabinet: child.userData.metadata?.isBaseCabinet, frontDirection: child.userData.metadata?.frontDirection, categoryName: child.userData.metadata?.categoryName },
             textureId: child.userData?.metadata?.appliedTexture?.id
           };
         }
@@ -7788,6 +7858,8 @@ export class ConfiguratorCore {
                   matrix: groupChild.matrix.clone(),
                   children: [],
                   textureUrl: groupChild.userData?.metadata?.appliedTexture?.url,
+                  worktop: groupChild.userData.worktop,
+                  worktopCabinet: { isBaseCabinet: groupChild.userData.metadata?.isBaseCabinet, frontDirection: groupChild.userData.metadata?.frontDirection, categoryName: groupChild.userData.metadata?.categoryName },
                   textureId: groupChild.userData?.metadata?.appliedTexture?.id
                 };
 
@@ -8163,6 +8235,7 @@ export class ConfiguratorCore {
       typeof config === "string" ? JSON.parse(config) : config;
 
     const result: Record<string, Object3D> = {};
+    this.scene.userData.worktopFinish = WORKTOP_FINISHES.find(option => option.name === parsedConfig.worktopSettings?.finish)?.name;
 
     /**
      * Parse a Matrix4 from different possible JSON representations.
@@ -8215,6 +8288,7 @@ export class ConfiguratorCore {
     };
 
     for (const [key, rawObj] of Object.entries(parsedConfig)) {
+      if (key === 'worktopSettings') continue;
       if (!rawObj || typeof rawObj !== "object") {
         continue;
       }
@@ -8281,6 +8355,9 @@ export class ConfiguratorCore {
         }
 
         const modelName = objData.name || key;
+        model.userData.worktop = objData.worktop;
+        model.userData.metadata = { ...model.userData.metadata, ...objData.worktopCabinet };
+        ensureWorktop(model);
 
         model.name = modelName;
 
@@ -8302,8 +8379,11 @@ export class ConfiguratorCore {
         };
 
         if (!model.userData.metadata.id) {
+          // Saved explicit worktop metadata overrides catalogue defaults.
           model.userData.metadata.id = key;
         }
+        Object.assign(model.userData.metadata, objData.worktopCabinet);
+        ensureWorktop(model);
 
         if (!model.userData.metadata.name) {
           model.userData.metadata.name = modelName;
@@ -8419,6 +8499,9 @@ export class ConfiguratorCore {
 
         const childName =
           childData.name || childId;
+        childObj.userData.worktop = childData.worktop;
+        childObj.userData.metadata = { ...childObj.userData.metadata, ...childData.worktopCabinet };
+        ensureWorktop(childObj);
 
         childObj.name = childName;
 
@@ -8442,6 +8525,8 @@ export class ConfiguratorCore {
         if (!childObj.userData.metadata.id) {
           childObj.userData.metadata.id = childId;
         }
+        Object.assign(childObj.userData.metadata, childData.worktopCabinet);
+        ensureWorktop(childObj);
 
         if (!childObj.userData.metadata.name) {
           childObj.userData.metadata.name = childName;

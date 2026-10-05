@@ -55,3 +55,29 @@ test('applied model texture exports its ID and URL', () => {
   assert.equal(saved['model-1'].textureId, 'texture-1');
   assert.equal(saved['model-1'].textureUrl, '/wood.jpg');
 });
+
+test('worktop depth, finish and cabinet orientation export with the cabinet', () => {
+  const { instance } = fixture();
+  const model = new THREE.Group();
+  model.userData = { selectable: 'true', metadata: { id: 'cabinet-1', isBaseCabinet: true, frontDirection: '-Z' }, worktop: { version: 1, depthMm: 900, thicknessMm: 15, finish: 'SMOKED OAK' } };
+  instance.scene.add(model);
+  const saved = JSON.parse(JSON.stringify(instance.export3DConfig()));
+  assert.deepEqual(saved['cabinet-1'].worktop, model.userData.worktop);
+  assert.deepEqual(saved['cabinet-1'].worktopCabinet, { isBaseCabinet: true, frontDirection: '-Z' });
+});
+
+test('empty texture URLs are ignored without changing model finish metadata', () => {
+  const { instance } = fixture();
+  instance.modelController = { applyTexture() { assert.fail('empty URL must not be loaded'); } };
+  const model = new THREE.Group();
+  model.userData.metadata = { id: 'cabinet-1' };
+  instance.applyTextureToModel('', 'texture-1', 0, model);
+  instance.applyTextureToModel('   ', 'texture-1', 0, model);
+  assert.equal(model.userData.metadata.appliedTexture, undefined);
+});
+test('global worktop color exports with the saved layout', () => {
+  const { instance } = fixture();
+  instance.scene.userData.worktopFinish = 'AMERICAN OAK';
+  const saved = JSON.parse(JSON.stringify(instance.export3DConfig()));
+  assert.deepEqual(saved.worktopSettings, { finish: 'AMERICAN OAK' });
+});

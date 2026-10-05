@@ -1,5 +1,7 @@
 // Export main 3D configurator class
 export { ConfiguratorCore } from './ConfiguratorCore';
+export { WORKTOP_FINISHES } from './Components/WorktopManager';
+export type { WorktopConfig } from './Components/WorktopManager';
 
 // Export type definitions
 export type { ConfigState, ConfiguratorOptions } from './types/types';

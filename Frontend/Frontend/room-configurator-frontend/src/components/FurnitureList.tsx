@@ -17,11 +17,13 @@ export interface CategoryItem {
 
 interface FurnitureListProps {
   setSelectedItem: (key: any) => void;
+  setSelectedCategoryName?: (name: string) => void;
   roomConfig?: any;
 }
 
 const FurnitureList: FC<FurnitureListProps> = ({
   setSelectedItem,
+  setSelectedCategoryName,
   roomConfig,
 }) => {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -92,7 +94,10 @@ const FurnitureList: FC<FurnitureListProps> = ({
             setCategories(items);
             // Default select the first category if available
             const firstId = items[0].id || items[0].category || items[0].name;
-            if (firstId) setSelectedItem(firstId);
+            if (firstId) {
+              setSelectedItem(firstId);
+              setSelectedCategoryName?.(items[0].categoryName || items[0].name || items[0].category || items[0].title || '');
+            }
           } else if (roomConfig?.configModels) {
             setCategories(roomConfig.configModels);
           }
@@ -134,7 +139,11 @@ const FurnitureList: FC<FurnitureListProps> = ({
           classNames={{
             tabWrapper: "overflow-y-hidden overflow-x-scroll",
           }}
-          onSelectionChange={setSelectedItem}
+          onSelectionChange={(key) => {
+            setSelectedItem(key);
+            const category = categories.find(cat => String(cat.id || cat.category || cat.name) === String(key));
+            setSelectedCategoryName?.(category?.categoryName || category?.name || category?.category || category?.title || '');
+          }}
         >
           {categories.map((cat: CategoryItem, idx: number) => {
             const catId = cat.id || cat.category || cat.name || `category-${idx}`;

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import WorktopPanel from './WorktopPanel';
 import { useIntersectionObserver } from "../utils/useIntersectionObserver";
 import {
   Accordion,
@@ -196,6 +197,7 @@ const ModelThumbnail = ({
 
 type FurnitureGridProps = {
   selectedItem: string;
+  selectedCategoryName?: string;
   configuratorInstance: ConfiguratorCore | undefined;
   roomConfig: any;
   selectedTab: string;
@@ -210,6 +212,7 @@ type FurnitureGridProps = {
 };
 
 export default function FurnitureGrid({
+  selectedCategoryName,
   selectedItem,
   configuratorInstance,
   roomConfig,
@@ -349,7 +352,7 @@ export default function FurnitureGrid({
               image: resolveStorageUrl(item.modelThumbnailPath || item.thumbnailUrl || item.previewImage || item.thumbnail || item.image || item.imageUrl) || "./images/twod.jfif",
               path: resolveStorageUrl(item.modelPath || item.modelUrl || item.uri || item.fileUrl || item.filePath || item.url || item.path),
               format: item.format || "glb",
-              category: item.categoryName || item.category || selectedItem,
+              category: item.categoryName || selectedCategoryName || item.category || selectedItem,
             }));
             setFurnitureItemsFinal(formatted);
           } else {
@@ -398,7 +401,7 @@ export default function FurnitureGrid({
     return () => {
       isMounted = false;
     };
-  }, [selectedItem, roomConfig, showFavorites, favorites]);
+  }, [selectedItem, selectedCategoryName, roomConfig, showFavorites, favorites]);
 
   useEffect(() => {
     let isMounted = true;
@@ -542,7 +545,12 @@ export default function FurnitureGrid({
     setLoadingCursor(true);
 
     const modelData = {
-      category: item.category,
+      isBaseCabinet: item.isBaseCabinet ?? item.modelMetadata?.isBaseCabinet,
+      frontDirection: item.frontDirection ?? item.modelMetadata?.frontDirection,
+      category: item.categoryName || item.modelMetadata?.categoryName || item.modelMetadata?.category || item.category || selectedCategoryName,
+      // A model response can contain a category ID in `category`; the selected
+      // tab supplies the human-readable name required by worktop eligibility.
+      categoryName: (!showFavorites && selectedCategoryName) || item.categoryName || item.modelMetadata?.categoryName || item.category,
       name: item.name,
       id: item.id,
       price: item.price,
@@ -594,6 +602,7 @@ export default function FurnitureGrid({
               if (contentType && contentType.includes("application/json")) {
                 const data = await textureRes.json();
                 const downloadUrl = resolveStorageUrl(data.downloadUrl);
+                if (!downloadUrl?.trim()) return;
                 const textureId = data.textureId;
                 textureUrlCache.set(selectedTexture, downloadUrl);
                 pendingTextureRef.current = { downloadUrl, textureId };
@@ -867,6 +876,9 @@ export default function FurnitureGrid({
                 }}
               >
                 <Accordion defaultExpandedKeys={["appearances"]}>
+                  <AccordionItem key="worktops" aria-label="Worktops" title="Worktops">
+                    <WorktopPanel core={configuratorInstance} />
+                  </AccordionItem>
                   <AccordionItem
                     key="appearances"
                     aria-label="Appearances"

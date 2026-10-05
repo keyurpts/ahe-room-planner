@@ -29,6 +29,7 @@ const LeftPanel = ({
   setShowFavorites
 }: LeftPanelProps) => {
   const [selectedItem, setSelectedItem] = useState("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState('');
   const [selectedTab, setSelectedTab] = useState("options");
   const [furnitureItemsFinal, setFurnitureItemsFinal] = useState<any[]>([]);
   const [searchFurniture, setSearchFurniture] = useState("");
@@ -82,11 +83,13 @@ const LeftPanel = ({
           {selectedTab === "options" && !showFavorites && (
             <FurnitureList
               setSelectedItem={setSelectedItem}
+              setSelectedCategoryName={setSelectedCategoryName}
               roomConfig={roomConfig}
             />
           )}
           <FurnitureGrid
             selectedItem={selectedItem}
+            selectedCategoryName={selectedCategoryName}
             configuratorInstance={configuratorInstance}
             roomConfig={roomConfig}
             selectedTab={selectedTab}
