@@ -185,7 +185,7 @@ export default function TextureAndColorPanel({ open, onClose, configuratorInstan
         configuratorInstance?.resetWalls?.();
         setActiveWallSelection(null); // Do not highlight eraser when applying to all
       } else if (selection?.type === 'color') {
-        configuratorInstance?.applyColorToAllWalls?.(selection.data.color);
+        configuratorInstance?.applyColorToAllWalls?.(selection.data.color, selection.id);
         setActiveWallSelection(selection); // Highlight the selected color
       } else if (selection?.type === 'texture') {
         configuratorInstance?.applyTextureToAllWalls?.(selection.data);

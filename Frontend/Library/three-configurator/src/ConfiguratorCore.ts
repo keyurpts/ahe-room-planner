@@ -3408,7 +3408,7 @@ export class ConfiguratorCore {
       }
     });
 
-    const intersects = raycaster.intersectObjects(meshes, true);
+    const intersects = raycaster.intersectObjects(meshes, false);
 
     if (intersects.length === 0) return null;
 
@@ -4233,6 +4233,15 @@ export class ConfiguratorCore {
       }
     }
 
+    // A solid face color needs no custom shader. Keep its value serializable.
+    if (contents.length === 1 && contents[0] instanceof Color) {
+      const material = new MeshStandardMaterial({ color: contents[0], roughness: 0.7, side: DoubleSide });
+      material.userData.finishId = textureId;
+      material.userData.finishUrl = `#${contents[0].getHexString()}`;
+      materials[groupIndex] = material;
+      mesh.material = materials;
+      return;
+    }
     // Detect whether each content item is a texture or a plain color
     const isTex1 = contents[0] instanceof Texture;
     const isTex2 = contents.length > 1 && contents[1] instanceof Texture;
@@ -5277,14 +5286,16 @@ export class ConfiguratorCore {
           if (!child.userData.metadata) child.userData.metadata = {};
           child.userData.metadata.appliedTexture = {
             price,
-            id
+            id,
+            url: texUrl
           };
         });
       }
       else {
         model.userData.metadata.appliedTexture = {
           price,
-          id
+          id,
+          url: texUrl
         };
       }
 
@@ -7043,7 +7054,7 @@ export class ConfiguratorCore {
    * @description This method immediately applies the specified color to all visible walls in the 3D viewer.
    * @public
    */
-  public applyColorToAllWalls(hexColor: string): void {
+  public applyColorToAllWalls(hexColor: string, finishId?: string): void {
     this.scene.traverse((child) => {
       if (child instanceof Mesh && (child as any).wall_id && child.material.opacity !== 0) {
         // dispose old material(s)
@@ -7053,12 +7064,15 @@ export class ConfiguratorCore {
           child.material.dispose();
         }
 
+        if (!(child as any)._wallFacesPrepared) this.groupFacesByNormal(child);
         // Apply one material to the whole mesh
         child.material = new MeshStandardMaterial({
           color: hexColor,
           roughness: 0.7,
           side: DoubleSide,
         });
+        child.material.userData.finishId = finishId;
+        child.material.userData.finishUrl = hexColor;
       }
     });
   }
@@ -7733,6 +7747,7 @@ export class ConfiguratorCore {
             name: child.userData?.metadata?.name || child.name,
             matrix: child.matrix.clone(),
             children: [],
+            textureUrl: child.userData?.metadata?.appliedTexture?.url,
             textureId: child.userData?.metadata?.appliedTexture?.id
           };
         }
@@ -7772,6 +7787,7 @@ export class ConfiguratorCore {
                     groupChild.name,
                   matrix: groupChild.matrix.clone(),
                   children: [],
+                  textureUrl: groupChild.userData?.metadata?.appliedTexture?.url,
                   textureId: groupChild.userData?.metadata?.appliedTexture?.id
                 };
 
@@ -7787,6 +7803,7 @@ export class ConfiguratorCore {
             name: child.userData?.metadata?.name || child.name,
             matrix: child.matrix.clone(),
             children,
+            textureUrl: child.userData?.metadata?.appliedTexture?.url,
             textureId: child.userData?.metadata?.appliedTexture?.id
           };
         }
@@ -7794,7 +7811,7 @@ export class ConfiguratorCore {
     });
 
     // Traverse all 3D walls in the scene and collect their wall IDs and material finishes
-    const wallsMap = new Map<string, Array<{ index: number; finishId: string }>>();
+    const wallsMap = new Map<string, Array<{ index: number; finishId: string; url?: string }>>();
 
     this.scene.traverse((child: Object3D) => {
       if (!(child instanceof Mesh)) return;
@@ -7803,7 +7820,7 @@ export class ConfiguratorCore {
       if (!wallId) return;
 
       // Ignore helper or boundary meshes if any
-      if (child.name?.startsWith("boundary_cube") || (child.material && (child.material as any).opacity === 0)) {
+      if (child.name?.startsWith("boundary_cube")) {
         return;
       }
 
@@ -7814,22 +7831,24 @@ export class ConfiguratorCore {
       const existingMaterials = wallsMap.get(wallId)!;
       const materialsArray = Array.isArray(child.material)
         ? child.material
-        : [child.material];
+        : Array.from({ length: Math.max(1, child.geometry.groups.length) }, () => child.material as Material);
 
       materialsArray.forEach((mat: any, index: number) => {
-        const finishId = mat?.finishId ?? mat?.userData?.finishId;
-        if (finishId !== undefined && finishId !== null && finishId !== "") {
+        const finishId = mat?.finishId ?? mat?.userData?.finishId ?? "";
+        const url = mat?.userData?.finishUrl;
+        if (finishId || url) {
           const existingEntry = existingMaterials.find((m) => m.index === index);
           if (existingEntry) {
             existingEntry.finishId = finishId;
+            existingEntry.url = url;
           } else {
-            existingMaterials.push({ index, finishId });
+            existingMaterials.push({ index, finishId, url });
           }
         }
       });
     });
 
-    const walls: Array<{ id: string; materials: Array<{ index: number; finishId: string }> }> = [];
+    const walls: Array<{ id: string; materials: Array<{ index: number; finishId: string; url?: string }> }> = [];
     wallsMap.forEach((materials, id) => {
       materials.sort((a, b) => a.index - b.index);
       walls.push({
@@ -8246,7 +8265,7 @@ export class ConfiguratorCore {
         const model = await this.loadModel(
           modelUrl,
           false,
-          undefined,
+          new Vector3(),
           undefined,
           undefined,
           true,
@@ -8382,7 +8401,7 @@ export class ConfiguratorCore {
         const childObj = await this.loadModel(
           childUrl,
           false,
-          undefined,
+          new Vector3(),
           undefined,
           undefined,
           false,
@@ -8725,6 +8744,7 @@ export class ConfiguratorCore {
         if (wallMesh) {
 
 
+          if (!material.url) continue;
           if (material.url.startsWith("#")) {
             console.log("String starts with #");
 

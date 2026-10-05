@@ -472,7 +472,7 @@ export default function DesignArea({
 
         await configuratorInstance.loadEnvironmentMap(
           "/lebombo_4k.hdr",
-          0.5
+          0.2
         );
       };
 

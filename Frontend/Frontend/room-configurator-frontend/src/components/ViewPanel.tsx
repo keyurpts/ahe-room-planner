@@ -123,7 +123,7 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
           if (CI) {
             await CI.loadEnvironmentMap(
               "/lebombo_4k.hdr",
-              0.5
+              0.2
             );
           }
         }
@@ -158,7 +158,7 @@ export default function ViewPanel({ onLogout }: ViewPanelProps) {
     let loadEnvMap = async () => {
       await instance.loadEnvironmentMap(
         "/lebombo_4k.hdr"
-        , 0.5
+        , 0.2
       );
     }
     loadEnvMap();

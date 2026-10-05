@@ -8,6 +8,7 @@ import { TOAST_MESSAGES } from "../toastMessages";
 import {
   update2DJSONApi,
   getStorageDownloadUrlApi,
+  getTextureDownloadUrlApi,
   resolveStorageUrl,
 } from "./Constants";
 import { getAccessToken } from "../utils/auth";
@@ -194,10 +195,10 @@ async function fetchTextureConfigLookup(): Promise<Map<string, any>> {
   return lookup;
 }
 
-function enrichTextureEntry(
+async function enrichTextureEntry(
   entry: any,
   textureLookup: Map<string, any>
-): void {
+): Promise<void> {
   if (!Array.isArray(entry.children) || entry.children.length !== 0) {
     return;
   }
@@ -210,6 +211,23 @@ function enrichTextureEntry(
 
   const match = textureLookup.get(textureId);
 
+  try {
+    const token = getAccessToken();
+    const response = await fetch(getTextureDownloadUrlApi(textureId), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (response.ok) {
+      const value = response.headers.get("content-type")?.includes("application/json")
+        ? (await response.json()).downloadUrl : (await response.text()).trim();
+      if (value) {
+        entry.textureUrl = resolveStorageUrl(value);
+        return;
+      }
+    }
+  } catch (error) {
+    console.warn(`Could not refresh texture ${textureId}; using saved or catalog URL`, error);
+  }
+  if (entry.textureUrl) return;
   if (match) {
     entry.textureUrl = match.textureUrl;
   }
@@ -276,7 +294,7 @@ async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promis
       const keyUpdated = key.replace(/_node\d+$/, "");
       enrichPromises.push(
         enrichLeafEntry(keyUpdated, entry, lookup, downloadUrlCache).then(() => {
-          enrichTextureEntry(entry, textureLookup);
+          return enrichTextureEntry(entry, textureLookup);
         })
       );
     } else if (Array.isArray(entry.children) && entry.children.length > 0) {
@@ -288,7 +306,7 @@ async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promis
               const childKeyUpdated = childKey.replace(/_node\d+$/, "");
               enrichPromises.push(
                 enrichLeafEntry(childKeyUpdated, childEntry as any, lookup, downloadUrlCache).then(() => {
-                  enrichTextureEntry(childEntry as any, textureLookup);
+                  return enrichTextureEntry(childEntry as any, textureLookup);
                 })
               );
             }
