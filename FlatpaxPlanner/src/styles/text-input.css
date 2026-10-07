@@ -1,0 +1,34 @@
+@layer components {
+  .project-name-input {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid var(--color-preset-panel);
+    border-radius: var(--radius-control);
+    padding: 0.5rem 0.75rem;
+    background: var(--color-canvas);
+    color: var(--color-brand-hover);
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .project-name-input::placeholder {
+    color: var(--color-muted);
+    font-size: 1rem;
+    font-weight: 400;
+    opacity: 1;
+    text-transform: none;
+  }
+  .project-name-input[aria-invalid='true'] {
+    border-color: var(--color-danger);
+    outline: 2px solid var(--color-danger);
+    outline-offset: 2px;
+  }
+  .project-name-input[aria-invalid='true']::placeholder {
+    color: var(--color-danger);
+  }
+  @media (width < 40rem) {
+    .project-name-input {
+      font-size: 1rem;
+    }
+  }
+}
