@@ -1,5 +1,6 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useViewportScale } from '@/hooks/useViewportScale';
+import { PlannerViewers } from '@/features/planner/components/PlannerViewers';
 import { ItemListDialog } from '@/features/planner/components/ItemListDialog';
 import {
   Navigate,
@@ -32,6 +33,8 @@ import {
 } from '@/features/planner/components/ItemCustomisationSidebar';
 
 export function Component() {
+  const viewer2DRef = useRef<HTMLDivElement>(null);
+  const viewer3DRef = useRef<HTMLDivElement>(null);
   const scale = useViewportScale();
   const draft = useAppSelector((state) => state.project.draft);
   const regionId = useAppSelector((state) => state.ui.regionId);
@@ -167,6 +170,11 @@ export function Component() {
       <div
         className={`planner-workspace ${step === 'Walls & floors' ? 'planner-finishes-workspace' : ''}`}
       >
+        <PlannerViewers
+          viewer2DRef={viewer2DRef}
+          viewer3DRef={viewer3DRef}
+          mode={location.pathname === paths.design ? '3d' : '2d'}
+        />
         <Outlet />
         {step === 'Walls & floors' && (
           <>
