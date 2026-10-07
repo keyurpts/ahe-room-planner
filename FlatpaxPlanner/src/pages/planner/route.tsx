@@ -1,11 +1,18 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useViewportScale } from '@/hooks/useViewportScale';
 import { ItemListDialog } from '@/features/planner/components/ItemListDialog';
-import { Navigate, useBlocker, useBeforeUnload } from 'react-router';
+import {
+  Navigate,
+  Outlet,
+  useBlocker,
+  useBeforeUnload,
+  useLocation,
+  useNavigate,
+} from 'react-router';
 import { LeaveDesignDialog } from '@/features/planner/components/LeaveDesignDialog';
 import { paths } from '@/constants/paths';
 import { SaveDesignDialog } from '@/features/planner/components/SaveDesignDialog';
-import { discardProject } from '@/features/planner/state/project-slice';
+import { discardProject, setActiveStep } from '@/features/planner/state/project-slice';
 import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import {
   PlannerNavigation,
@@ -30,13 +37,30 @@ export function Component() {
   const regionId = useAppSelector((state) => state.ui.regionId);
   const dispatch = useAppDispatch();
   // Drafts are unsaved until a backend confirms a successful save.
-  const blocker = useBlocker(Boolean(draft));
+  const blocker = useBlocker(
+    ({ nextLocation }) =>
+      Boolean(draft) &&
+      ![paths.planner, paths.roomSetup, paths.design].some(
+        (path) => path === nextLocation.pathname,
+      ),
+  );
   useBeforeUnload((event) => {
     if (draft) {
       event.preventDefault();
     }
   });
-  const [step, setStep] = useState<PlannerStep>('Room setup');
+  const step = useAppSelector((state) => state.project.activeStep);
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const next: PlannerStep =
+      location.pathname === paths.design
+        ? new URLSearchParams(location.search).get('step') === 'items'
+          ? 'Add items'
+          : 'Walls & floors'
+        : 'Room setup';
+    dispatch(setActiveStep(next));
+  }, [location.pathname, location.search, dispatch]);
   const [tool, setTool] = useState<PlannerTool | null>(null);
   const [panel, setPanel] = useState<'save' | 'items' | null>(null);
   const [announcement, setAnnouncement] = useState('');
@@ -74,7 +98,14 @@ export function Component() {
     setAnnouncement('Item removed from the item list.');
   }
   function changeStep(next: PlannerStep) {
-    setStep(next);
+    dispatch(setActiveStep(next));
+    void navigate(
+      next === 'Room setup'
+        ? paths.roomSetup
+        : next === 'Add items'
+          ? `${paths.design}?step=items`
+          : paths.design,
+    );
     setFinishesOpen(false);
     setCustomising(false);
   }
@@ -136,15 +167,7 @@ export function Component() {
       <div
         className={`planner-workspace ${step === 'Walls & floors' ? 'planner-finishes-workspace' : ''}`}
       >
-        <div
-          className="planner-viewer"
-          role="region"
-          aria-label={
-            step === 'Walls & floors' || (customising && items.length > 0)
-              ? '3D room viewer'
-              : '2D room viewer'
-          }
-        />
+        <Outlet />
         {step === 'Walls & floors' && (
           <>
             <button

@@ -94,7 +94,7 @@ switching will follow design requirements. It is not persisted by default.
 selected shape across setup and planner routes. It retains only the draft in
 session storage, validates restored data, and never stores server responses or
 authentication tokens. Drafts survive a same-tab refresh; this is not cloud saving.
-Planner step/tool selection and dialog visibility stay in local component state.
+The active planner step is shared through the project Redux slice. Tool selection and dialog visibility stay in local component state.
 Use the typed hooks in app/store-hooks.ts and feature slice actions. The store
 is configured in app/store.ts; listener middleware persists project actions.
 Persistence tolerates unavailable storage and invalid saved data. Existing draft
@@ -279,3 +279,18 @@ Added items retain category, model, texture, SKU, and region metadata. Item list
 use regional item numbers and prices. VITE_REGION_ID sets the initial region; the
 future user flow can dispatch setRegionId from state/ui-slice.ts.
 Benchtop styling and the 2D/3D renderer are not connected to these catalogue APIs.
+
+## Planner pages
+
+- `/planner/room-setup`: separate 2D room setup page (`pages/room-setup/route.tsx`).
+- `/planner/design`: shared 3D page for Walls & Floors (`pages/design/route.tsx`).
+- `/planner/design?step=items`: the same 3D page with the Add Items controls.
+- `/planner`: redirects to Room Setup for compatibility.
+
+The parent planner route provides the shared navigation, catalogue, tools, and
+project dialogs while rendering the current page through an outlet. Project
+`activeStep` is held in Redux and synchronized with the URL, including browser
+Back/Forward navigation. Moving between planner pages preserves the current
+editing session; leaving the planner triggers the unsaved-draft confirmation.
+Temporary blue (2D) and green (3D) viewer backgrounds and labels identify the
+renderer mounting areas; no actual room rendering has been implemented yet.

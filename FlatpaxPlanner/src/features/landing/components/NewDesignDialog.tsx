@@ -104,7 +104,7 @@ export function NewDesignDialog({ open, onClose }: Props) {
                 if (!shape || !roomType) return;
                 dispatch(startProject({ projectName: projectName.trim(), roomType, shape }));
                 close();
-                void navigate(paths.planner);
+                void navigate(paths.roomSetup);
               }}
             >
               Next

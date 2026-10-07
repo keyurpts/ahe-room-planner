@@ -1,4 +1,5 @@
 export type RoomType = 'Kitchen' | 'Laundry' | 'Office' | 'Linen' | 'Garage' | 'Other';
+export type PlannerStep = 'Room setup' | 'Walls & floors' | 'Add items';
 export type RoomShape =
   'rectangle' | 'l-top-left' | 'l-top-right' | 'square' | 'l-bottom-right' | 'l-bottom-left';
 

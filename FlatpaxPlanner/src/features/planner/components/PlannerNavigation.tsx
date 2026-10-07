@@ -2,7 +2,8 @@ import { Link } from 'react-router';
 import { paths } from '@/constants/paths';
 
 const plannerSteps = ['Room setup', 'Walls & floors', 'Add items'] as const;
-export type PlannerStep = (typeof plannerSteps)[number];
+import type { PlannerStep } from '@/features/planner/types';
+export type { PlannerStep } from '@/features/planner/types';
 
 interface Props {
   total: number | null;

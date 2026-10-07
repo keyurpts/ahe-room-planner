@@ -13,6 +13,8 @@
     grid-row: 2;
   }
   .items-sidebar {
+    min-height: 0;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     grid-column: 1;

@@ -24,7 +24,7 @@ export const store = configureStore({
     ui: uiReducer,
     [catalogueApi.reducerPath]: catalogueApi.reducer,
   },
-  preloadedState: { project: { draft: restoreDraft() } },
+  preloadedState: { project: { draft: restoreDraft(), activeStep: 'Room setup' as const } },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(persistence.middleware).concat(catalogueApi.middleware),
   devTools: env.appEnvironment === 'development',
