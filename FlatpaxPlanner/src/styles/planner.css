@@ -154,12 +154,12 @@
     position: absolute;
     inset: 0;
   }
-  .planner-viewer-2d {
+  /* .planner-viewer-2d {
     background: #edf6ff;
   }
   .planner-viewer-3d {
     background: #edf8f1;
-  }
+  } */
   .planner-viewer-label {
     position: absolute;
     top: 1rem;

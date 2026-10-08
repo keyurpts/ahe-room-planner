@@ -55,7 +55,6 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
         aria-label="2D room viewer"
         hidden={mode !== '2d'}
       >
-        <p className="planner-viewer-label">2D room setup viewer</p>
       </div>
       <div
         ref={viewer3DRef}
@@ -64,7 +63,6 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
         aria-label="3D room viewer"
         hidden={mode !== '3d'}
       >
-        <p className="planner-viewer-label">3D design viewer</p>
       </div>
     </>
   );
