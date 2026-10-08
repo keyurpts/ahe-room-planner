@@ -2,10 +2,6 @@
   .planner-finishes-workspace {
     position: relative;
   }
-  .planner-navigation[data-step='Walls & floors'] .planner-save {
-    background: white;
-    color: var(--color-brand);
-  }
   .planner-step-navigation button[data-complete='true'] {
     background: #f5f5f5;
   }
@@ -42,11 +38,13 @@
   .finishes-panel {
     z-index: 3;
     position: absolute;
-    top: 50%;
+    top: 1.25rem;
+    bottom: 8rem;
     right: 3.625rem;
-    transform: translateY(-50%);
+    margin-block: auto;
+    height: fit-content;
     width: 25rem;
-    max-height: calc(100% - 10rem);
+    max-height: calc(100% / var(--planner-scale) - 9.25rem);
     overflow-y: auto;
     background: white;
     border-radius: 0.25rem;
@@ -128,14 +126,15 @@
   .finishes-surfaces {
     padding: 0.75rem 1rem 1.5rem;
   }
-  .finishes-surfaces h3 {
+  .finishes-surfaces h3,
+  .finishes-walls h3 {
     line-height: 1.5;
     font-size: 1rem;
     font-weight: 700;
     text-transform: uppercase;
   }
-  .finish-walls-heading {
-    margin-top: 0.375rem;
+  .finishes-walls h3 {
+    padding: 0 1rem 0.5rem;
   }
   .finish-swatch-grid {
     display: grid;
@@ -150,8 +149,23 @@
     border-radius: 0.3125rem;
   }
   .finish-swatch {
+    position: relative;
     border: 2px solid #d9d9d9;
     background: white;
+  }
+  .finish-swatch-check {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
   }
   .finish-swatch:hover,
   .finish-swatch[aria-pressed='true'] {
@@ -174,16 +188,17 @@
   .finish-reset:hover {
     background: var(--color-brand-soft);
   }
-  .finishes-combined {
+  .finishes-wall-options {
     padding: 1rem 1rem 0.8125rem;
   }
-  .finishes-combined .finish-swatch-grid {
+  .finishes-wall-options .finish-swatch-grid {
     margin-top: 0;
   }
   @media (width < 80rem) {
     .finishes-panel {
       right: 1.5rem;
-      max-height: calc(100% - 8rem);
+      bottom: 6rem;
+      max-height: calc(100% - 7.25rem);
     }
     .planner-finishes-controls {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -200,6 +215,9 @@
     .finishes-panel {
       position: fixed;
       top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+      margin-block: 0;
       left: 1rem;
       right: 1rem;
       width: auto;
@@ -220,7 +238,7 @@
       font-size: 0.875rem;
     }
     .finishes-surfaces,
-    .finishes-combined {
+    .finishes-wall-options {
       padding-inline: 0.75rem;
     }
     .finish-swatch-grid {

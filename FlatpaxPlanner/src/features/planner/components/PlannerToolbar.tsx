@@ -23,8 +23,6 @@ interface Props {
 }
 
 export function PlannerToolbar({ selected, onSelect, onFit }: Props) {
-
-
   const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
 
   return (
@@ -36,45 +34,18 @@ export function PlannerToolbar({ selected, onSelect, onFit }: Props) {
           aria-label={tool.label}
           title={tool.label}
           aria-pressed={tool.id === 'fit' ? undefined : selected === tool.id}
-          onClick={async () => {
+          onClick={() => {
             if (tool.id === 'fit') {
-              if (floorPlanManager) {
-                floorPlanManager.fitToView();
-              }
+              if (floorPlanManager) floorPlanManager.fitToView();
+              else onFit();
+              return;
             }
-
-            if (tool.id === 'draw') {
-              if (floorPlanManager) {
-                floorPlanManager.set2DMode("Draw", true);
-              }
-            }
-
-            if (tool.id === 'measure') {
-              if (floorPlanManager) {
-                floorPlanManager.fitToView();
-              }
-            }
-
-            if (tool.id === 'door') {
-              if (floorPlanManager) {
-                floorPlanManager.set2DMode("Door", true);
-              }
-            }
-
-            if (tool.id === 'window') {
-              if (floorPlanManager) {
-                floorPlanManager.set2DMode("Window", true);
-              }
-            }
-
-            if (tool.id === 'erase') {
-              if (floorPlanManager) {
-                floorPlanManager.clear2DLayout();
-              }
-            }
-
-
-            else onSelect(selected === tool.id ? null : tool.id);
+            if (tool.id === 'draw') floorPlanManager?.set2DMode('Draw', true);
+            else if (tool.id === 'measure') floorPlanManager?.fitToView();
+            else if (tool.id === 'door') floorPlanManager?.set2DMode('Door', true);
+            else if (tool.id === 'window') floorPlanManager?.set2DMode('Window', true);
+            else floorPlanManager?.clear2DLayout();
+            onSelect(selected === tool.id ? null : tool.id);
           }}
         >
           <img src={tool.icon} width={52} height={52} alt="" />

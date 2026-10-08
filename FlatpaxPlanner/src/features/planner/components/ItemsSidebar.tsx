@@ -12,6 +12,7 @@ import {
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
 
 interface Props {
+  active?: boolean;
   onAdd: (product: CatalogueProduct) => void;
   onSelect: (id: string) => void;
   selected: string | null;
@@ -222,9 +223,10 @@ export function ItemsSidebar({
   canCustomise,
   onCustomise,
   hidden = false,
+  active = true,
 }: Props) {
-  const categories = useGetCategoriesQuery(undefined);
-  const textures = useGetTexturesQuery(undefined);
+  const categories = useGetCategoriesQuery(undefined, { skip: !active });
+  const textures = useGetTexturesQuery(undefined, { skip: !active });
   const [openSections, setOpenSections] = useState<readonly string[]>([
     'cupboard',
     'benchtop',
@@ -376,7 +378,7 @@ export function ItemsSidebar({
                     </button>
                   </h3>
                   <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
-                    {activeCategory === group.id && activeTexture && (
+                    {active && activeCategory === group.id && activeTexture && (
                       <CategoryProducts
                         categoryId={group.id}
                         textureId={activeTexture}

@@ -6,7 +6,7 @@ import {
 } from '@/features/planner/state/project-slice';
 import { persistDraft, restoreDraft } from '@/features/planner/state/project-persistence';
 import { uiReducer } from '@/state/ui-slice';
-import { configuratorReducer } from '@/features/planner/state/configurator-slice'
+import { configuratorReducer } from '@/features/planner/state/configurator-slice';
 
 import { env } from '@/config/env';
 import { catalogueApi } from '@/features/planner/catalogue/catalogue-api';
@@ -38,7 +38,12 @@ export const store = configureStore({
   },
 
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware()
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['configurator/setFloorPlanManager', 'configurator/setConfiguratorCore'],
+        ignoredPaths: ['configurator.floorPlanManager', 'configurator.configuratorCore'],
+      },
+    })
       .prepend(persistence.middleware)
       .concat(catalogueApi.middleware),
 

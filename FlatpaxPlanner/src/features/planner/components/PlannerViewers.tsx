@@ -1,8 +1,7 @@
 import { useAppDispatch } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
-import { ConfiguratorCore, FloorplanManager } from 'three-configurator';
+import { FloorplanManager } from 'three-configurator';
 import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
-
 
 interface Props {
   viewer2DRef: RefObject<HTMLDivElement | null>;
@@ -11,7 +10,6 @@ interface Props {
 }
 
 export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
-
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -24,27 +22,28 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
 
     const floorPlanManagerInstance = new FloorplanManager();
     floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
-    const configuratorCoreInstance = floorPlanManagerInstance.getConfiguratorCore() as ConfiguratorCore;
+    const configuratorCoreInstance = floorPlanManagerInstance.getConfiguratorCore();
+    if (!configuratorCoreInstance) {
+      floorPlanManagerInstance.dispose();
+      return;
+    }
     dispatch(setFloorPlanManager(floorPlanManagerInstance));
     dispatch(setConfiguratorCore(configuratorCoreInstance));
-    configuratorCoreInstance!.setBackgroundColor(0xffffff);
+    configuratorCoreInstance.setBackgroundColor(0xffffff);
 
-    let loadEnvMap = async () => {
-
-      if (configuratorCoreInstance) {
-        await configuratorCoreInstance.loadEnvironmentMap(
-          "/lebombo_4k.hdr"
-          , 0.5
-        );
-      }
-    }
-    loadEnvMap();
+    void configuratorCoreInstance
+      .loadEnvironmentMap('/lebombo_4k.hdr', 0.5)
+      .catch((error: unknown) => {
+        console.error('Unable to load the viewer environment map.', error);
+      });
 
     return () => {
       // Cleanup on unmount / re-mount
       floorPlanManagerInstance.dispose();
+      dispatch(setFloorPlanManager(null));
+      dispatch(setConfiguratorCore(null));
     };
-  }, []);
+  }, [dispatch, viewer2DRef, viewer3DRef]);
 
   return (
     <>
@@ -53,17 +52,19 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
         className="planner-viewer planner-viewer-2d"
         role="region"
         aria-label="2D room viewer"
-        hidden={mode !== '2d'}
-      >
-      </div>
+        data-active={mode === '2d'}
+        aria-hidden={mode !== '2d'}
+        inert={mode !== '2d'}
+      ></div>
       <div
         ref={viewer3DRef}
         className="planner-viewer planner-viewer-3d"
         role="region"
         aria-label="3D room viewer"
-        hidden={mode !== '3d'}
-      >
-      </div>
+        data-active={mode === '3d'}
+        aria-hidden={mode !== '3d'}
+        inert={mode !== '3d'}
+      ></div>
     </>
   );
 }

@@ -21,8 +21,8 @@ import {
 } from '@/features/planner/components/PlannerNavigation';
 import { PlannerToolbar, type PlannerTool } from '@/features/planner/components/PlannerToolbar';
 import '@/styles/planner.css';
-import { FinishesPanel } from '@/features/planner/components/FinishesPanel';
-import customiseIcon from '@/assets/icons/FP-FLOATED-CUSTOMISE.svg';
+import { PlannerFinishesControls } from '@/features/planner/components/PlannerFinishesControls';
+
 import { ItemsSidebar } from '@/features/planner/components/ItemsSidebar';
 import { ItemsToolbar, type ItemsTool } from '@/features/planner/components/ItemsToolbar';
 import type { CatalogueProduct } from '@/features/planner/catalogue/catalogue';
@@ -52,9 +52,16 @@ export function Component() {
       event.preventDefault();
     }
   });
-  const step = useAppSelector((state) => state.project.activeStep);
+
   const location = useLocation();
   const navigate = useNavigate();
+  const step: PlannerStep =
+    location.pathname === paths.design
+      ? new URLSearchParams(location.search).get('step') === 'items'
+        ? 'Add items'
+        : 'Walls & floors'
+      : 'Room setup';
+  const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
   useEffect(() => {
     const next: PlannerStep =
       location.pathname === paths.design
@@ -66,8 +73,9 @@ export function Component() {
   }, [location.pathname, location.search, dispatch]);
   const [tool, setTool] = useState<PlannerTool | null>(null);
   const [panel, setPanel] = useState<'save' | 'items' | null>(null);
-  const [announcement, setAnnouncement] = useState('');
   const [finishesOpen, setFinishesOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+
   const [selectedProduct, setSelectedProduct] = useState<string | null>('floor-1');
   const [itemsTool, setItemsTool] = useState<ItemsTool | null>(null);
   const [customising, setCustomising] = useState(false);
@@ -79,8 +87,8 @@ export function Component() {
     setItems((current) =>
       current.some((item) => item.product.id === product.id)
         ? current.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
+            item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+          )
         : [...current, { product, quantity: 1 }],
     );
     setAnnouncement(`${product.name} added to the item list.`);
@@ -101,22 +109,44 @@ export function Component() {
     setAnnouncement('Item removed from the item list.');
   }
   function changeStep(next: PlannerStep) {
-    dispatch(setActiveStep(next));
-    void navigate(
-      next === 'Room setup'
-        ? paths.roomSetup
-        : next === 'Add items'
-          ? `${paths.design}?step=items`
-          : paths.design,
-    );
-    setFinishesOpen(false);
-    setCustomising(false);
+    void Promise.resolve(
+      navigate(
+        next === 'Room setup'
+          ? paths.roomSetup
+          : next === 'Add items'
+            ? `${paths.design}?step=items`
+            : paths.design,
+      ),
+    )
+      .then(() => {
+        // Reset panels after the destination commits so the launcher cannot flash on the old page.
+
+        setCustomising(false);
+      })
+      .catch(() => {
+        setAnnouncement('Unable to change the design step. Please try again.');
+      });
   }
-  function closeFinishes() {
-    setFinishesOpen(false);
-    requestAnimationFrame(() => {
-      document.getElementById('open-finishes')?.focus();
-    });
+  async function nextStep() {
+    if (step === 'Room setup') {
+      try {
+        const success = await floorPlanManager?.switchTo3D();
+        if (!success) {
+          setAnnouncement('Draw a room before continuing to the 3D design.');
+          return;
+        }
+      } catch {
+        setAnnouncement('Unable to open the 3D design. Please try again.');
+        return;
+      }
+    }
+    changeStep(
+      step === 'Room setup'
+        ? 'Walls & floors'
+        : step === 'Walls & floors'
+          ? 'Add items'
+          : 'Walls & floors',
+    );
   }
   if (!draft) return <Navigate to={paths.home} replace />;
   const total = items.reduce<number | null>((sum, item) => {
@@ -124,20 +154,34 @@ export function Component() {
     return sum === null || !region ? null : sum + region.price * item.quantity;
   }, 0);
 
-  const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
-
-  const isRoomDetected = (room: boolean) => {
-    console.log(room);
-  }
-
   return (
     <div
       className={`planner-page ${step === 'Add items' ? 'planner-items-page' : ''}`}
       style={{ '--planner-scale': scale } as CSSProperties}
     >
-      {step === 'Add items' && (
-        <>
+      <PlannerNavigation
+        total={total}
+        projectName={draft.projectName}
+        step={step}
+        onStepChange={changeStep}
+        onSave={() => {
+          setPanel('save');
+        }}
+        onItemList={() => {
+          setPanel('items');
+        }}
+      />
+      <div
+        className={`planner-workspace ${step === 'Walls & floors' ? 'planner-finishes-workspace' : ''}`}
+      >
+        <div
+          className="planner-sidebar-overlay"
+          data-open={step === 'Add items'}
+          aria-hidden={step !== 'Add items'}
+          inert={step !== 'Add items'}
+        >
           <ItemsSidebar
+            active={step === 'Add items'}
             onAdd={addItem}
             onSelect={setSelectedProduct}
             selected={selectedProduct}
@@ -159,23 +203,8 @@ export function Component() {
               }}
             />
           )}
-        </>
-      )}
-      <PlannerNavigation
-        total={total}
-        projectName={draft.projectName}
-        step={step}
-        onStepChange={changeStep}
-        onSave={() => {
-          setPanel('save');
-        }}
-        onItemList={() => {
-          setPanel('items');
-        }}
-      />
-      <div
-        className={`planner-workspace ${step === 'Walls & floors' ? 'planner-finishes-workspace' : ''}`}
-      >
+        </div>
+
         <PlannerViewers
           viewer2DRef={viewer2DRef}
           viewer3DRef={viewer3DRef}
@@ -183,23 +212,15 @@ export function Component() {
         />
         <Outlet />
         {step === 'Walls & floors' && (
-          <>
-            <button
-              type="button"
-              id="open-finishes"
-              className="open-finishes-button"
-              aria-label="Open floor and wall finishes"
-              aria-haspopup="dialog"
-              aria-expanded={finishesOpen}
-              hidden={finishesOpen}
-              onClick={() => {
-                setFinishesOpen(true);
-              }}
-            >
-              <img src={customiseIcon} width={114} height={114} alt="" />
-            </button>
-            <FinishesPanel open={finishesOpen} onClose={closeFinishes} />
-          </>
+          <PlannerFinishesControls
+            open={finishesOpen}
+            onOpen={() => {
+              setFinishesOpen(true);
+            }}
+            onClose={() => {
+              setFinishesOpen(false);
+            }}
+          />
         )}
         <div
           className={`planner-bottom-controls ${step === 'Walls & floors' ? 'planner-finishes-controls' : step === 'Add items' ? 'planner-items-controls' : ''}`}
@@ -244,17 +265,8 @@ export function Component() {
           <button
             type="button"
             className="planner-next"
-            onClick={async () => {
-              changeStep(
-                step === 'Room setup'
-                  ? 'Walls & floors'
-                  : step === 'Walls & floors'
-                    ? 'Add items'
-                    : 'Walls & floors',
-              );
-              const success = await floorPlanManager?.switchTo3D(isRoomDetected);
-              console.log("success : ", success);
-
+            onClick={() => {
+              void nextStep();
             }}
           >
             {step === 'Room setup'

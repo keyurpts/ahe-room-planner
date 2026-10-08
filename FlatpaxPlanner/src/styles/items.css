@@ -1,16 +1,35 @@
 @layer components {
   .planner-items-page {
-    display: grid;
-    grid-template-columns: 17.4375rem minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    display: flex;
   }
-  .planner-items-page > .planner-navigation {
-    grid-column: 2;
-    grid-row: 1;
+  .planner-sidebar-overlay {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: calc(17.4375rem * var(--planner-scale));
+    max-width: calc(100% - 3rem);
+    display: flex;
+    z-index: 3;
+    box-shadow: 3px 0 12px rgb(0 0 0 / 8%);
+    transform: translateX(-100%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      transform 200ms ease-out,
+      opacity 200ms ease-out,
+      visibility 0s 200ms;
   }
-  .planner-items-page > .planner-workspace {
-    grid-column: 2;
-    grid-row: 2;
+  .planner-sidebar-overlay[data-open='true'] {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+  .planner-sidebar-overlay > .items-sidebar {
+    width: 100%;
+    max-height: none;
   }
   .items-sidebar {
     min-height: 0;
@@ -302,31 +321,9 @@
   .planner-items-controls > .planner-next {
     flex-direction: row-reverse;
   }
-  .planner-items-page .planner-save {
-    background: white;
-    color: var(--color-brand);
-  }
-  @media (width < 90rem) and (width >= 40rem) {
-    .planner-items-page .planner-navigation {
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 0;
-    }
-    .planner-items-page .planner-step-navigation {
-      grid-row: 2;
-      grid-column: 1 / -1;
-      justify-self: center;
-      padding: 0.5rem 1rem;
-    }
-    .planner-items-page .planner-project-heading h1 {
-      font-size: 1.5rem;
-    }
-  }
   @media (width < 64rem) and (width >= 40rem) {
-    .planner-items-page {
-      grid-template-columns: 15rem minmax(0, 1fr);
-    }
-    .planner-items-page .planner-project-actions {
-      padding: 0.75rem;
+    .planner-sidebar-overlay {
+      width: 15rem;
     }
     .planner-items-controls {
       padding-inline: 0.75rem;
@@ -337,6 +334,9 @@
     }
   }
   @media (width < 40rem) {
+    .planner-sidebar-overlay {
+      bottom: 12rem;
+    }
     .planner-items-page {
       display: flex;
     }

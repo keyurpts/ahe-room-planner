@@ -2,6 +2,13 @@ import { useEffect, useId, useRef, useState } from 'react';
 import closeIcon from '@/assets/icons/Close.svg';
 import resetIcon from '@/assets/icons/material-symbols_restart-alt-rounded.svg';
 import '@/styles/finishes.css';
+import {
+  floorTextures,
+  wallTextures,
+  floorColours,
+  wallColours,
+  type DemoFinish,
+} from '@/features/planner/finishes/demo-finishes';
 
 interface Props {
   open: boolean;
@@ -60,13 +67,13 @@ function FinishSymbol({
 
 function SwatchGrid({
   label,
-  count,
+  options,
   mode,
   selected,
   onSelect,
 }: {
   label: string;
-  count: number;
+  options: readonly DemoFinish[];
   mode: FinishMode;
   selected: number | null;
   onSelect: (index: number | null) => void;
@@ -84,17 +91,25 @@ function SwatchGrid({
         <img src={resetIcon} width={24} height={24} alt="" />
         <span>Reset</span>
       </button>
-      {Array.from({ length: count }, (_, index) => (
+      {options.map((option, index) => (
         <button
-          key={index}
+          key={option.name}
           type="button"
           className="finish-swatch"
-          aria-label={`${label} ${mode.toLowerCase()} option ${String(index + 1)}`}
+          aria-label={`${label}: ${option.name}`}
+          title={option.name}
+          style={{ background: option.background }}
           aria-pressed={selected === index}
           onClick={() => {
             onSelect(index);
           }}
-        />
+        >
+          {selected === index && (
+            <span className="finish-swatch-check" aria-hidden="true">
+              ✓
+            </span>
+          )}
+        </button>
       ))}
     </div>
   );
@@ -102,10 +117,10 @@ function SwatchGrid({
 
 export function FinishesPanel({ open, onClose }: Props) {
   const [mode, setMode] = useState<FinishMode>('Textures');
-  const [scope, setScope] = useState<'all' | 'selection'>('all');
+  const [wallScope, setWallScope] = useState<'all' | 'selection'>('all');
   const [floor, setFloor] = useState<number | null>(null);
   const [walls, setWalls] = useState<number | null>(null);
-  const [combined, setCombined] = useState<number | null>(null);
+
   const closeRef = useRef<HTMLButtonElement>(null);
   const id = useId();
   useEffect(() => {
@@ -156,7 +171,6 @@ export function FinishesPanel({ open, onClose }: Props) {
               setMode(tab);
               setFloor(null);
               setWalls(null);
-              setCombined(null);
             }}
             onKeyDown={(event) => {
               if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
@@ -172,7 +186,7 @@ export function FinishesPanel({ open, onClose }: Props) {
                 setMode(next);
                 setFloor(null);
                 setWalls(null);
-                setCombined(null);
+
                 document.getElementById(`${id}-${next}`)?.focus();
               }
             }}
@@ -183,47 +197,54 @@ export function FinishesPanel({ open, onClose }: Props) {
         ))}
       </div>
       <div role="tabpanel" id={`${id}-options`} aria-labelledby={`${id}-${mode}`}>
-        <div className="finishes-surfaces">
+        <section className="finishes-surfaces" aria-label="Floor finishes">
           <h3>Floor</h3>
-          <SwatchGrid label="Floor" count={11} mode={mode} selected={floor} onSelect={setFloor} />
-          <h3 className="finish-walls-heading">Walls</h3>
-          <SwatchGrid label="Walls" count={5} mode={mode} selected={walls} onSelect={setWalls} />
-        </div>
-        <div className="finish-apply-controls">
-          <button
-            type="button"
-            aria-pressed={scope === 'all'}
-            onClick={() => {
-              setScope('all');
-            }}
-          >
-            <FinishSymbol type="all" />
-            Apply to all
-          </button>
-          <button
-            type="button"
-            aria-pressed={scope === 'selection'}
-            onClick={() => {
-              setScope('selection');
-            }}
-          >
-            <FinishSymbol type="selection" />
-            <span>
-              Apply
-              <br />
-              to selection
-            </span>
-          </button>
-        </div>
-        <div className="finishes-combined">
           <SwatchGrid
-            label={scope === 'all' ? 'All surfaces' : 'Selected surfaces'}
-            count={11}
+            label="Floor"
+            options={mode === 'Textures' ? floorTextures : floorColours}
             mode={mode}
-            selected={combined}
-            onSelect={setCombined}
+            selected={floor}
+            onSelect={setFloor}
           />
-        </div>
+        </section>
+        <section aria-label="Wall finishes" className="finishes-walls">
+          <h3>Walls</h3>
+          <div className="finish-apply-controls" role="group" aria-label="Wall application scope">
+            <button
+              type="button"
+              aria-pressed={wallScope === 'all'}
+              onClick={() => {
+                setWallScope('all');
+              }}
+            >
+              <FinishSymbol type="all" />
+              Apply to all
+            </button>
+            <button
+              type="button"
+              aria-pressed={wallScope === 'selection'}
+              onClick={() => {
+                setWallScope('selection');
+              }}
+            >
+              <FinishSymbol type="selection" />
+              <span>
+                Apply
+                <br />
+                to selection
+              </span>
+            </button>
+          </div>
+          <div className="finishes-wall-options">
+            <SwatchGrid
+              label="Walls"
+              options={mode === 'Textures' ? wallTextures : wallColours}
+              mode={mode}
+              selected={walls}
+              onSelect={setWalls}
+            />
+          </div>
+        </section>
       </div>
     </section>
   );
