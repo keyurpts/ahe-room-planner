@@ -6,11 +6,14 @@ import {
 } from '@/features/planner/state/project-slice';
 import { persistDraft, restoreDraft } from '@/features/planner/state/project-persistence';
 import { uiReducer } from '@/state/ui-slice';
+import { configuratorReducer } from '@/features/planner/state/configurator-slice'
+
 import { env } from '@/config/env';
 import { catalogueApi } from '@/features/planner/catalogue/catalogue-api';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 const persistence = createListenerMiddleware();
+
 persistence.startListening({
   matcher: isAnyOf(startProject, discardProject),
   effect: (action) => {
@@ -22,11 +25,23 @@ export const store = configureStore({
   reducer: {
     project: projectReducer,
     ui: uiReducer,
+    configurator: configuratorReducer,
+
     [catalogueApi.reducerPath]: catalogueApi.reducer,
   },
-  preloadedState: { project: { draft: restoreDraft(), activeStep: 'Room setup' as const } },
+
+  preloadedState: {
+    project: {
+      draft: restoreDraft(),
+      activeStep: 'Room setup' as const,
+    },
+  },
+
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(persistence.middleware).concat(catalogueApi.middleware),
+    getDefaultMiddleware()
+      .prepend(persistence.middleware)
+      .concat(catalogueApi.middleware),
+
   devTools: env.appEnvironment === 'development',
 });
 setupListeners(store.dispatch);

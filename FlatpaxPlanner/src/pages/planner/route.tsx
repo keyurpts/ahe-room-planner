@@ -79,8 +79,8 @@ export function Component() {
     setItems((current) =>
       current.some((item) => item.product.id === product.id)
         ? current.map((item) =>
-            item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-          )
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+        )
         : [...current, { product, quantity: 1 }],
     );
     setAnnouncement(`${product.name} added to the item list.`);
@@ -123,6 +123,12 @@ export function Component() {
     const region = item.product.regions.find((value) => value.regionId === regionId);
     return sum === null || !region ? null : sum + region.price * item.quantity;
   }, 0);
+
+  const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+
+  const isRoomDetected = (room: boolean) => {
+    console.log(room);
+  }
 
   return (
     <div
@@ -238,7 +244,7 @@ export function Component() {
           <button
             type="button"
             className="planner-next"
-            onClick={() => {
+            onClick={async () => {
               changeStep(
                 step === 'Room setup'
                   ? 'Walls & floors'
@@ -246,6 +252,9 @@ export function Component() {
                     ? 'Add items'
                     : 'Walls & floors',
               );
+              const success = await floorPlanManager?.switchTo3D(isRoomDetected);
+              console.log("success : ", success);
+
             }}
           >
             {step === 'Room setup'

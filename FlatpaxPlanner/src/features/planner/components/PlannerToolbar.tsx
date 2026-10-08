@@ -4,6 +4,7 @@ import doorIcon from '@/assets/icons/FP-FLOATED-DOOR.svg';
 import windowIcon from '@/assets/icons/FP-FLOATED-WINDOW.svg';
 import fitIcon from '@/assets/icons/FP-FLOATED-ZOON TO FIT.svg';
 import eraseIcon from '@/assets/icons/FP-FLOATED-RUBBER.svg';
+import { useAppSelector } from '@/app/store-hooks';
 
 const tools = [
   { id: 'draw', label: 'Draw walls', icon: drawIcon },
@@ -22,6 +23,10 @@ interface Props {
 }
 
 export function PlannerToolbar({ selected, onSelect, onFit }: Props) {
+
+
+  const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+
   return (
     <div role="group" aria-label="Room setup tools" className="planner-toolbar">
       {tools.map((tool) => (
@@ -31,8 +36,44 @@ export function PlannerToolbar({ selected, onSelect, onFit }: Props) {
           aria-label={tool.label}
           title={tool.label}
           aria-pressed={tool.id === 'fit' ? undefined : selected === tool.id}
-          onClick={() => {
-            if (tool.id === 'fit') onFit();
+          onClick={async () => {
+            if (tool.id === 'fit') {
+              if (floorPlanManager) {
+                floorPlanManager.fitToView();
+              }
+            }
+
+            if (tool.id === 'draw') {
+              if (floorPlanManager) {
+                floorPlanManager.set2DMode("Draw", true);
+              }
+            }
+
+            if (tool.id === 'measure') {
+              if (floorPlanManager) {
+                floorPlanManager.fitToView();
+              }
+            }
+
+            if (tool.id === 'door') {
+              if (floorPlanManager) {
+                floorPlanManager.set2DMode("Door", true);
+              }
+            }
+
+            if (tool.id === 'window') {
+              if (floorPlanManager) {
+                floorPlanManager.set2DMode("Window", true);
+              }
+            }
+
+            if (tool.id === 'erase') {
+              if (floorPlanManager) {
+                floorPlanManager.clear2DLayout();
+              }
+            }
+
+
             else onSelect(selected === tool.id ? null : tool.id);
           }}
         >

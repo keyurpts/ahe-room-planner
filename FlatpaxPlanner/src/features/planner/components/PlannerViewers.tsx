@@ -1,4 +1,8 @@
+import { useAppDispatch } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
+import { ConfiguratorCore, FloorplanManager } from 'three-configurator';
+import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
+
 
 interface Props {
   viewer2DRef: RefObject<HTMLDivElement | null>;
@@ -7,10 +11,40 @@ interface Props {
 }
 
 export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
+
+  const dispatch = useAppDispatch();
+
   useEffect(() => {
     console.log('2D viewer ref.current:', viewer2DRef.current);
     console.log('3D viewer ref.current:', viewer3DRef.current);
   }, [viewer2DRef, viewer3DRef, mode]);
+
+  useEffect(() => {
+    if (!viewer2DRef.current || !viewer3DRef.current) return;
+
+    const floorPlanManagerInstance = new FloorplanManager();
+    floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
+    const configuratorCoreInstance = floorPlanManagerInstance.getConfiguratorCore() as ConfiguratorCore;
+    dispatch(setFloorPlanManager(floorPlanManagerInstance));
+    dispatch(setConfiguratorCore(configuratorCoreInstance));
+    configuratorCoreInstance!.setBackgroundColor(0xffffff);
+
+    let loadEnvMap = async () => {
+
+      if (configuratorCoreInstance) {
+        await configuratorCoreInstance.loadEnvironmentMap(
+          "/lebombo_4k.hdr"
+          , 0.5
+        );
+      }
+    }
+    loadEnvMap();
+
+    return () => {
+      // Cleanup on unmount / re-mount
+      floorPlanManagerInstance.dispose();
+    };
+  }, []);
 
   return (
     <>
