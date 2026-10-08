@@ -8,6 +8,8 @@ import fitIcon from '@/assets/icons/FP-FLOATED-ZOON TO FIT.svg';
 import eraseIcon from '@/assets/icons/FP-FLOATED-RUBBER.svg';
 import { useAppSelector } from '@/app/store-hooks';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
+import { useState } from 'react';
+
 const tools = [
   { id: 'draw', label: 'Draw walls', icon: drawIcon },
   { id: 'snap', label: 'Snap drawing', icon: null },
@@ -29,6 +31,13 @@ interface Props {
 
 export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChange }: Props) {
   const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+
+
+
+  const [isMeasurementActive, setIsMeasurementActive] = useState<boolean>(true);
+  const [isWindowModeActive, setisWindowModeActive] = useState<boolean>(false);
+  const [isDoorModeActive, setisDoorModeActive] = useState<boolean>(false);
+
 
   const [unit, setUnit] = useState(() => floorPlanManager?.getLengthUnit() ?? LengthUnit.MM);
   return (
