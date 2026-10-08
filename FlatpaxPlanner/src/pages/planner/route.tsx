@@ -71,6 +71,7 @@ export function Component() {
         : 'Room setup';
     dispatch(setActiveStep(next));
   }, [location.pathname, location.search, dispatch]);
+  const [snapping, setSnapping] = useState(true);
   const [tool, setTool] = useState<PlannerTool | null>(null);
   const [panel, setPanel] = useState<'save' | 'items' | null>(null);
   const [finishesOpen, setFinishesOpen] = useState(false);
@@ -247,6 +248,8 @@ export function Component() {
           )}
           {step === 'Room setup' && (
             <PlannerToolbar
+              snapping={snapping}
+              onSnapChange={setSnapping}
               selected={tool}
               onSelect={setTool}
               onFit={() => {

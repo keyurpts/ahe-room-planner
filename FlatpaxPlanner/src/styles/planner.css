@@ -221,7 +221,8 @@
     pointer-events: none;
     transition: background-color 150ms;
   }
-  .planner-toolbar button + button::before {
+  .planner-toolbar button + button::before,
+  .planner-toolbar .toolbar-dropdown-control + button::before {
     content: '';
     position: absolute;
     left: 0;
@@ -237,6 +238,11 @@
     width: 3.25rem;
     height: 3.25rem;
     object-fit: contain;
+  }
+  .planner-tool-icon {
+    position: relative;
+    z-index: 1;
+    color: white;
   }
   .planner-toolbar button:not(:disabled):hover::after {
     background: #222;
@@ -321,6 +327,18 @@
     }
   }
   @media (width < 40rem) {
+    .planner-toolbar.room-setup-toolbar .toolbar-dropdown-control > button {
+      width: 100%;
+    }
+    .room-setup-toolbar {
+      flex-wrap: wrap;
+    }
+    .planner-toolbar.room-setup-toolbar button,
+    .room-setup-toolbar .toolbar-dropdown-control {
+      flex: 0 0 25%;
+      width: auto;
+      min-height: 3.25rem;
+    }
     .planner-page {
       height: auto;
     }
