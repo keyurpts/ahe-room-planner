@@ -5,6 +5,7 @@ import windowIcon from '@/assets/icons/FP-FLOATED-WINDOW.svg';
 import fitIcon from '@/assets/icons/FP-FLOATED-ZOON TO FIT.svg';
 import eraseIcon from '@/assets/icons/FP-FLOATED-RUBBER.svg';
 import { useAppSelector } from '@/app/store-hooks';
+import { useState } from 'react';
 
 const tools = [
   { id: 'draw', label: 'Draw walls', icon: drawIcon },
@@ -24,6 +25,11 @@ interface Props {
 
 export function PlannerToolbar({ selected, onSelect, onFit }: Props) {
   const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+
+  const [isMeasurementActive, setIsMeasurementActive] = useState<boolean>(true);
+  const [isWindowModeActive, setisWindowModeActive] = useState<boolean>(false);
+  const [isDoorModeActive, setisDoorModeActive] = useState<boolean>(false);
+
 
   return (
     <div role="group" aria-label="Room setup tools" className="planner-toolbar">

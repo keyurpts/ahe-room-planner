@@ -108,6 +108,11 @@ export function Component() {
     );
     setAnnouncement('Item removed from the item list.');
   }
+
+  const isRoomDetected = (room: boolean) => {
+    console.log(room);
+  }
+
   function changeStep(next: PlannerStep) {
     void Promise.resolve(
       navigate(
@@ -118,10 +123,18 @@ export function Component() {
             : paths.design,
       ),
     )
-      .then(() => {
+      .then(async () => {
         // Reset panels after the destination commits so the launcher cannot flash on the old page.
 
         setCustomising(false);
+
+        if (next === 'Walls & floors') {
+          const success = await floorPlanManager?.switchTo3D(isRoomDetected);
+          console.log("success : ", success);
+        }
+        if (next === "Room setup") {
+          floorPlanManager?.switchTo2D();
+        }
       })
       .catch(() => {
         setAnnouncement('Unable to change the design step. Please try again.');
