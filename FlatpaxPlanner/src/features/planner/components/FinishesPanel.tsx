@@ -3,12 +3,12 @@ import closeIcon from '@/assets/icons/Close.svg';
 import resetIcon from '@/assets/icons/material-symbols_restart-alt-rounded.svg';
 import '@/styles/finishes.css';
 import {
-  floorTextures,
-  wallTextures,
-  floorColours,
-  wallColours,
-  type DemoFinish,
-} from '@/features/planner/finishes/demo-finishes';
+  floorPresets,
+  wallPresets,
+  colorPresets,
+  type TexturePreset,
+  type ColorPreset,
+} from '@/features/planner/finishes/presets';
 
 interface Props {
   open: boolean;
@@ -73,10 +73,10 @@ function SwatchGrid({
   onSelect,
 }: {
   label: string;
-  options: readonly DemoFinish[];
+  options: readonly (TexturePreset | ColorPreset)[];
   mode: FinishMode;
-  selected: number | null;
-  onSelect: (index: number | null) => void;
+  selected: string | null;
+  onSelect: (id: string | null) => void;
 }) {
   return (
     <div className="finish-swatch-grid" role="group" aria-label={`${label} ${mode.toLowerCase()}`}>
@@ -91,20 +91,23 @@ function SwatchGrid({
         <img src={resetIcon} width={24} height={24} alt="" />
         <span>Reset</span>
       </button>
-      {options.map((option, index) => (
+      {options.map((option) => (
         <button
-          key={option.name}
+          key={option.id}
           type="button"
           className="finish-swatch"
           aria-label={`${label}: ${option.name}`}
           title={option.name}
-          style={{ background: option.background }}
-          aria-pressed={selected === index}
+          style={'color' in option ? { backgroundColor: option.color } : undefined}
+          aria-pressed={selected === option.id}
           onClick={() => {
-            onSelect(index);
+            onSelect(option.id);
           }}
         >
-          {selected === index && (
+          {'thumbnail' in option && (
+            <img className="finish-swatch-thumbnail" src={option.thumbnail} alt="" loading="lazy" />
+          )}
+          {selected === option.id && (
             <span className="finish-swatch-check" aria-hidden="true">
               ✓
             </span>
@@ -118,8 +121,8 @@ function SwatchGrid({
 export function FinishesPanel({ open, onClose }: Props) {
   const [mode, setMode] = useState<FinishMode>('Textures');
   const [wallScope, setWallScope] = useState<'all' | 'selection'>('all');
-  const [floor, setFloor] = useState<number | null>(null);
-  const [walls, setWalls] = useState<number | null>(null);
+  const [floor, setFloor] = useState<string | null>(null);
+  const [walls, setWalls] = useState<string | null>(null);
 
   const closeRef = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -201,7 +204,7 @@ export function FinishesPanel({ open, onClose }: Props) {
           <h3>Floor</h3>
           <SwatchGrid
             label="Floor"
-            options={mode === 'Textures' ? floorTextures : floorColours}
+            options={mode === 'Textures' ? floorPresets : colorPresets}
             mode={mode}
             selected={floor}
             onSelect={setFloor}
@@ -238,7 +241,7 @@ export function FinishesPanel({ open, onClose }: Props) {
           <div className="finishes-wall-options">
             <SwatchGrid
               label="Walls"
-              options={mode === 'Textures' ? wallTextures : wallColours}
+              options={mode === 'Textures' ? wallPresets : colorPresets}
               mode={mode}
               selected={walls}
               onSelect={setWalls}

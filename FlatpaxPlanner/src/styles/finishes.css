@@ -167,10 +167,15 @@
     font-size: 12px;
     font-weight: 700;
   }
+  .finish-swatch-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.1875rem;
+  }
   .finish-swatch:hover,
   .finish-swatch[aria-pressed='true'] {
     border-color: var(--color-brand);
-    background: var(--color-brand-subtle);
   }
   .finish-reset {
     display: flex;
