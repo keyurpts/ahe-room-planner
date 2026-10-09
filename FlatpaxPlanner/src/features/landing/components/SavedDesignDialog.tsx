@@ -46,9 +46,9 @@ export function SavedDesignDialog({ open, onClose }: Props) {
       onClose={close}
       footer={
         <Button
-          variant="outline"
+          variant="navigation"
           size="compact"
-          className="saved-design-back rounded-[0.625rem]! text-base uppercase"
+          className="saved-design-back text-base uppercase"
           onClick={close}
         >
           <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">
@@ -101,7 +101,8 @@ export function SavedDesignDialog({ open, onClose }: Props) {
           <Button
             type="submit"
             size="compact"
-            className="load-design-button rounded-[0.625rem]! text-base uppercase"
+            variant="brand-outline"
+            className="load-design-button text-base uppercase"
           >
             Load design
             <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">

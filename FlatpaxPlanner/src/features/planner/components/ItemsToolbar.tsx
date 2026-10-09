@@ -1,16 +1,25 @@
-import move from '@/assets/icons/Group 76.svg';
-import rotate from '@/assets/icons/FP-Rotate.svg';
-import flip from '@/assets/icons/Group 77.svg';
-import images from '@/assets/icons/Group 78.svg';
-import remove from '@/assets/icons/Group 79.svg';
-import hide from '@/assets/icons/Group 85.svg';
-import view from '@/assets/icons/Group 86.svg';
-import measure from '@/assets/icons/FP-FLOATED-MEASURES.svg';
+import move from '@/assets/icons/move.svg';
+import rotate from '@/assets/icons/rotate.svg';
+import flip from '@/assets/icons/swap.svg';
+import images from '@/assets/icons/duplicate.svg';
+import remove from '@/assets/icons/delete.svg';
+import hide from '@/assets/icons/wall-hide.svg';
+import view from '@/assets/icons/camera.svg';
+import measure from '@/assets/icons/measure.svg';
 import { Fragment, useState } from 'react';
 import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
+
+import moveHover from '@/assets/icons/move-h.svg';
+import rotateHover from '@/assets/icons/rotate-h.svg';
+import swapHover from '@/assets/icons/swap-h.svg';
+import duplicateHover from '@/assets/icons/duplicate-h.svg';
+import deleteHover from '@/assets/icons/delete-h.svg';
+import wallhideHover from '@/assets/icons/wall-hide-h.svg';
+import cameraHover from '@/assets/icons/camera-h.svg';
+import measureHover from '@/assets/icons/measure-h.svg';
 
 type MeasurementMode = 'nearby' | 'walls' | 'all' | 'selected';
 type CameraMode = 'orthographic' | 'perspective';
@@ -35,12 +44,12 @@ const cameraGroups: readonly DropdownGroup<CameraMode>[] = [
   },
 ];
 const tools = [
-  { id: 'move', label: 'Move item', icon: move },
-  { id: 'rotate', label: 'Rotate item', icon: rotate },
-  { id: 'replace', label: 'Replace item', icon: flip },
-  { id: 'copy', label: 'Copy item', icon: images },
-  { id: 'delete', label: 'Delete item', icon: remove },
-  { id: 'hidewalls', label: 'Hide walls', icon: hide },
+  { id: 'move', label: 'Move item', icon: move, hoverIcon: moveHover },
+  { id: 'rotate', label: 'Rotate item', icon: rotate, hoverIcon: rotateHover },
+  { id: 'replace', label: 'Replace item', icon: flip, hoverIcon: swapHover },
+  { id: 'copy', label: 'Copy item', icon: images, hoverIcon: duplicateHover },
+
+  { id: 'hidewalls', label: 'Hide walls', icon: hide, hoverIcon: wallhideHover },
 ] as const;
 export type ItemsTool = (typeof tools)[number]['id'];
 type TransformTool = Extract<ItemsTool, 'move' | 'rotate'>;
@@ -134,18 +143,18 @@ export function ItemsToolbar({
                     ? hideWallsSelected
                     : undefined
             }
-            disabled={tool.id === 'delete' && !canRemove}
+
             onClick={() => {
-              if (tool.id === 'delete') onRemove();
-              else if (tool.id === 'move' || tool.id === 'rotate') onTransformToolChange(tool.id);
+              if (tool.id === 'move' || tool.id === 'rotate') onTransformToolChange(tool.id);
               else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
               else if (tool.id === 'copy') onCopy();
               else onHideWallsSelectedChange(!hideWallsSelected);
             }}
           >
-            <img src={tool.icon} width={52} height={52} alt="" />
+            <img src={tool.icon} width={52} height={52} alt="" className="item-tool-default" />
+            <img src={tool.hoverIcon} width={52} height={52} alt="" className="item-tool-hover" />
           </button>
-          {tool.id === 'delete' && (
+          {tool.id === 'copy' && (
             <ToolbarDropdown
               value={measurement}
               onChange={changeMeasurement}
@@ -154,7 +163,18 @@ export function ItemsToolbar({
               }}
               groups={measurementGroups}
               label="Measurement types"
-              triggerContent={<img src={measure} width={52} height={52} alt="" />}
+              triggerContent={
+                <>
+                  <img src={measure} width={52} height={52} alt="" className="item-tool-default" />
+                  <img
+                    src={measureHover}
+                    width={52}
+                    height={52}
+                    alt=""
+                    className="item-tool-hover"
+                  />
+                </>
+              }
             />
           )}
         </Fragment>
@@ -164,8 +184,23 @@ export function ItemsToolbar({
         onChange={changeCamera}
         groups={cameraGroups}
         label="Camera view"
-        triggerContent={<img src={view} width={52} height={52} alt="" />}
+        triggerContent={
+          <>
+            <img src={view} width={52} height={52} alt="" className="item-tool-default" />
+            <img src={cameraHover} width={52} height={52} alt="" className="item-tool-hover" />
+          </>
+        }
       />
+      <button
+        type="button"
+        aria-label="Delete item"
+        title="Delete item"
+        disabled={!canRemove}
+        onClick={onRemove}
+      >
+        <img src={remove} width={52} height={52} alt="" className="item-tool-default" />
+        <img src={deleteHover} width={52} height={52} alt="" className="item-tool-hover" />
+      </button>
       <UnitSelector
         unit={unit}
         onChange={(next) => {

@@ -57,6 +57,11 @@
     outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
+  .room-shape-card:hover svg path,
+  .room-shape-card:has(input:checked) svg path,
+  .room-shape-card:active svg path {
+    fill: #fff;
+  }
   .room-shape-input {
     position: absolute;
     inset: 0;
@@ -103,18 +108,22 @@
     width: 100%;
     min-height: 2.5625rem;
     padding: 0.375rem 0.875rem 0.375rem 1.75rem;
-    border-radius: 0.1875rem;
+    border-radius: var(--radius-control);
+    border: var(--control-border-width) solid var(--color-brand);
     background: var(--color-brand);
-    color: white;
+    color: #fff;
     font-size: 1.0625rem;
     font-weight: 500;
     text-transform: uppercase;
   }
-  .custom-room-button:hover {
+  .custom-room-button:hover,
+  .custom-room-button:focus-visible {
     background: var(--color-brand-hover);
+    color: white;
   }
   .custom-room-button:active {
     background: var(--color-brand-active);
+    color: white;
   }
   .custom-room-button svg {
     flex-shrink: 0;
@@ -131,7 +140,6 @@
   .room-shape-next {
     min-width: 7.1875rem;
     min-height: 2.25rem;
-    border: 1px solid var(--color-brand);
   }
   @media (width < 40rem) {
     .room-shape-dialog-header {
@@ -161,7 +169,6 @@
     .custom-room-button {
       padding-inline: 0.75rem;
       font-size: 0.875rem;
-      background: var(--color-brand-hover);
     }
     .room-shape-dialog-footer {
       position: sticky;

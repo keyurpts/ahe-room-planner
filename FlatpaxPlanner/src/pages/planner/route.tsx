@@ -114,7 +114,7 @@ export function Component() {
 
   const isRoomDetected = (room: boolean) => {
     console.log(room);
-  }
+  };
 
   function changeStep(next: PlannerStep) {
     void Promise.resolve(
@@ -133,9 +133,9 @@ export function Component() {
 
         if (next === 'Walls & floors') {
           const success = await floorPlanManager?.switchTo3D(isRoomDetected);
-          console.log("success : ", success);
+          console.log('success : ', success);
         }
-        if (next === "Room setup") {
+        if (next === 'Room setup') {
           floorPlanManager?.switchTo2D();
         }
       })
@@ -289,7 +289,7 @@ export function Component() {
           )}
           <button
             type="button"
-            className="planner-next"
+            className={`planner-next ${step === 'Room setup' ? 'room-setup-next' : ''}`}
             onClick={() => {
               void nextStep();
             }}

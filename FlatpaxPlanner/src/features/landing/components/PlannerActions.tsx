@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { SavedDesignDialog } from '@/features/landing/components/SavedDesignDialog';
-import layoutIcon from '@/assets/icons/pre-designed-layout.svg';
-import newDesignIcon from '@/assets/icons/new-design.svg';
-import savedDesignIcon from '@/assets/icons/saved-design.svg';
+import layoutIcon from '@/assets/icons/Subtract.svg';
+import layoutHoverIcon from '@/assets/icons/Subtract-h.svg';
+import newDesignIcon from '@/assets/icons/bi_pencil-square.svg';
+import newDesignHoverIcon from '@/assets/icons/bi_pencil-square-h.svg';
+import savedDesignIcon from '@/assets/icons/fluent_folder-document-28-regular.svg';
+import savedDesignHoverIcon from '@/assets/icons/fluent_folder-document-28-regular-h.svg';
 import { PresetLayoutDialog } from '@/features/landing/components/PresetLayoutDialog';
 import { NewDesignDialog } from '@/features/landing/components/NewDesignDialog';
 
@@ -12,22 +15,22 @@ const actions = [
     id: 'layout',
     label: 'Use a pre-designed layout',
     icon: layoutIcon,
+    hoverIcon: layoutHoverIcon,
     iconSize: 38,
-    variant: 'outline',
   },
   {
     id: 'new',
     label: 'Start a new design',
     icon: newDesignIcon,
+    hoverIcon: newDesignHoverIcon,
     iconSize: 34,
-    variant: 'outline',
   },
   {
     id: 'saved',
-    label: 'Open a saved design',
+    label: 'Open saved project',
     icon: savedDesignIcon,
+    hoverIcon: savedDesignHoverIcon,
     iconSize: 39,
-    variant: 'primary',
   },
 ] as const;
 
@@ -40,7 +43,7 @@ export function PlannerActions() {
         {actions.map((action) => (
           <Button
             key={action.id}
-            variant={action.variant}
+            variant="brand-outline"
             size="planner"
             className="group planner-action min-h-14 w-full text-action uppercase max-sm:justify-start max-sm:px-4 max-sm:text-left"
             aria-haspopup="dialog"
@@ -54,7 +57,14 @@ export function PlannerActions() {
               width={action.iconSize}
               height={action.iconSize}
               alt=""
-              className="shrink-0 group-active:brightness-0 group-active:invert group-aria-expanded:brightness-0 group-aria-expanded:invert"
+              className="shrink-0 group-hover:hidden group-focus-visible:hidden group-active:hidden"
+            />
+            <img
+              src={action.hoverIcon}
+              width={action.iconSize}
+              height={action.iconSize}
+              alt=""
+              className="hidden shrink-0 group-hover:block group-focus-visible:block group-active:block"
             />
             <span>{action.label}</span>
           </Button>

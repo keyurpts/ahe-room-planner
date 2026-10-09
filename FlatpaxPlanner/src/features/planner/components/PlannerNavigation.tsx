@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { paths } from '@/constants/paths';
+import homeIcon from '@/assets/icons/boxicons_home-alt.svg';
 
 const plannerSteps = ['Room setup', 'Walls & floors', 'Add items'] as const;
 import type { PlannerStep } from '@/features/planner/types';
@@ -27,15 +28,7 @@ export function PlannerNavigation({
     <header className="planner-navigation" data-step={step}>
       <div className="planner-project-heading">
         <Link to={paths.home} className="planner-back" aria-label="Back to planner home">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M20 12H4m0 0 7-7m-7 7 7 7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <img src={homeIcon} width={24} height={24} alt="" />
         </Link>
         <h1 title={projectName}>{projectName}</h1>
       </div>

@@ -1,32 +1,51 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import roomOutline from '@/assets/images/Group 13-1.png';
+import singleWall from '@/assets/images/Property 1=Single Kit Layout.svg';
+import singleWallHover from '@/assets/images/Property 1=Single Kit Layout-h.svg';
+import lShape from '@/assets/images/Property 1=Kitchen L-Shape Layout.svg';
+import lShapeHover from '@/assets/images/Property 1=Kitchen L-Shape Layout-h.svg';
+import galley from '@/assets/images/Property 1=Kitchen Galley Layout.svg';
+import galleyHover from '@/assets/images/Property 1=Kitchen Galley Layout-h.svg';
+import uShape from '@/assets/images/Property 1=Kitchen U-Shape Layout.svg';
+import uShapeHover from '@/assets/images/Property 1=Kitchen U-Shape Layout-h.svg';
+import laundry from '@/assets/images/Property 1=Laundry Layout.svg';
+import laundryHover from '@/assets/images/Property 1=Laundry Layout-h.svg';
 import '@/styles/presets.css';
 
 const presets = [
   {
     id: 'single-wall',
+    image: singleWall,
+    hoverImage: singleWallHover,
     title: ['Single wall', 'kitchen'],
     description: 'Cabinets along two adjacent walls.',
   },
   {
     id: 'l-shape',
+    image: lShape,
+    hoverImage: lShapeHover,
     title: ['L-shape', 'kitchen'],
     description: 'Cabinets along two adjacent walls.',
   },
   {
     id: 'galley',
+    image: galley,
+    hoverImage: galleyHover,
     title: ['Galley', 'kitchen'],
     description: 'Two parallel runs facing each other.',
   },
   {
     id: 'u-shape',
+    image: uShape,
+    hoverImage: uShapeHover,
     title: ['U-shape', 'kitchen'],
     description: 'Cabinets on three walls',
   },
   {
     id: 'laundry',
+    image: laundry,
+    hoverImage: laundryHover,
     title: ['Laundry', 'room'],
     description: 'Front loader, dryer and storage',
   },
@@ -52,10 +71,9 @@ export function PresetLayoutDialog({ open, onClose }: Props) {
       layout="preset"
       footer={
         <Button
-          variant="outline"
+          variant="navigation"
           size="compact"
           className="preset-back min-w-[7.1875rem] text-sm uppercase"
-          style={{ borderColor: 'var(--color-brand)' }}
           onClick={close}
         >
           <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">
@@ -84,7 +102,20 @@ export function PresetLayoutDialog({ open, onClose }: Props) {
               }}
             >
               <span className="preset-preview" aria-hidden="true">
-                <img src={roomOutline} width={174} height={184} alt="" className="preset-room" />
+                <img
+                  src={preset.image}
+                  width={168}
+                  height={168}
+                  alt=""
+                  className="preset-room preset-room-default"
+                />
+                <img
+                  src={preset.hoverImage}
+                  width={168}
+                  height={168}
+                  alt=""
+                  className="preset-room preset-room-hover"
+                />
               </span>
               <span className="preset-card-title">
                 {preset.title.map((line) => (

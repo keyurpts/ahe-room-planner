@@ -4,18 +4,18 @@ import '@/styles/room-shape.css';
 
 const roomShapes = [
   { id: 'rectangle', label: 'Wide rectangular room', path: 'M10 30H90V72H10Z' },
-  { id: 'l-top-left', label: 'L-shaped room, upper left corner', path: 'M10 18H63V50H91V79H10Z' },
-  { id: 'l-top-right', label: 'L-shaped room, upper right corner', path: 'M8 50H38V18H92V79H8Z' },
-  { id: 'square', label: 'Square room', path: 'M15 15H85V85H15Z' },
+  { id: 'l-top-left', label: 'L-shaped room, upper left corner', path: 'M10 10H50V50H90V90H10Z' },
+  { id: 'l-top-right', label: 'L-shaped room, upper right corner', path: 'M10 50H50V10H90V90H10Z' },
+  { id: 'square', label: 'Square room', path: 'M10 10H90V90H10Z' },
   {
     id: 'l-bottom-right',
     label: 'L-shaped room, lower right corner',
-    path: 'M10 20H90V80H36V55H10Z',
+    path: 'M10 10H90V50H50V90H10Z',
   },
   {
     id: 'l-bottom-left',
     label: 'L-shaped room, lower left corner',
-    path: 'M10 20H95V48H65V80H10Z',
+    path: 'M10 10H90V90H50V50H10Z',
   },
 ] as const;
 
@@ -46,8 +46,8 @@ export function RoomShapeStep({ selected, onSelect, onCustom, message }: Props) 
                 }}
                 aria-label={shape.label}
               />
-              <svg width="104" height="100" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                <path d={shape.path} stroke="currentColor" strokeWidth="4" />
+              <svg width="100" height="100" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                <path d={shape.path} stroke="currentColor" strokeWidth="2" />
               </svg>
             </label>
           ))}

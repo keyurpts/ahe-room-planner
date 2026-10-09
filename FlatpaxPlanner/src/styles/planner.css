@@ -119,23 +119,25 @@
   .planner-item-list {
     min-height: 2.5rem;
     padding: 0.5rem 0.625rem;
-    border-radius: 0.3125rem;
+    border-radius: var(--radius-control);
+    border: 1px solid #f5f5f5;
+    background: #fff;
+    color: var(--color-brand);
+    transition:
+      background-color 150ms,
+      color 150ms,
+      border-color 150ms;
     font-weight: 700;
     text-transform: uppercase;
     white-space: nowrap;
   }
-  .planner-save {
-    background: white;
-    color: var(--color-brand);
-  }
-  .planner-item-list {
-    border-radius: 0.75rem;
-    background: white;
-    color: var(--color-brand);
-  }
   .planner-save:hover,
-  .planner-item-list:hover {
-    background: var(--color-brand-soft);
+  .planner-item-list:hover,
+  .planner-save:active,
+  .planner-item-list:active {
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+    color: #fff;
   }
   .planner-workspace {
     position: relative;
@@ -244,6 +246,51 @@
     z-index: 1;
     color: white;
   }
+  .room-setup-toolbar .room-tool-hover {
+    display: none;
+  }
+  .room-setup-toolbar .toolbar-dropdown-symbol {
+    font-weight: 400;
+  }
+  .room-setup-toolbar .toolbar-dropdown-control > button:not(:disabled):hover:not(:active)::after {
+    background: #fff;
+  }
+  .room-setup-toolbar .toolbar-dropdown-control > button:hover .toolbar-dropdown-symbol {
+    color: var(--color-brand);
+  }
+  .room-setup-toolbar .toolbar-dropdown-control > button[aria-expanded='true']::after,
+  .room-setup-toolbar
+    .toolbar-dropdown-control
+    > button[aria-expanded='true']:not(:disabled):hover::after,
+  .room-setup-toolbar .toolbar-dropdown-control > button:active::after {
+    background: var(--color-brand);
+  }
+  .room-setup-toolbar
+    .toolbar-dropdown-control
+    > button[aria-expanded='true']
+    .toolbar-dropdown-symbol,
+  .room-setup-toolbar .toolbar-dropdown-control > button:active .toolbar-dropdown-symbol {
+    color: #fff;
+  }
+  .room-setup-toolbar button:not([aria-pressed='true']):hover:not(:active) .room-tool-default {
+    display: none;
+  }
+  .room-setup-toolbar button:not([aria-pressed='true']):hover:not(:active) .room-tool-hover {
+    display: block;
+  }
+  .room-setup-toolbar button:not([aria-pressed='true']):hover:not(:active)::after {
+    background: transparent;
+  }
+  .room-setup-toolbar button[aria-pressed='true']:not(:disabled):hover::after,
+  .room-setup-toolbar button:not(:disabled):active::after {
+    background: var(--color-brand);
+  }
+  .room-setup-toolbar button:active .room-tool-hover {
+    display: none;
+  }
+  .room-setup-toolbar button:active .room-tool-default {
+    display: block;
+  }
   .planner-toolbar button:not(:disabled):hover::after {
     background: #222;
   }
@@ -290,6 +337,27 @@
   }
   .planner-next:disabled {
     opacity: 0.5;
+  }
+  .planner-next.room-setup-next,
+  .planner-finishes-controls .planner-next,
+  .planner-items-controls .planner-next {
+    border-radius: var(--radius-control);
+    border: var(--control-border-width) solid var(--color-brand);
+    background: #fff;
+    color: var(--color-brand);
+    box-shadow: var(--shadow-navigation);
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+  .planner-next.room-setup-next:hover,
+  .planner-next.room-setup-next:active,
+  .planner-finishes-controls .planner-next:hover,
+  .planner-finishes-controls .planner-next:active,
+  .planner-items-controls .planner-next:hover,
+  .planner-items-controls .planner-next:active {
+    background: var(--color-brand);
+    color: #fff;
   }
   @media (width >= 90rem) {
     .planner-navigation,
@@ -399,7 +467,6 @@
     .planner-bottom-controls {
       padding-inline: 0.75rem;
     }
-    .planner-item-list,
     .planner-next {
       color: var(--color-brand-hover);
     }

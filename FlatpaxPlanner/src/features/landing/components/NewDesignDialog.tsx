@@ -7,12 +7,30 @@ import type { RoomShape, RoomType } from '@/features/planner/types';
 import { Button } from '@/components/ui/Button';
 import '@/styles/text-input.css';
 import { Dialog } from '@/components/ui/Dialog';
-import kitchenIcon from '@/assets/icons/cbi_kitchen-alt.svg';
-import selectedKitchenIcon from '@/assets/icons/cbi_kitchen-alt-clicked.svg';
+import kitchenImage from '@/assets/images/kitchen.svg';
+import kitchenSelectedImage from '@/assets/images/kitchen-h.svg';
+import laundryImage from '@/assets/images/laundry.svg';
+import laundrySelectedImage from '@/assets/images/laundry-h.svg';
+import officeImage from '@/assets/images/office.svg';
+import officeSelectedImage from '@/assets/images/office-h.svg';
+import linenImage from '@/assets/images/linen.svg';
+import linenSelectedImage from '@/assets/images/linen-h.svg';
+import garageImage from '@/assets/images/garage.svg';
+import garageSelectedImage from '@/assets/images/garage-h.svg';
+import otherImage from '@/assets/images/other.svg';
+import otherSelectedImage from '@/assets/images/other-h.svg';
 import '@/styles/new-design.css';
 import { RoomShapeStep } from '@/features/landing/components/RoomShapeStep';
 
 const roomTypes = ['Kitchen', 'Laundry', 'Office', 'Linen', 'Garage', 'Other'] as const;
+const roomImages: Record<RoomType, { default: string; selected: string }> = {
+  Kitchen: { default: kitchenImage, selected: kitchenSelectedImage },
+  Laundry: { default: laundryImage, selected: laundrySelectedImage },
+  Office: { default: officeImage, selected: officeSelectedImage },
+  Linen: { default: linenImage, selected: linenSelectedImage },
+  Garage: { default: garageImage, selected: garageSelectedImage },
+  Other: { default: otherImage, selected: otherSelectedImage },
+};
 
 interface Props {
   open: boolean;
@@ -73,9 +91,9 @@ export function NewDesignDialog({ open, onClose }: Props) {
       footer={
         <>
           <Button
-            variant="outline"
+            variant="navigation"
             size="compact"
-            className="new-design-back rounded-[0.625rem]! text-base uppercase"
+            className="new-design-back text-base uppercase"
             onClick={() => {
               if (step === 'shape') {
                 setStep('details');
@@ -96,9 +114,9 @@ export function NewDesignDialog({ open, onClose }: Props) {
           </Button>
           {step === 'shape' && (
             <Button
-              variant="outline"
+              variant="navigation"
               size="compact"
-              className="room-shape-next rounded-[0.625rem]! border-brand! text-base uppercase"
+              className="room-shape-next text-base uppercase"
               disabled={!shape}
               onClick={() => {
                 if (!shape || !roomType) return;
@@ -159,14 +177,14 @@ export function NewDesignDialog({ open, onClose }: Props) {
                   />
                   <span className="room-type-icon" aria-hidden="true">
                     <img
-                      src={kitchenIcon}
+                      src={roomImages[room].default}
                       width={122}
                       height={101}
                       alt=""
                       className="room-icon-default"
                     />
                     <img
-                      src={selectedKitchenIcon}
+                      src={roomImages[room].selected}
                       width={122}
                       height={101}
                       alt=""
@@ -212,8 +230,9 @@ export function NewDesignDialog({ open, onClose }: Props) {
             </div>
             <Button
               type="submit"
+              variant="brand-outline"
               size="compact"
-              className="create-design-button min-w-[12.125rem] rounded-[0.625rem]! text-base uppercase"
+              className="create-design-button min-w-[12.125rem] text-base uppercase"
             >
               Create design
               <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">

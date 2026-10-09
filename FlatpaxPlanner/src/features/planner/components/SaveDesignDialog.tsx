@@ -46,7 +46,7 @@ export function SaveDesignDialog({ open, onClose, designCode }: SaveDesignDialog
         <p className="save-design-code">{code}</p>
         {!designCode && <p className="sr-only">Sample design code for preview only.</p>}
         <Button
-          variant="outline"
+          variant="brand-outline"
           onClick={() => {
             void copyCode();
           }}

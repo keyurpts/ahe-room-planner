@@ -1,22 +1,32 @@
-import drawIcon from '@/assets/icons/FP-FLOATED-DRAW.svg';
-import deleteIcon from '@/assets/icons/Group 79.svg';
+import drawIcon from '@/assets/icons/draw.svg';
+import deleteIcon from '@/assets/icons/delete.svg';
 import { useState } from 'react';
 import { LengthUnit } from 'three-configurator';
-import doorIcon from '@/assets/icons/FP-FLOATED-DOOR.svg';
-import windowIcon from '@/assets/icons/FP-FLOATED-WINDOW.svg';
-import fitIcon from '@/assets/icons/FP-FLOATED-ZOON TO FIT.svg';
-import eraseIcon from '@/assets/icons/FP-FLOATED-RUBBER.svg';
+import doorIcon from '@/assets/icons/door.svg';
+import windowIcon from '@/assets/icons/window.svg';
+import fitIcon from '@/assets/icons/zoom-fit.svg';
+import eraseIcon from '@/assets/icons/clear.svg';
 import { useAppSelector } from '@/app/store-hooks';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
 
+import drawHover from '@/assets/icons/draw-h.svg';
+import deleteHover from '@/assets/icons/delete-h.svg';
+import doorHover from '@/assets/icons/door-h.svg';
+import windowHover from '@/assets/icons/window-h.svg';
+import fitHover from '@/assets/icons/zoom-fit-h.svg';
+import clearHover from '@/assets/icons/clear-h.svg';
+import snapIcon from '@/assets/icons/snap.svg';
+import snapHover from '@/assets/icons/snap-h.svg';
+
 const tools = [
-  { id: 'draw', label: 'Draw walls', icon: drawIcon },
-  { id: 'snap', label: 'Snap drawing', icon: null },
-  { id: 'delete', label: 'Delete selected element', icon: deleteIcon },
-  { id: 'door', label: 'Add door', icon: doorIcon },
-  { id: 'window', label: 'Add window', icon: windowIcon },
-  { id: 'fit', label: 'Zoom to fit', icon: fitIcon },
-  { id: 'erase', label: 'Erase', icon: eraseIcon },
+  { id: 'draw', label: 'Draw walls', icon: drawIcon, hoverIcon: drawHover },
+  { id: 'snap', label: 'Snap drawing', icon: snapIcon, hoverIcon: snapHover },
+
+  { id: 'door', label: 'Add door', icon: doorIcon, hoverIcon: doorHover },
+  { id: 'window', label: 'Add window', icon: windowIcon, hoverIcon: windowHover },
+  { id: 'fit', label: 'Zoom to fit', icon: fitIcon, hoverIcon: fitHover },
+  { id: 'erase', label: 'Clear', icon: eraseIcon, hoverIcon: clearHover },
+  { id: 'delete', label: 'Delete selected element', icon: deleteIcon, hoverIcon: deleteHover },
 ] as const;
 
 export type PlannerTool = (typeof tools)[number]['id'];
@@ -30,11 +40,6 @@ interface Props {
 
 export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChange }: Props) {
   const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
-
-  const [isMeasurementActive, setIsMeasurementActive] = useState<boolean>(true);
-  const [isWindowModeActive, setisWindowModeActive] = useState<boolean>(false);
-  const [isDoorModeActive, setisDoorModeActive] = useState<boolean>(false);
-
 
   const [unit, setUnit] = useState(() => floorPlanManager?.getLengthUnit() ?? LengthUnit.MM);
   return (
@@ -75,18 +80,8 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
           }}
         >
           <span className="planner-tool-icon">
-            {tool.icon ? (
-              <img src={tool.icon} width={52} height={52} alt="" />
-            ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M5 4v8a7 7 0 0 0 14 0V4h-4v8a3 3 0 0 1-6 0V4H5Z"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-                <path d="M5 8h4m6 0h4" stroke="currentColor" strokeWidth="1.7" />
-              </svg>
-            )}
+            <img src={tool.icon} width={52} height={52} alt="" className="room-tool-default" />
+            <img src={tool.hoverIcon} width={52} height={52} alt="" className="room-tool-hover" />
           </span>
         </button>
       ))}
