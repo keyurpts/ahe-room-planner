@@ -24,7 +24,7 @@ import '@/styles/planner.css';
 import { PlannerFinishesControls } from '@/features/planner/components/PlannerFinishesControls';
 
 import { ItemsSidebar } from '@/features/planner/components/ItemsSidebar';
-import { ItemsToolbar, type ItemsTool } from '@/features/planner/components/ItemsToolbar';
+import { ItemsToolbar } from '@/features/planner/components/ItemsToolbar';
 import type { CatalogueProduct } from '@/features/planner/catalogue/catalogue';
 import '@/styles/items.css';
 import {
@@ -78,7 +78,9 @@ export function Component() {
   const [announcement, setAnnouncement] = useState('');
 
   const [selectedProduct, setSelectedProduct] = useState<string | null>('floor-1');
-  const [itemsTool, setItemsTool] = useState<ItemsTool | null>(null);
+  const [transformTool, setTransformTool] = useState<'move' | 'rotate'>('move');
+  const [replaceSelected, setReplaceSelected] = useState(false);
+  const [hideWallsSelected, setHideWallsSelected] = useState(false);
   const [customising, setCustomising] = useState(false);
   const [itemFinishes, setItemFinishes] = useState<ItemFinishes>({ sink: null, benchtop: null });
   const [items, setItems] = useState<readonly { product: CatalogueProduct; quantity: number }[]>(
@@ -272,8 +274,15 @@ export function Component() {
           )}
           {step === 'Add items' && (
             <ItemsToolbar
-              selected={itemsTool}
-              onSelect={setItemsTool}
+              transformTool={transformTool}
+              onTransformToolChange={setTransformTool}
+              replaceSelected={replaceSelected}
+              onReplaceSelectedChange={setReplaceSelected}
+              hideWallsSelected={hideWallsSelected}
+              onHideWallsSelectedChange={setHideWallsSelected}
+              onCopy={() => {
+                console.log('Copy item requested.');
+              }}
               onRemove={removeItem}
               canRemove={items.some((item) => item.product.id === selectedProduct)}
             />

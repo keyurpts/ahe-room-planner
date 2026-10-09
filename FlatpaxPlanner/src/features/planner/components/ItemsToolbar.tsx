@@ -37,15 +37,21 @@ const cameraGroups: readonly DropdownGroup<CameraMode>[] = [
 const tools = [
   { id: 'move', label: 'Move item', icon: move },
   { id: 'rotate', label: 'Rotate item', icon: rotate },
-  { id: 'flip', label: 'Flip item', icon: flip },
-  { id: 'images', label: 'Item images', icon: images },
-  { id: 'remove', label: 'Delete item', icon: remove },
-  { id: 'hide', label: 'Hide items', icon: hide },
+  { id: 'replace', label: 'Replace item', icon: flip },
+  { id: 'copy', label: 'Copy item', icon: images },
+  { id: 'delete', label: 'Delete item', icon: remove },
+  { id: 'hidewalls', label: 'Hide walls', icon: hide },
 ] as const;
 export type ItemsTool = (typeof tools)[number]['id'];
+type TransformTool = Extract<ItemsTool, 'move' | 'rotate'>;
 interface Props {
-  selected: ItemsTool | null;
-  onSelect: (tool: ItemsTool | null) => void;
+  transformTool: TransformTool;
+  onTransformToolChange: (tool: TransformTool) => void;
+  replaceSelected: boolean;
+  onReplaceSelectedChange: (selected: boolean) => void;
+  hideWallsSelected: boolean;
+  onHideWallsSelectedChange: (selected: boolean) => void;
+  onCopy: () => void;
   onRemove: () => void;
   canRemove: boolean;
 }
@@ -59,7 +65,17 @@ function configureMeasurements(core: ConfiguratorCore, mode: MeasurementMode | n
   };
 }
 
-export function ItemsToolbar({ selected, onSelect, onRemove, canRemove }: Props) {
+export function ItemsToolbar({
+  transformTool,
+  onTransformToolChange,
+  replaceSelected,
+  onReplaceSelectedChange,
+  hideWallsSelected,
+  onHideWallsSelectedChange,
+  onCopy,
+  onRemove,
+  canRemove,
+}: Props) {
   const core = useAppSelector((state) => state.configurator.configuratorCore);
   const manager = useAppSelector((state) => state.configurator.floorPlanManager);
   const [measurement, setMeasurement] = useState<MeasurementMode | null>(null);
@@ -109,16 +125,27 @@ export function ItemsToolbar({ selected, onSelect, onRemove, canRemove }: Props)
             type="button"
             aria-label={tool.label}
             title={tool.label}
-            aria-pressed={tool.id === 'remove' ? undefined : selected === tool.id}
-            disabled={tool.id === 'remove' && !canRemove}
+            aria-pressed={
+              tool.id === 'move' || tool.id === 'rotate'
+                ? transformTool === tool.id
+                : tool.id === 'replace'
+                  ? replaceSelected
+                  : tool.id === 'hidewalls'
+                    ? hideWallsSelected
+                    : undefined
+            }
+            disabled={tool.id === 'delete' && !canRemove}
             onClick={() => {
-              if (tool.id === 'remove') onRemove();
-              else onSelect(selected === tool.id ? null : tool.id);
+              if (tool.id === 'delete') onRemove();
+              else if (tool.id === 'move' || tool.id === 'rotate') onTransformToolChange(tool.id);
+              else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
+              else if (tool.id === 'copy') onCopy();
+              else onHideWallsSelectedChange(!hideWallsSelected);
             }}
           >
             <img src={tool.icon} width={52} height={52} alt="" />
           </button>
-          {tool.id === 'remove' && (
+          {tool.id === 'delete' && (
             <ToolbarDropdown
               value={measurement}
               onChange={changeMeasurement}

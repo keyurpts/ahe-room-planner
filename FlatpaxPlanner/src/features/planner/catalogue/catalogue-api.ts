@@ -140,6 +140,13 @@ export const catalogueApi = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
+    getModelDownloadUrl: builder.query<Thumbnail, string>({
+      query: (modelId) => ({
+        path: `/api/storage/${encodeURIComponent(modelId)}/download-url`,
+        parse: thumbnail,
+      }),
+      keepUnusedDataFor: 0,
+    }),
   }),
 });
 export const {
@@ -147,4 +154,5 @@ export const {
   useGetTexturesQuery,
   useGetModelsQuery,
   useGetThumbnailQuery,
+  useGetModelDownloadUrlQuery,
 } = catalogueApi;

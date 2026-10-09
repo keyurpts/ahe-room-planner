@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { FinishesPanel } from '@/features/planner/components/FinishesPanel';
 import customiseIcon from '@/assets/icons/FP-FLOATED-CUSTOMISE.svg';
+import { useAppSelector } from '@/app/store-hooks';
 
 interface Props {
   open: boolean;
@@ -10,6 +11,8 @@ interface Props {
 
 export function PlannerFinishesControls({ open, onOpen, onClose }: Props) {
   const launcher = useRef<HTMLButtonElement>(null);
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+
   return (
     <>
       <button
@@ -32,6 +35,9 @@ export function PlannerFinishesControls({ open, onOpen, onClose }: Props) {
           requestAnimationFrame(() => {
             launcher.current?.focus();
           });
+          configuratorCore?.enableWallColoringMode?.(false);
+          configuratorCore?.enableWallTextureMode?.(false);
+          configuratorCore?.enableWallMaterialResetMode?.(false);
         }}
       />
     </>

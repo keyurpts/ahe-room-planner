@@ -9,6 +9,7 @@ import {
   type TexturePreset,
   type ColorPreset,
 } from '@/features/planner/finishes/presets';
+import { useAppSelector } from '@/app/store-hooks';
 
 interface Props {
   open: boolean;
@@ -71,13 +72,20 @@ function SwatchGrid({
   mode,
   selected,
   onSelect,
+  wallScope,
+  section
 }: {
   label: string;
   options: readonly (TexturePreset | ColorPreset)[];
   mode: FinishMode;
   selected: string | null;
   onSelect: (id: string | null) => void;
+  wallScope: 'all' | 'selection',
+  section: 'floor' | 'wall'
 }) {
+
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+
   return (
     <div className="finish-swatch-grid" role="group" aria-label={`${label} ${mode.toLowerCase()}`}>
       <button
@@ -86,6 +94,19 @@ function SwatchGrid({
         aria-label={`Reset ${label.toLowerCase()} finish`}
         onClick={() => {
           onSelect(null);
+          if (section === "floor") {
+            configuratorCore?.resetFloor?.();
+          }
+          else if (section === "wall") {
+            if (wallScope === "all") {
+              configuratorCore?.resetWalls?.();
+            }
+            else if (wallScope === "selection") {
+              configuratorCore?.enableWallColoringMode?.(false);
+              configuratorCore?.enableWallTextureMode?.(false);
+              configuratorCore?.enableWallMaterialResetMode?.(true);
+            }
+          }
         }}
       >
         <img src={resetIcon} width={24} height={24} alt="" />
@@ -102,6 +123,46 @@ function SwatchGrid({
           aria-pressed={selected === option.id}
           onClick={() => {
             onSelect(option.id);
+            if (section === "wall") {
+              if (mode === "Textures") {
+                // call api to set texture
+                if (wallScope === "all") {
+                  configuratorCore?.enableWallColoringMode?.(false);
+                  configuratorCore?.enableWallTextureMode?.(false);
+                  configuratorCore?.enableWallMaterialResetMode?.(false);
+                  configuratorCore?.applyTextureToAllWalls?.(option);
+                }
+                else if (wallScope === "selection") {
+                  configuratorCore?.setWallTexture?.(option);
+                  configuratorCore?.enableWallTextureMode?.(true);
+                  configuratorCore?.enableWallColoringMode?.(false);
+                  configuratorCore?.enableWallMaterialResetMode?.(false);
+                }
+              }
+              else if (mode === "Colours") {
+                // call api to set color
+                if (wallScope === "all") {
+                  configuratorCore?.enableWallColoringMode?.(false);
+                  configuratorCore?.enableWallTextureMode?.(false);
+                  configuratorCore?.enableWallMaterialResetMode?.(false);
+                  configuratorCore?.applyColorToAllWalls?.((option as ColorPreset).color);
+                }
+                else if (wallScope === "selection") {
+                  configuratorCore?.setWallColor?.(option);
+                  configuratorCore?.enableWallColoringMode?.(true);
+                  configuratorCore?.enableWallTextureMode?.(false);
+                  configuratorCore?.enableWallMaterialResetMode?.(false);
+                }
+              }
+            }
+            else if (section === "floor") {
+              if (mode === "Colours") {
+                configuratorCore?.applyColorToAllFloors?.((option as ColorPreset).color, (option as ColorPreset).id);
+              }
+              else if (mode === "Textures") {
+                configuratorCore?.applyTextureToAllFloors?.(option);
+              }
+            }
           }}
         >
           {'thumbnail' in option && (
@@ -208,6 +269,8 @@ export function FinishesPanel({ open, onClose }: Props) {
             mode={mode}
             selected={floor}
             onSelect={setFloor}
+            wallScope={wallScope}
+            section={"floor"}
           />
         </section>
         <section aria-label="Wall finishes" className="finishes-walls">
@@ -245,6 +308,8 @@ export function FinishesPanel({ open, onClose }: Props) {
               mode={mode}
               selected={walls}
               onSelect={setWalls}
+              wallScope={wallScope}
+              section={"wall"}
             />
           </div>
         </section>
