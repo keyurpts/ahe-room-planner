@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useAppSelector } from '@/app/store-hooks';
 import type { CatalogueProduct } from '@/features/planner/catalogue/catalogue';
 import {
@@ -6,10 +6,13 @@ import {
   useGetTexturesQuery,
   useGetModelsQuery,
   useGetThumbnailQuery,
+  useLazyGetModelDownloadUrlQuery,
+  useLazyGetTextureDownloadUrlQuery,
   type CatalogueModel,
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
+import { ConfiguratorEventType, Events } from 'three-configurator';
 
 interface Props {
   active?: boolean;
@@ -20,6 +23,10 @@ interface Props {
   onCustomise: () => void;
   hidden?: boolean;
 }
+type ProductHandlers = Pick<Props, 'onAdd' | 'onSelect' | 'selected'> & {
+  onModelAdding: (textureId: string) => void;
+  onModelAddFailed: () => void;
+};
 function Chevron({ expanded }: { expanded: boolean }) {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -80,10 +87,10 @@ function Product({
   onAdd,
   onSelect,
   selected,
-}: { model: CatalogueModel; variant: ModelVariant } & Pick<
-  Props,
-  'onAdd' | 'onSelect' | 'selected'
->) {
+  onModelAdding,
+  onModelAddFailed,
+}: { model: CatalogueModel; variant: ModelVariant } & ProductHandlers) {
+  const [getModelDownloadUrl] = useLazyGetModelDownloadUrlQuery();
   const thumbnail = useGetThumbnailQuery(
     { categoryId: model.categoryId, modelId: model.id, textureId: variant.textureId },
     { skip: !variant.thumbnailPath, refetchOnMountOrArgChange: true },
@@ -104,6 +111,8 @@ function Product({
       clearTimeout(timer);
     };
   }, [thumbnailData, thumbnailError, refetchThumbnail]);
+
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const downloadUrl = thumbnail.currentData?.downloadUrl;
   const image = downloadUrl && failedUrl !== downloadUrl ? downloadUrl : placeholder;
   const product: CatalogueProduct = {
@@ -116,6 +125,50 @@ function Product({
     skuNumber: variant.skuNumber,
     regions: variant.regions,
   };
+  async function addProduct() {
+    onSelect(product.id);
+    onAdd(product);
+    try {
+      const { downloadUrl } = await getModelDownloadUrl(model.id).unwrap();
+      console.log('Model download URL:', downloadUrl);
+
+      const modelData = {
+        category: product.categoryId,
+        name: product.name,
+        id: product.id,
+      };
+
+      let callbacks = {
+        onModelLoading: (xhr: any) => {
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          console.log("model loading:", percent + "%");
+        },
+
+        onModelLoaded: (model: any) => {
+          console.log("Model successfully loaded:", model);
+        },
+
+        onModelError: (error: any) => {
+          console.error("Error while loading model:", error);
+          window.alert(error);
+        },
+      };
+
+      onModelAdding(product.textureId);
+      await configuratorCore!.loadModel(
+        downloadUrl,
+        true,
+        undefined,
+        undefined,
+        callbacks,
+        true,
+        modelData
+      );
+    } catch (error) {
+      onModelAddFailed();
+      console.error('Unable to get the model download URL.', error);
+    }
+  }
   return (
     <div className="catalogue-product" data-selected={selected === product.id}>
       <button
@@ -144,8 +197,7 @@ function Product({
         className="catalogue-add"
         aria-label={`Add ${product.name}, ${variant.skuNumber}`}
         onClick={() => {
-          onSelect(product.id);
-          onAdd(product);
+          void addProduct();
         }}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -173,10 +225,7 @@ function CategoryProducts({
   categoryId,
   textureId,
   ...props
-}: { categoryId: string; textureId: string | undefined } & Pick<
-  Props,
-  'onAdd' | 'onSelect' | 'selected'
->) {
+}: { categoryId: string; textureId: string | undefined } & ProductHandlers) {
   const query = useGetModelsQuery(categoryId);
   const regionId = useAppSelector((state) => state.ui.regionId);
   if (query.isLoading)
@@ -235,16 +284,53 @@ export function ItemsSidebar({
   const [category, setCategory] = useState<string | null | undefined>();
   const [texture, setTexture] = useState<string>();
   const [benchtopColour, setBenchtopColour] = useState('white');
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+  const [getTextureDownloadUrl] = useLazyGetTextureDownloadUrlQuery();
+  const pendingTextureId = useRef<string | null>(null);
   const id = useId();
   const activeCategory =
     category === undefined
       ? (
-          categories.data?.find((item) => item.categoryName === 'Floor Cupboard') ??
-          categories.data?.[0]
-        )?.id
+        categories.data?.find((item) => item.categoryName === 'Floor Cupboard') ??
+        categories.data?.[0]
+      )?.id
       : category;
   const activeTexture =
     textures.data?.find((item) => item.id === texture)?.id ?? textures.data?.[0]?.id;
+  useEffect(() => {
+    if (!configuratorCore) return;
+    const handleModelPlaced = (metadata: unknown) => {
+      const textureId = pendingTextureId.current;
+      if (!metadata || !textureId) return;
+      pendingTextureId.current = null;
+      console.log("selected texture", textureId);
+
+      void getTextureDownloadUrl({ textureId })
+        .unwrap()
+        .then(({ downloadUrl }) => {
+          if (!downloadUrl) {
+            console.warn('The selected cupboard texture has no download URL.');
+            return;
+          }
+          console.log('Cupboard texture download URL:', downloadUrl);
+          setTimeout(() => {
+            configuratorCore.applyTextureToModel(downloadUrl, textureId);
+          }, 100);
+        })
+        .catch((error: unknown) => {
+          console.error('Unable to get the cupboard texture download URL.', error);
+        });
+    };
+    const handlePreviewCancelled = () => {
+      pendingTextureId.current = null;
+    };
+    Events.on(ConfiguratorEventType.MODEL_SELECTED, handleModelPlaced);
+    Events.on(ConfiguratorEventType.PREVIEW_CANCELLED, handlePreviewCancelled);
+    return () => {
+      Events.off(ConfiguratorEventType.MODEL_SELECTED, handleModelPlaced);
+      Events.off(ConfiguratorEventType.PREVIEW_CANCELLED, handlePreviewCancelled);
+    };
+  }, [configuratorCore, getTextureDownloadUrl]);
   function toggle(section: string) {
     setOpenSections((current) =>
       current.includes(section)
@@ -385,6 +471,12 @@ export function ItemsSidebar({
                         onAdd={onAdd}
                         onSelect={onSelect}
                         selected={selected}
+                        onModelAdding={(textureId) => {
+                          pendingTextureId.current = textureId;
+                        }}
+                        onModelAddFailed={() => {
+                          pendingTextureId.current = null;
+                        }}
                       />
                     )}
                   </div>

@@ -6,8 +6,8 @@ import remove from '@/assets/icons/Group 79.svg';
 import hide from '@/assets/icons/Group 85.svg';
 import view from '@/assets/icons/Group 86.svg';
 import measure from '@/assets/icons/FP-FLOATED-MEASURES.svg';
-import { Fragment, useState } from 'react';
-import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
+import { Fragment, useEffect, useState } from 'react';
+import { ConfiguratorEventType, Events, LengthUnit, type ConfiguratorCore } from 'three-configurator';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
@@ -53,7 +53,6 @@ interface Props {
   onHideWallsSelectedChange: (selected: boolean) => void;
   onCopy: () => void;
   onRemove: () => void;
-  canRemove: boolean;
 }
 
 function configureMeasurements(core: ConfiguratorCore, mode: MeasurementMode | null) {
@@ -74,32 +73,43 @@ export function ItemsToolbar({
   onHideWallsSelectedChange,
   onCopy,
   onRemove,
-  canRemove,
 }: Props) {
-  const core = useAppSelector((state) => state.configurator.configuratorCore);
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const manager = useAppSelector((state) => state.configurator.floorPlanManager);
   const [measurement, setMeasurement] = useState<MeasurementMode | null>(null);
   const [camera, setCamera] = useState<CameraMode>('perspective');
   const [unit, setUnit] = useState(() => manager?.getLengthUnit() ?? LengthUnit.MM);
   const [message, setMessage] = useState('');
+  const [hasSelectedModel, setHasSelectedModel] = useState(
+    () => configuratorCore?.isModelSelected() ?? false,
+  );
+  const canUseSelectedModelTools = Boolean(configuratorCore) && hasSelectedModel;
+  useEffect(() => {
+    if (!configuratorCore) return;
+    const handleModelSelected = (metadata: unknown) => {
+      setHasSelectedModel(metadata !== null && metadata !== undefined);
+    };
+    Events.on(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
+    return () => {
+      Events.off(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
+    };
+  }, [configuratorCore]);
   function changeMeasurement(mode: MeasurementMode | null) {
-    setMeasurement(mode);
-    if (!core) {
-      setMessage('The viewer is not ready.');
+    if (!configuratorCore?.isModelSelected()) {
+      setMessage('Select an item in the viewer to show its measurements.');
       return;
     }
-    configureMeasurements(core, mode);
+    setMeasurement(mode);
+    configureMeasurements(configuratorCore, mode);
     if (mode === null) {
       setMessage('Measurements disabled.');
       return;
     }
     if (mode === 'all') {
-      core.showAllMeasurements();
+      configuratorCore.showAllMeasurements();
       setMessage('All measurements enabled.');
-    } else if (mode === 'selected' && !core.isModelSelected()) {
-      setMessage('Select an item in the viewer to show its measurements.');
-    } else {
-      const applied = core.toggleMeasurement();
+    } else if (mode === 'nearby' || mode === 'walls') {
+      const applied = configuratorCore.toggleMeasurement();
       setMessage(
         applied
           ? 'Measurement mode updated.'
@@ -108,15 +118,18 @@ export function ItemsToolbar({
     }
   }
   function changeCamera(mode: CameraMode) {
-    if (!core) {
+    if (!configuratorCore) {
       setMessage('The viewer is not ready.');
       return;
     }
     // The SDK accepts these values but does not export its CameraTypes enum at runtime.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
-    core.setCameraType(mode as Parameters<ConfiguratorCore['setCameraType']>[0]);
+    configuratorCore.setCameraType(mode as Parameters<ConfiguratorCore['setCameraType']>[0]);
     setCamera(mode);
   }
+
+
+
   return (
     <div role="group" aria-label="Item editing tools" className="planner-toolbar items-toolbar">
       {tools.map((tool) => (
@@ -134,13 +147,46 @@ export function ItemsToolbar({
                     ? hideWallsSelected
                     : undefined
             }
-            disabled={tool.id === 'delete' && !canRemove}
+            disabled={
+              (tool.id === 'delete' && !canUseSelectedModelTools) ||
+              (tool.id === 'copy' && !canUseSelectedModelTools)
+            }
             onClick={() => {
-              if (tool.id === 'delete') onRemove();
-              else if (tool.id === 'move' || tool.id === 'rotate') onTransformToolChange(tool.id);
+              console.log(`${tool.label} button clicked.`);
+              if (tool.id === 'delete') {
+                onRemove();
+                const isRemoved = configuratorCore?.deleteModel();
+                console.log(isRemoved);
+              }
+              else if (tool.id === 'move' || tool.id === 'rotate') {
+                onTransformToolChange(tool.id);
+                if (tool.id === "move") {
+                  configuratorCore?.setTransformMode("translate");
+                  configuratorCore?.setTransformSize(0.7);
+                  configuratorCore?.toggleTransformAxis("y", false);
+                  configuratorCore?.toggleTransformAxis("x", true);
+                  configuratorCore?.toggleTransformAxis("z", true);
+                }
+                else if (tool.id === "rotate") {
+                  configuratorCore?.setTransformMode("rotate");
+                  configuratorCore?.toggleTransformAxis("y", true);
+                  configuratorCore?.toggleTransformAxis("x", false);
+                  configuratorCore?.toggleTransformAxis("z", false);
+                }
+              }
               else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
-              else if (tool.id === 'copy') onCopy();
-              else onHideWallsSelectedChange(!hideWallsSelected);
+              else if (tool.id === 'copy') {
+                onCopy();
+                const isCopied = configuratorCore?.duplicateModel();
+                if (!isCopied) {
+                  console.log(isCopied);
+                }
+              }
+              // else onHideWallsSelectedChange(!hideWallsSelected);
+              else if (tool.id === "hidewalls") {
+                configuratorCore?.enableWallHiding(!hideWallsSelected);
+                onHideWallsSelectedChange(!hideWallsSelected);
+              }
             }}
           >
             <img src={tool.icon} width={52} height={52} alt="" />
@@ -155,6 +201,7 @@ export function ItemsToolbar({
               groups={measurementGroups}
               label="Measurement types"
               triggerContent={<img src={measure} width={52} height={52} alt="" />}
+              disabled={!canUseSelectedModelTools}
             />
           )}
         </Fragment>

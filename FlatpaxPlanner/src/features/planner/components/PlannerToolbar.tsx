@@ -1,6 +1,6 @@
 import drawIcon from '@/assets/icons/FP-FLOATED-DRAW.svg';
 import deleteIcon from '@/assets/icons/Group 79.svg';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LengthUnit } from 'three-configurator';
 import doorIcon from '@/assets/icons/FP-FLOATED-DOOR.svg';
 import windowIcon from '@/assets/icons/FP-FLOATED-WINDOW.svg';
@@ -20,6 +20,7 @@ const tools = [
 ] as const;
 
 export type PlannerTool = (typeof tools)[number]['id'];
+type ActiveMode = 'draw' | 'edit' | 'door' | 'window' | null;
 interface Props {
   snapping: boolean;
   onSnapChange: (enabled: boolean) => void;
@@ -31,12 +32,31 @@ interface Props {
 export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChange }: Props) {
   const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
 
-  const [isMeasurementActive, setIsMeasurementActive] = useState<boolean>(true);
-  const [isWindowModeActive, setisWindowModeActive] = useState<boolean>(false);
-  const [isDoorModeActive, setisDoorModeActive] = useState<boolean>(false);
-
-
   const [unit, setUnit] = useState(() => floorPlanManager?.getLengthUnit() ?? LengthUnit.MM);
+  const [activeMode, setActiveMode] = useState<ActiveMode>(null);
+  useEffect(() => {
+    if (!floorPlanManager) return;
+    floorPlanManager.setLengthUnit(unit);
+    // The viewer SDK exposes mode changes through this mutable callback property.
+    // eslint-disable-next-line react-hooks/immutability
+    floorPlanManager.on2DModeChange = (mode: string | null) => {
+      const nextMode: ActiveMode =
+        mode === 'Draw'
+          ? 'draw'
+          : mode === 'Window'
+            ? 'window'
+            : mode === 'Door'
+              ? 'door'
+              : mode === 'Edit'
+                ? 'edit'
+                : null;
+      setActiveMode(nextMode);
+      onSelect(nextMode === 'draw' || nextMode === 'door' || nextMode === 'window' ? nextMode : null);
+    };
+    return () => {
+      floorPlanManager.on2DModeChange = undefined;
+    };
+  }, [floorPlanManager, onSelect, unit]);
   return (
     <div role="group" aria-label="Room setup tools" className="planner-toolbar room-setup-toolbar">
       {tools.map((tool) => (
@@ -45,13 +65,14 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
           type="button"
           aria-label={tool.label}
           title={tool.label}
-          aria-pressed={
-            tool.id === 'snap'
-              ? snapping
-              : tool.id === 'fit' || tool.id === 'delete' || tool.id === 'erase'
-                ? undefined
-                : selected === tool.id
-          }
+            aria-pressed={
+              tool.id === 'snap'
+                ? snapping
+                : tool.id === 'draw' || tool.id === 'door' || tool.id === 'window'
+                  ? activeMode === tool.id
+                  : undefined
+            }
+          disabled={tool.id === 'delete' && activeMode !== 'edit'}
           onClick={() => {
             if (tool.id === 'snap') {
               floorPlanManager?.enableSnapping(!snapping);
@@ -67,10 +88,19 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
               else onFit();
               return;
             }
-            if (tool.id === 'draw') floorPlanManager?.set2DMode('Draw', true);
-            else if (tool.id === 'door') floorPlanManager?.set2DMode('Door', true);
-            else if (tool.id === 'window') floorPlanManager?.set2DMode('Window', true);
-            else floorPlanManager?.clear2DLayout();
+            if (tool.id === 'draw') {
+              floorPlanManager?.set2DMode('Draw', true);
+              return;
+            }
+            if (tool.id === 'door') {
+              floorPlanManager?.set2DMode('Door', true);
+              return;
+            }
+            if (tool.id === 'window') {
+              floorPlanManager?.set2DMode('Window', true);
+              return;
+            }
+            floorPlanManager?.clear2DLayout();
             onSelect(selected === tool.id ? null : tool.id);
           }}
         >

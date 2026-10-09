@@ -31,6 +31,12 @@ interface Thumbnail {
   downloadUrl: string;
   expiresAt: string;
 }
+interface DownloadUrl {
+  downloadUrl: string;
+}
+interface TextureDownloadUrl {
+  downloadUrl: string | null;
+}
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new Error('Invalid catalogue response.');
@@ -87,18 +93,24 @@ const models = (value: unknown) =>
       }),
     })),
   })).filter((item) => item.isActive);
+function parseDownloadUrl(value: unknown): DownloadUrl {
+  const item = object(value);
+  const valueUrl = string(item.downloadUrl);
+  const url = new URL(valueUrl);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+    throw new Error('Invalid thumbnail download URL.');
+  return { downloadUrl: valueUrl };
+}
+function parseTextureDownloadUrl(value: unknown): TextureDownloadUrl {
+  const item = object(value);
+  if (item.downloadUrl === null) return { downloadUrl: null };
+  return parseDownloadUrl(value);
+}
 function thumbnail(value: unknown): Thumbnail {
   const item = object(value);
-  const downloadUrl = string(item.downloadUrl);
-  const url = new URL(downloadUrl);
+  const { downloadUrl } = parseDownloadUrl(value);
   const expiresAt = string(item.expiresAt);
-  if (
-    !['http:', 'https:'].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    !Number.isFinite(Date.parse(expiresAt))
-  )
-    throw new Error('Invalid thumbnail download URL.');
+  if (!Number.isFinite(Date.parse(expiresAt))) throw new Error('Invalid thumbnail expiry date.');
   return { downloadUrl, expiresAt };
 }
 export const catalogueApi = createApi({
@@ -140,10 +152,17 @@ export const catalogueApi = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
-    getModelDownloadUrl: builder.query<Thumbnail, string>({
+    getModelDownloadUrl: builder.query<DownloadUrl, string>({
       query: (modelId) => ({
-        path: `/api/storage/${encodeURIComponent(modelId)}/download-url`,
-        parse: thumbnail,
+        path: `/storage/${encodeURIComponent(modelId)}/download-url`,
+        parse: parseDownloadUrl,
+      }),
+      keepUnusedDataFor: 0,
+    }),
+    getTextureDownloadUrl: builder.query<TextureDownloadUrl, { textureId: string }>({
+      query: ({ textureId }) => ({
+        path: `/storage/${encodeURIComponent(textureId)}/texture/download-url`,
+        parse: parseTextureDownloadUrl,
       }),
       keepUnusedDataFor: 0,
     }),
@@ -155,4 +174,7 @@ export const {
   useGetModelsQuery,
   useGetThumbnailQuery,
   useGetModelDownloadUrlQuery,
+  useLazyGetModelDownloadUrlQuery,
+  useGetTextureDownloadUrlQuery,
+  useLazyGetTextureDownloadUrlQuery,
 } = catalogueApi;

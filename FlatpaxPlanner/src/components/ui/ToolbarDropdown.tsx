@@ -12,6 +12,7 @@ interface Props<T extends string> {
   groups: readonly DropdownGroup<T>[];
   label: string;
   triggerContent: ReactNode;
+  disabled?: boolean;
 }
 export function ToolbarDropdown<T extends string>({
   value,
@@ -20,6 +21,7 @@ export function ToolbarDropdown<T extends string>({
   groups,
   label,
   triggerContent,
+  disabled = false,
 }: Props<T>) {
   const [open, setOpen] = useState(false);
   const [alignStart, setAlignStart] = useState(false);
@@ -76,6 +78,7 @@ export function ToolbarDropdown<T extends string>({
         aria-pressed={onClear ? value !== null : undefined}
         aria-controls={id}
         aria-haspopup="dialog"
+        disabled={disabled}
         onClick={() => {
           if (open) setOpen(false);
           else showMenu();
@@ -120,6 +123,7 @@ export function ToolbarDropdown<T extends string>({
                     name={id}
                     value={option.value}
                     checked={value === option.value}
+                    disabled={disabled}
                     onChange={(event) => {
                       if (onClear && !event.currentTarget.checked) onClear();
                       else onChange(option.value);

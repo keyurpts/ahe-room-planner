@@ -86,12 +86,15 @@ export function Component() {
   const [items, setItems] = useState<readonly { product: CatalogueProduct; quantity: number }[]>(
     [],
   );
+  
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+  
   function addItem(product: CatalogueProduct) {
     setItems((current) =>
       current.some((item) => item.product.id === product.id)
         ? current.map((item) =>
-            item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-          )
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+        )
         : [...current, { product, quantity: 1 }],
     );
     setAnnouncement(`${product.name} added to the item list.`);
@@ -128,16 +131,7 @@ export function Component() {
     )
       .then(async () => {
         // Reset panels after the destination commits so the launcher cannot flash on the old page.
-
         setCustomising(false);
-
-        if (next === 'Walls & floors') {
-          const success = await floorPlanManager?.switchTo3D(isRoomDetected);
-          console.log("success : ", success);
-        }
-        if (next === "Room setup") {
-          floorPlanManager?.switchTo2D();
-        }
       })
       .catch(() => {
         setAnnouncement('Unable to change the design step. Please try again.');
@@ -146,7 +140,7 @@ export function Component() {
   async function nextStep() {
     if (step === 'Room setup') {
       try {
-        const success = await floorPlanManager?.switchTo3D();
+        const success = await floorPlanManager?.switchTo3D(isRoomDetected);
         if (!success) {
           setAnnouncement('Draw a room before continuing to the 3D design.');
           return;
@@ -155,6 +149,11 @@ export function Component() {
         setAnnouncement('Unable to open the 3D design. Please try again.');
         return;
       }
+    }
+    else if (step === 'Walls & floors') {
+      configuratorCore?.enableWallColoringMode?.(false);
+      configuratorCore?.enableWallTextureMode?.(false);
+      configuratorCore?.enableWallMaterialResetMode?.(false);
     }
     changeStep(
       step === 'Room setup'
@@ -247,6 +246,11 @@ export function Component() {
               className="planner-next planner-stage-back"
               onClick={() => {
                 changeStep('Room setup');
+                floorPlanManager?.switchTo2D();
+
+                configuratorCore?.enableWallColoringMode?.(false);
+                configuratorCore?.enableWallTextureMode?.(false);
+                configuratorCore?.enableWallMaterialResetMode?.(false);
               }}
             >
               <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">
@@ -284,7 +288,6 @@ export function Component() {
                 console.log('Copy item requested.');
               }}
               onRemove={removeItem}
-              canRemove={items.some((item) => item.product.id === selectedProduct)}
             />
           )}
           <button
