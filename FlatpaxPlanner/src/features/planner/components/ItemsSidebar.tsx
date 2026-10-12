@@ -10,6 +10,7 @@ import {
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
+import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
 
 interface Props {
   active?: boolean;
@@ -19,25 +20,6 @@ interface Props {
   canCustomise: boolean;
   onCustomise: () => void;
   hidden?: boolean;
-}
-function Chevron({
-  expanded,
-  closedDirection = 'down',
-}: {
-  expanded: boolean;
-  closedDirection?: 'down' | 'right';
-}) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-      <path
-        d={
-          expanded ? 'm4 11 5-5 5 5' : closedDirection === 'right' ? 'm6 4 5 5-5 5' : 'm4 6 5 5 5-5'
-        }
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
 }
 function Retry({ label, retry }: { label: string; retry: () => void }) {
   return (
@@ -275,7 +257,7 @@ export function ItemsSidebar({
               }}
             >
               Cupboard colour
-              <Chevron expanded={openSections.includes('cupboard')} />
+              <SidebarChevron expanded={openSections.includes('cupboard')} />
             </button>
           </h2>
           <div
@@ -316,7 +298,7 @@ export function ItemsSidebar({
               }}
             >
               Benchtop colour
-              <Chevron expanded={openSections.includes('benchtop')} />
+              <SidebarChevron expanded={openSections.includes('benchtop')} />
             </button>
           </h2>
           <div
@@ -347,7 +329,7 @@ export function ItemsSidebar({
               }}
             >
               Cabinets
-              <Chevron expanded={openSections.includes('cabinets')} />
+              <SidebarChevron expanded={openSections.includes('cabinets')} />
             </button>
           </h2>
           <div
@@ -382,7 +364,10 @@ export function ItemsSidebar({
                       }}
                     >
                       {group.categoryName}
-                      <Chevron expanded={activeCategory === group.id} closedDirection="right" />
+                      <SidebarChevron
+                        expanded={activeCategory === group.id}
+                        closedDirection="right"
+                      />
                     </button>
                   </h3>
                   <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>

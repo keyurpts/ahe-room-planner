@@ -70,7 +70,7 @@
     right: 3.625rem;
     margin-block: auto;
     height: fit-content;
-    width: 25rem;
+    width: min(25rem, calc(100% - 2rem));
     max-height: calc(100% / var(--planner-scale) - 9.25rem);
     overflow-y: auto;
     background: white;
@@ -295,6 +295,30 @@
     }
     .planner-finishes-controls .planner-next {
       justify-self: center;
+    }
+  }
+  @media (height < 50rem) {
+    .finishes-panel-header {
+      min-height: 4rem;
+      padding-block: 0.625rem;
+    }
+    .finishes-tabs,
+    .finish-apply-controls {
+      min-height: 3.25rem;
+      padding-block: 0.5rem;
+    }
+    .finishes-surfaces {
+      padding-block: 0.625rem;
+    }
+    .finishes-wall-options {
+      padding-block: 0.625rem;
+    }
+    .finish-swatch-grid {
+      gap: 0.5rem;
+    }
+    .finish-swatch,
+    .finish-reset {
+      height: 2.5rem;
     }
   }
 }

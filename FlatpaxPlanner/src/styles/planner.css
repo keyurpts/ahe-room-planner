@@ -359,7 +359,7 @@
     background: var(--color-brand);
     color: #fff;
   }
-  @media (width >= 90rem) {
+  @media (width >= 64rem) {
     .planner-navigation,
     .planner-bottom-controls,
     .items-sidebar,
@@ -407,9 +407,6 @@
       width: auto;
       min-height: 3.25rem;
     }
-    .planner-page {
-      height: auto;
-    }
     .planner-step-navigation li:not(:last-child) button {
       width: 100%;
     }
@@ -447,7 +444,7 @@
       padding: 0.5rem 1rem;
     }
     .planner-workspace {
-      min-height: max(30rem, calc(100svh - 11rem));
+      min-height: 0;
     }
     .planner-toolbar {
       width: 100%;
@@ -469,6 +466,18 @@
     }
     .planner-next {
       color: var(--color-brand-hover);
+    }
+  }
+  @media (40rem <= width < 64rem) {
+    .room-setup-toolbar button,
+    .room-setup-toolbar .toolbar-dropdown-control {
+      --tool-highlight-size: 2.75rem;
+      width: 4rem;
+      min-height: 3.25rem;
+    }
+    .room-setup-toolbar img {
+      width: 2rem;
+      height: 2rem;
     }
   }
 }
