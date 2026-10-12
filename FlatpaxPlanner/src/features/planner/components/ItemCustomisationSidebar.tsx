@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import resetIcon from '@/assets/icons/material-symbols_restart-alt-rounded.svg';
+import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
 
 export interface ItemFinishes {
   sink: number | null;
@@ -22,11 +23,11 @@ export function ItemCustomisationSidebar({ finishes, onChange, onBack }: Props) 
     <aside className="items-sidebar customisation-sidebar" aria-label="Item customisation">
       <div className="customisation-card">
         {(['sink', 'benchtop'] as const).map((key) => (
-          <section key={key}>
+          <section key={key} className="catalogue-section">
             <h2>
               <button
                 type="button"
-                className="customisation-section-toggle"
+                className="catalogue-section-toggle"
                 aria-expanded={section === key}
                 aria-controls={`${id}-${key}`}
                 onClick={() => {
@@ -34,15 +35,7 @@ export function ItemCustomisationSidebar({ finishes, onChange, onBack }: Props) 
                 }}
               >
                 {key === 'sink' ? 'Sink' : 'Benchtops'}
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path
-                    d="m4 7 6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <SidebarChevron expanded={section === key} />
               </button>
             </h2>
             <div

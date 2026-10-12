@@ -1,9 +1,13 @@
 @layer components {
   .landing-page {
     --landing-header-height: 13.7706875rem;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
   }
 
   .landing-header {
+    flex-shrink: 0;
     min-height: var(--landing-header-height);
     padding-block: 4rem 2.8331875rem;
   }
@@ -14,7 +18,8 @@
   }
 
   .landing-backdrop {
-    min-height: calc(100svh - var(--landing-header-height));
+    min-height: 0;
+    flex: 1;
     background-color: var(--color-canvas);
     background-image: url('../assets/images/kitchen-planner-background.webp');
     background-position: center top;
@@ -65,9 +70,6 @@
       max-width: 40rem;
       grid-template-columns: 1fr;
     }
-    .landing-backdrop {
-      min-height: max(48rem, calc(100svh - var(--landing-header-height)));
-    }
   }
 
   @media (width < 40rem) {
@@ -90,6 +92,25 @@
       justify-content: flex-start;
       padding-inline: 1rem;
       text-align: left;
+    }
+  }
+  @media (height < 50rem) {
+    .landing-page {
+      --landing-header-height: clamp(6rem, 18svh, 9rem);
+    }
+    .landing-header {
+      align-items: center;
+      padding-block: 1rem;
+    }
+    .landing-logo {
+      max-width: clamp(11rem, 23svh, 17rem);
+      margin-inline-end: 0;
+    }
+    .planner-introduction {
+      padding-block: clamp(1rem, 3svh, 1.75rem);
+    }
+    .planner-description {
+      margin-block-start: clamp(0.75rem, 2svh, 1.25rem);
     }
   }
 }
