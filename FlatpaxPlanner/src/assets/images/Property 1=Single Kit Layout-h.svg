@@ -1,0 +1,13 @@
+<svg width="168" height="168" viewBox="0 0 168 168" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 4H164V164H4V4Z" fill="white"/>
+<mask id="stroke0_2013_2028" maskUnits="userSpaceOnUse" x="0" y="0" width="168" height="168" fill="black">
+<rect fill="white" width="168" height="168"/>
+<path d="M4 4H164V164H4V4Z"/>
+</mask>
+<path d="M4 4H164V164H4V4Z" stroke-width="8" stroke="black" mask="url(#stroke0_2013_2028)"/>
+<path d="M3.75 3.75H36.25V36.25H3.75V3.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M35.75 3.75H68.25V36.25H35.75V3.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M67.75 3.75H100.25V36.25H67.75V3.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M99.75 3.75H132.25V36.25H99.75V3.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M131.75 3.75H164.25V36.25H131.75V3.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+</svg>

@@ -27,11 +27,19 @@ type ProductHandlers = Pick<Props, 'onAdd' | 'onSelect' | 'selected'> & {
   onModelAdding: (textureId: string) => void;
   onModelAddFailed: () => void;
 };
-function Chevron({ expanded }: { expanded: boolean }) {
+function Chevron({
+  expanded,
+  closedDirection = 'down',
+}: {
+  expanded: boolean;
+  closedDirection?: 'down' | 'right';
+}) {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
       <path
-        d={expanded ? 'm4 11 5-5 5 5' : 'm4 6 5 5 5-5'}
+        d={
+          expanded ? 'm4 11 5-5 5 5' : closedDirection === 'right' ? 'm6 4 5 5-5 5' : 'm4 6 5 5 5-5'
+        }
         stroke="currentColor"
         strokeWidth="1.5"
       />
@@ -170,7 +178,7 @@ function Product({
     }
   }
   return (
-    <div className="catalogue-product" data-selected={selected === product.id}>
+    <div className="catalogue-product">
       <button
         type="button"
         className="catalogue-product-preview"
@@ -460,7 +468,7 @@ export function ItemsSidebar({
                       }}
                     >
                       {group.categoryName}
-                      <Chevron expanded={activeCategory === group.id} />
+                      <Chevron expanded={activeCategory === group.id} closedDirection="right" />
                     </button>
                   </h3>
                   <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
@@ -490,7 +498,7 @@ export function ItemsSidebar({
         <button
           type="button"
           id="catalogue-customise"
-          className="catalogue-customise"
+          className="catalogue-customise brand-outline-control"
           onClick={onCustomise}
         >
           Customise

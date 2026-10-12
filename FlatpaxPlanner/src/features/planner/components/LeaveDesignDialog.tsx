@@ -18,7 +18,7 @@ export function LeaveDesignDialog({ open, onCancel, onConfirm }: Props) {
       onClose={onCancel}
       footer={
         <>
-          <Button variant="outline" autoFocus onClick={onCancel}>
+          <Button variant="brand-outline" autoFocus onClick={onCancel}>
             Cancel
           </Button>
           <Button onClick={onConfirm}>OK</Button>

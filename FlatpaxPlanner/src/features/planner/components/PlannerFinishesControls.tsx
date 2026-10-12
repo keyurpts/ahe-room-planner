@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { FinishesPanel } from '@/features/planner/components/FinishesPanel';
-import customiseIcon from '@/assets/icons/FP-FLOATED-CUSTOMISE.svg';
+import customiseIcon from '@/assets/icons/ci_swatches-palette.svg';
+import customiseHoverIcon from '@/assets/icons/ci_swatches-palette-h.svg';
 import { useAppSelector } from '@/app/store-hooks';
 
 interface Props {
@@ -26,7 +27,20 @@ export function PlannerFinishesControls({ open, onOpen, onClose }: Props) {
         hidden={open}
         onClick={onOpen}
       >
-        <img src={customiseIcon} width={114} height={114} alt="" />
+        <img
+          src={customiseIcon}
+          width={114}
+          height={114}
+          alt=""
+          className="swatches-icon-default"
+        />
+        <img
+          src={customiseHoverIcon}
+          width={114}
+          height={114}
+          alt=""
+          className="swatches-icon-hover"
+        />
       </button>
       <FinishesPanel
         open={open}
@@ -35,9 +49,9 @@ export function PlannerFinishesControls({ open, onOpen, onClose }: Props) {
           requestAnimationFrame(() => {
             launcher.current?.focus();
           });
-          configuratorCore?.enableWallColoringMode?.(false);
-          configuratorCore?.enableWallTextureMode?.(false);
-          configuratorCore?.enableWallMaterialResetMode?.(false);
+          configuratorCore?.enableWallColoringMode(false);
+          configuratorCore?.enableWallTextureMode(false);
+          configuratorCore?.enableWallMaterialResetMode(false);
         }}
       />
     </>

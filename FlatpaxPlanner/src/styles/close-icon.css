@@ -1,0 +1,22 @@
+@layer components {
+  .close-icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+  }
+  .close-icon img {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+  }
+  .close-icon-hover {
+    visibility: hidden;
+  }
+  button:is(:hover, :focus-visible, :active) .close-icon-default {
+    visibility: hidden;
+  }
+  button:is(:hover, :focus-visible, :active) .close-icon-hover {
+    visibility: visible;
+  }
+}

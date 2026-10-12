@@ -117,7 +117,7 @@ export function Component() {
 
   const isRoomDetected = (room: boolean) => {
     console.log(room);
-  }
+  };
 
   function changeStep(next: PlannerStep) {
     void Promise.resolve(
@@ -292,7 +292,7 @@ export function Component() {
           )}
           <button
             type="button"
-            className="planner-next"
+            className={`planner-next ${step === 'Room setup' ? 'room-setup-next' : ''}`}
             onClick={() => {
               void nextStep();
             }}

@@ -85,22 +85,32 @@
     border-radius: 0.3125rem;
     font-size: 0.875rem;
     font-weight: 500;
+    background: transparent;
+    color: #fff;
+    transition:
+      background-color 150ms,
+      color 150ms;
     cursor: pointer;
   }
   .toolbar-dropdown-option:hover {
-    background: #222;
+    background: #fff;
+    color: var(--color-brand);
   }
   .toolbar-dropdown-option:has(input:checked) {
     background: var(--color-brand);
+    color: #fff;
   }
   .toolbar-dropdown-option:has(input:checked):hover {
-    background: var(--color-brand-hover);
+    background: var(--color-brand);
+    color: #fff;
   }
-  .toolbar-dropdown-option:active {
-    background: var(--color-brand-active);
+  .toolbar-dropdown-option:active,
+  .toolbar-dropdown-option:has(input:checked):active {
+    background: var(--color-brand);
+    color: #fff;
   }
   .toolbar-dropdown-option:has(input:focus-visible) {
-    outline: 2px solid white;
+    outline: 2px solid var(--color-brand);
     outline-offset: -2px;
   }
   .toolbar-dropdown-control::before {

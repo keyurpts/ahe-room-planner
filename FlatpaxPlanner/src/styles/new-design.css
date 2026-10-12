@@ -44,14 +44,15 @@
     align-items: center;
     justify-content: flex-start;
     min-height: 10.625rem;
-    border-radius: 0.625rem;
-    padding: 0.3125rem 0.5rem 1rem;
+    border-radius: 5px;
+    padding: 1rem 0.5rem;
     background: var(--color-surface);
+    color: #000;
     cursor: pointer;
     transition: background-color 150ms;
   }
   .room-type-card:hover {
-    background: var(--color-brand-subtle);
+    background: #e7eff0;
   }
   .room-type-input {
     position: absolute;
@@ -65,7 +66,7 @@
   }
   .room-type-card:has(input:checked),
   .room-type-card:active {
-    background: #f2f9fa;
+    background: #e7eff0;
     color: var(--color-brand);
   }
   .room-type-card:has(input:focus-visible) {
@@ -74,8 +75,8 @@
   }
   .room-type-icon {
     display: block;
-    width: 9.5rem;
-    height: 7.875rem;
+    width: min(100%, 8rem);
+    height: 6.1875rem;
   }
   .room-type-icon img {
     display: block;
@@ -86,16 +87,18 @@
   .room-type-icon .room-icon-selected {
     display: none;
   }
+  .room-type-card:hover .room-icon-default,
   .room-type-card:has(input:checked) .room-icon-default,
   .room-type-card:active .room-icon-default {
     display: none;
   }
+  .room-type-card:hover .room-icon-selected,
   .room-type-card:has(input:checked) .room-icon-selected,
   .room-type-card:active .room-icon-selected {
     display: block;
   }
   .room-type-label {
-    margin-top: -0.25rem;
+    margin-top: 0.75rem;
     font-size: 1.25rem;
     font-weight: var(--font-weight-design-heading);
     line-height: 1.2;
@@ -115,7 +118,6 @@
   }
   .create-design-button {
     min-height: 2.25rem;
-    border-radius: 0.625rem;
     white-space: nowrap;
   }
   .new-design-dialog-footer {
@@ -128,7 +130,6 @@
   .new-design-back {
     min-width: 7.1875rem;
     min-height: 2.25rem;
-    border-radius: 0.625rem;
   }
   @media (width < 40rem) {
     .new-design-dialog-header {
@@ -156,16 +157,12 @@
       padding: 0.75rem 0.25rem;
     }
     .room-type-icon {
-      width: 6rem;
+      width: 4.25rem;
       height: 5rem;
     }
     .room-type-label {
       margin-top: 0.5rem;
       font-size: 1rem;
-    }
-    .room-type-card:has(input:checked),
-    .room-type-card:active {
-      color: var(--color-brand-hover);
     }
     .new-design-project {
       grid-template-columns: minmax(0, 1fr);

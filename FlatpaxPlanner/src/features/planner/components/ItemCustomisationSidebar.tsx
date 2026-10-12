@@ -79,7 +79,12 @@ export function ItemCustomisationSidebar({ finishes, onChange, onBack }: Props) 
           </section>
         ))}
       </div>
-      <button ref={backRef} type="button" className="customisation-back" onClick={onBack}>
+      <button
+        ref={backRef}
+        type="button"
+        className="customisation-back brand-outline-control navigation-control"
+        onClick={onBack}
+      >
         <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">
           <path
             d="M26 10H2m0 0 7-7m-7 7 7 7"

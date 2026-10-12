@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import closeIcon from '@/assets/icons/Close.svg';
+import { CloseIcon } from '@/components/ui/CloseIcon';
 import resetIcon from '@/assets/icons/material-symbols_restart-alt-rounded.svg';
 import '@/styles/finishes.css';
 import {
@@ -22,6 +22,7 @@ function FinishSymbol({
 }: {
   type: 'textures' | 'colours' | 'all' | 'selection' | 'finishes';
 }) {
+  const colourMaskId = useId();
   return (
     <svg
       width={type === 'finishes' ? 40 : 24}
@@ -39,8 +40,13 @@ function FinishSymbol({
       )}
       {type === 'colours' && (
         <>
-          <circle cx="12" cy="12" r="10" fill="currentColor" />
-          <path d="M12 2v20M2 12h20M5 5l14 14M5 19 19 5" stroke="white" strokeWidth="1.5" />
+          <defs>
+            <mask id={colourMaskId}>
+              <circle cx="12" cy="12" r="10" fill="white" />
+              <path d="M12 2v20M2 12h20M5 5l14 14M5 19 19 5" stroke="black" strokeWidth="1.5" />
+            </mask>
+          </defs>
+          <circle cx="12" cy="12" r="10" fill="currentColor" mask={`url(#${colourMaskId})`} />
         </>
       )}
       {type === 'all' && (
@@ -73,17 +79,16 @@ function SwatchGrid({
   selected,
   onSelect,
   wallScope,
-  section
+  section,
 }: {
   label: string;
   options: readonly (TexturePreset | ColorPreset)[];
   mode: FinishMode;
   selected: string | null;
   onSelect: (id: string | null) => void;
-  wallScope: 'all' | 'selection',
-  section: 'floor' | 'wall'
+  wallScope: 'all' | 'selection';
+  section: 'floor' | 'wall';
 }) {
-
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
 
   return (
@@ -94,17 +99,15 @@ function SwatchGrid({
         aria-label={`Reset ${label.toLowerCase()} finish`}
         onClick={() => {
           onSelect(null);
-          if (section === "floor") {
-            configuratorCore?.resetFloor?.();
-          }
-          else if (section === "wall") {
-            if (wallScope === "all") {
-              configuratorCore?.resetWalls?.();
-            }
-            else if (wallScope === "selection") {
-              configuratorCore?.enableWallColoringMode?.(false);
-              configuratorCore?.enableWallTextureMode?.(false);
-              configuratorCore?.enableWallMaterialResetMode?.(true);
+          if (section === 'floor') {
+            configuratorCore?.resetFloor();
+          } else {
+            if (wallScope === 'all') {
+              configuratorCore?.resetWalls();
+            } else {
+              configuratorCore?.enableWallColoringMode(false);
+              configuratorCore?.enableWallTextureMode(false);
+              configuratorCore?.enableWallMaterialResetMode(true);
             }
           }
         }}
@@ -123,44 +126,37 @@ function SwatchGrid({
           aria-pressed={selected === option.id}
           onClick={() => {
             onSelect(option.id);
-            if (section === "wall") {
-              if (mode === "Textures") {
-                // call api to set texture
-                if (wallScope === "all") {
-                  configuratorCore?.enableWallColoringMode?.(false);
-                  configuratorCore?.enableWallTextureMode?.(false);
-                  configuratorCore?.enableWallMaterialResetMode?.(false);
-                  configuratorCore?.applyTextureToAllWalls?.(option);
+            if (section === 'wall') {
+              if ('url' in option) {
+                if (wallScope === 'all') {
+                  configuratorCore?.enableWallColoringMode(false);
+                  configuratorCore?.enableWallTextureMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
+                  configuratorCore?.applyTextureToAllWalls(option);
+                } else {
+                  configuratorCore?.setWallTexture(option);
+                  configuratorCore?.enableWallTextureMode(true);
+                  configuratorCore?.enableWallColoringMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
                 }
-                else if (wallScope === "selection") {
-                  configuratorCore?.setWallTexture?.(option);
-                  configuratorCore?.enableWallTextureMode?.(true);
-                  configuratorCore?.enableWallColoringMode?.(false);
-                  configuratorCore?.enableWallMaterialResetMode?.(false);
-                }
-              }
-              else if (mode === "Colours") {
-                // call api to set color
-                if (wallScope === "all") {
-                  configuratorCore?.enableWallColoringMode?.(false);
-                  configuratorCore?.enableWallTextureMode?.(false);
-                  configuratorCore?.enableWallMaterialResetMode?.(false);
-                  configuratorCore?.applyColorToAllWalls?.((option as ColorPreset).color);
-                }
-                else if (wallScope === "selection") {
-                  configuratorCore?.setWallColor?.(option);
-                  configuratorCore?.enableWallColoringMode?.(true);
-                  configuratorCore?.enableWallTextureMode?.(false);
-                  configuratorCore?.enableWallMaterialResetMode?.(false);
+              } else {
+                if (wallScope === 'all') {
+                  configuratorCore?.enableWallColoringMode(false);
+                  configuratorCore?.enableWallTextureMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
+                  configuratorCore?.applyColorToAllWalls(option.color);
+                } else {
+                  configuratorCore?.setWallColor(option);
+                  configuratorCore?.enableWallColoringMode(true);
+                  configuratorCore?.enableWallTextureMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
                 }
               }
-            }
-            else if (section === "floor") {
-              if (mode === "Colours") {
-                configuratorCore?.applyColorToAllFloors?.((option as ColorPreset).color, (option as ColorPreset).id);
-              }
-              else if (mode === "Textures") {
-                configuratorCore?.applyTextureToAllFloors?.(option);
+            } else {
+              if ('color' in option) {
+                configuratorCore?.applyColorToAllFloors(option.color, option.id);
+              } else {
+                configuratorCore?.applyTextureToAllFloors(option);
               }
             }
           }}
@@ -218,7 +214,7 @@ export function FinishesPanel({ open, onClose }: Props) {
           aria-label="Close finishes"
           onClick={onClose}
         >
-          <img src={closeIcon} width={30} height={30} alt="" />
+          <CloseIcon />
         </button>
       </header>
       <div role="tablist" aria-label="Finish type" className="finishes-tabs">
@@ -270,7 +266,7 @@ export function FinishesPanel({ open, onClose }: Props) {
             selected={floor}
             onSelect={setFloor}
             wallScope={wallScope}
-            section={"floor"}
+            section={'floor'}
           />
         </section>
         <section aria-label="Wall finishes" className="finishes-walls">
@@ -309,7 +305,7 @@ export function FinishesPanel({ open, onClose }: Props) {
               selected={walls}
               onSelect={setWalls}
               wallScope={wallScope}
-              section={"wall"}
+              section={'wall'}
             />
           </div>
         </section>

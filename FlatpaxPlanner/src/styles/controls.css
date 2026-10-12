@@ -1,0 +1,18 @@
+@layer components {
+  .brand-outline-control {
+    border-radius: var(--radius-control);
+    border: var(--control-border-width) solid var(--color-brand);
+    background: var(--color-surface);
+    color: var(--color-brand);
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+  .brand-outline-control:is(:hover, :focus-visible, :active) {
+    background: var(--color-brand);
+    color: #fff;
+  }
+  .navigation-control:hover {
+    border-width: var(--control-hover-border-width);
+  }
+}

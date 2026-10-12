@@ -2,6 +2,7 @@
 @import './theme.css';
 @import './fonts.css';
 @import './landing.css';
+@import './controls.css';
 
 @layer base {
   html {

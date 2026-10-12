@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
-import closeIcon from '@/assets/icons/Close.svg';
+import { CloseIcon } from '@/components/ui/CloseIcon';
 import { useViewportScale } from '@/hooks/useViewportScale';
 
 interface DialogProps {
@@ -118,11 +118,7 @@ export function Dialog({
                           ? 'Close room shapes'
                           : 'Close new design'
                 }
-                className={
-                  layout === 'item-list'
-                    ? 'item-list-close'
-                    : 'preset-close rounded-full hover:bg-brand-subtle active:bg-brand-soft'
-                }
+                className={layout === 'item-list' ? 'item-list-close' : 'preset-close rounded-full'}
                 onClick={onClose}
               >
                 {layout === 'item-list' ? (
@@ -131,7 +127,7 @@ export function Dialog({
                     <path d="m8 8 8 8m0-8-8 8" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
                 ) : (
-                  <img src={closeIcon} width={30} height={30} alt="" />
+                  <CloseIcon />
                 )}
               </button>
             )}
