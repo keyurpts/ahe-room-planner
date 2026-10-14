@@ -18,6 +18,7 @@ function isDraft(value: unknown): value is PlannerDraft {
       'square',
       'l-bottom-right',
       'l-bottom-left',
+      'custom',
     ].includes(value.shape)
   );
 }

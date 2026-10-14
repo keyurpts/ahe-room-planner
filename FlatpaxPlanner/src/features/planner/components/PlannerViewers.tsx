@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
-import { FloorplanManager } from 'configurator-library-wrapper';
+import { FloorplanManager, Predefined2DShapes } from 'configurator-library-wrapper';
 import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
 
 interface Props {
@@ -11,7 +11,10 @@ interface Props {
 
 export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
   const dispatch = useAppDispatch();
-  const shape = useAppSelector((state) => state.project.draft?.shape);
+  const draft = useAppSelector((state) => state.project.draft);
+  const floorplanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+  const shape = draft?.shape;
+
 
   useEffect(() => {
     console.log('2D viewer ref.current:', viewer2DRef.current);
@@ -51,6 +54,22 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
       dispatch(setConfiguratorCore(null));
     };
   }, [dispatch, viewer2DRef, viewer3DRef, shape]);
+
+  useEffect(() => {
+
+    if (floorplanManager && draft && draft.shape !== "custom") {
+      if (draft.shape === "rectangle") {
+        floorplanManager.addPredefinedShape(Predefined2DShapes.RECTANGLE);
+      }
+      else if (draft.shape === "square") {
+        floorplanManager.addPredefinedShape(Predefined2DShapes.SQUARE);
+      }
+      else {
+        floorplanManager.addPredefinedShape(Predefined2DShapes.L_SHAPE);
+      }
+    }
+
+  }, [draft?.shape, floorplanManager])
 
   return (
     <>
