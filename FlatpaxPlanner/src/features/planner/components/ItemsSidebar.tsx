@@ -128,7 +128,7 @@ function Product({
       const modelData = {
         category: product.categoryId,
         name: product.name,
-        id: product.id,
+        id: product.modelId,
       };
 
       let callbacks = {

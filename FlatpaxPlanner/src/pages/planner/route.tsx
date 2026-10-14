@@ -13,8 +13,18 @@ import {
 import { LeaveDesignDialog } from '@/features/planner/components/LeaveDesignDialog';
 import { paths } from '@/constants/paths';
 import { SaveDesignDialog } from '@/features/planner/components/SaveDesignDialog';
-import { discardProject, setActiveStep } from '@/features/planner/state/project-slice';
+import {
+  discardProject,
+  setActiveStep,
+  setDesignCode,
+  setProjectID,
+} from '@/features/planner/state/project-slice';
 import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
+import {
+  createProject,
+  updateProject2DJson,
+  updateProject3DJson,
+} from '@/features/planner/services/project-api';
 import {
   PlannerNavigation,
   type PlannerStep,
@@ -37,6 +47,7 @@ export function Component() {
   const viewer3DRef = useRef<HTMLDivElement>(null);
   const scale = useViewportScale();
   const draft = useAppSelector((state) => state.project.draft);
+  const projectID = useAppSelector((state) => state.project.projectID);
   const regionId = useAppSelector((state) => state.ui.regionId);
   const dispatch = useAppDispatch();
   // Drafts are unsaved until a backend confirms a successful save.
@@ -76,6 +87,7 @@ export function Component() {
   const [panel, setPanel] = useState<'save' | 'items' | null>(null);
   const [finishesOpen, setFinishesOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const isSavingProject = useRef(false);
 
   const [selectedProduct, setSelectedProduct] = useState<string | null>('floor-1');
   const [transformTool, setTransformTool] = useState<'move' | 'rotate'>('move');
@@ -86,9 +98,15 @@ export function Component() {
   const [items, setItems] = useState<readonly { product: CatalogueProduct; quantity: number }[]>(
     [],
   );
-  
+  const savedProject = location.state?.savedProject;
+  let p2dJSON, p3dJSON;
+  if (savedProject) {
+    p2dJSON = savedProject.project2DJson;
+    p3dJSON = savedProject.project3DJson;
+  }
+
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
-  
+
   function addItem(product: CatalogueProduct) {
     setItems((current) =>
       current.some((item) => item.product.id === product.id)
@@ -113,6 +131,48 @@ export function Component() {
       ),
     );
     setAnnouncement('Item removed from the item list.');
+  }
+
+  function serializeProjectJson(value: unknown): string {
+    if (typeof value === 'string') return value;
+    return JSON.stringify(value) ?? '{}';
+  }
+
+  async function saveProject() {
+    if (isSavingProject.current || !draft) return;
+    isSavingProject.current = true;
+
+    try {
+      if (projectID) {
+        const mode = location.pathname === paths.design ? '3d' : '2d'
+        if (mode === "2d") {
+          const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
+          await updateProject2DJson(projectID, project2DJson);
+          const project3DJson = serializeProjectJson({});
+          await updateProject3DJson(projectID, project3DJson);
+        }
+        else if (mode === "3d") {
+          const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
+          await updateProject2DJson(projectID, project2DJson);
+          // const project3DJson = serializeProjectJson(configuratorCore?.export3DConfig() ?? {});
+          const project3DJson = configuratorCore?.export3DConfig() ?? {};
+          await updateProject3DJson(projectID, project3DJson);
+        }
+      } else {
+        const { id, designCode } = await createProject(draft.projectName);
+        dispatch(setProjectID(id));
+        dispatch(setDesignCode(designCode));
+      }
+      setPanel('save');
+    } catch (error) {
+      console.error(
+        'Project save failed:',
+        error instanceof Error ? error.message : 'Unknown project save error.',
+      );
+      setAnnouncement('Unable to save the project. Please try again.');
+    } finally {
+      isSavingProject.current = false;
+    }
   }
 
   const isRoomDetected = (room: boolean) => {
@@ -149,8 +209,7 @@ export function Component() {
         setAnnouncement('Unable to open the 3D design. Please try again.');
         return;
       }
-    }
-    else if (step === 'Walls & floors') {
+    } else if (step === 'Walls & floors') {
       configuratorCore?.enableWallColoringMode?.(false);
       configuratorCore?.enableWallTextureMode?.(false);
       configuratorCore?.enableWallMaterialResetMode?.(false);
@@ -180,7 +239,7 @@ export function Component() {
         step={step}
         onStepChange={changeStep}
         onSave={() => {
-          setPanel('save');
+          void saveProject();
         }}
         onItemList={() => {
           setPanel('items');
@@ -224,6 +283,8 @@ export function Component() {
           viewer2DRef={viewer2DRef}
           viewer3DRef={viewer3DRef}
           mode={location.pathname === paths.design ? '3d' : '2d'}
+          p2dJSON={p2dJSON}
+          p3dJSON={p3dJSON}
         />
         <Outlet />
         {step === 'Walls & floors' && (

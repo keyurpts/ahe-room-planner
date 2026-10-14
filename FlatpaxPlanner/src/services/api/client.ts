@@ -120,4 +120,22 @@ export function createApiClient({
   };
 }
 
-export const apiClient = createApiClient({ baseUrl: env.apiBaseUrl });
+const ACCESS_TOKEN_KEY = "accessToken";
+
+export function setApiAccessToken(token: string | undefined) {
+
+  if (token) {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } else {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
+}
+
+export function getApiAccessToken(): string | undefined {
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? undefined;
+}
+
+export const apiClient = createApiClient({
+  baseUrl: env.apiBaseUrl,
+  getAccessToken: () => getApiAccessToken(),
+});

@@ -3,6 +3,12 @@ import { Button } from '@/components/ui/Button';
 import '@/styles/text-input.css';
 import { Dialog } from '@/components/ui/Dialog';
 import '@/styles/saved-design.css';
+import type { RoomShape, RoomType } from '@/features/planner/types';
+import { useNavigate } from 'react-router';
+import { setDesignCode, setProjectID, startProject } from '@/features/planner/state/project-slice';
+import { paths } from '@/constants/paths';
+import { useAppDispatch } from '@/app/store-hooks';
+import { getProjectByDesignCode, type ProjectResponse } from '@/features/planner/services/project-api';
 
 interface Props {
   open: boolean;
@@ -15,9 +21,52 @@ export function SavedDesignDialog({ open, onClose }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const id = useId();
-  const normalizedCode = code.replace(/\s/g, '').toUpperCase();
-  const invalid = attempted && normalizedCode.length !== 6;
-  const error = normalizedCode ? 'Enter exactly 6 characters' : 'Enter your design code';
+  // const normalizedCode = code.replace(/\s/g, '').toUpperCase();
+  const invalid = attempted && code.length !== 6;
+  const error = code ? 'Enter exactly 6 characters' : 'Enter your design code';
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
+
+  /**
+ * Checks if project3DJson has meaningful data (not null, undefined, or empty object).
+ */
+  function hasValid3DJson(project3DJson: any): boolean {
+    if (project3DJson == null) return false;
+    if (typeof project3DJson === "string") {
+      const trimmed = project3DJson.trim();
+      return trimmed !== "" && trimmed !== "{}" && trimmed !== "[]";
+    }
+    if (typeof project3DJson === "object") {
+      return Object.keys(project3DJson).length > 0;
+    }
+    return false;
+  }
+
+  function loadSavedDesign(project: ProjectResponse) {
+    let roomType = 'Other' as RoomType;
+    let selectedShape = 'custom' as RoomShape;
+    dispatch(startProject({ projectName: project.projectName.trim(), roomType, shape: selectedShape }));
+    dispatch(setProjectID(project.id));
+    dispatch(setDesignCode(project.designCode));
+    close();
+    // void navigate(paths.roomSetup);
+    const project3DJSON = JSON.parse(project.project3DJson);
+    if (hasValid3DJson(project3DJSON)) {
+      void navigate(paths.design, {
+        state: {
+          savedProject: project,
+        },
+      });
+    }
+    else {
+      void navigate(paths.roomSetup, {
+        state: {
+          savedProject: project,
+        },
+      });
+    }
+  }
 
   function close() {
     setCode('');
@@ -25,22 +74,25 @@ export function SavedDesignDialog({ open, onClose }: Props) {
     setSubmitted(false);
     onClose();
   }
-  function submit(event: SubmitEvent<HTMLFormElement>) {
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setAttempted(true);
-    if (normalizedCode.length !== 6) {
-      if (!normalizedCode) setCode('');
+    if (code.length !== 6) {
+      if (!code) setCode('');
       inputRef.current?.focus();
       return;
     }
-    setCode(normalizedCode);
     setSubmitted(true);
+
+    // Fetch Project 
+    let project = await getProjectByDesignCode(code);
+    loadSavedDesign(project);
   }
 
   return (
     <Dialog
       open={open}
-      title="Opened saved project"
+      title="Open saved project"
       subtitle="Enter your 6-character design code"
       layout="saved-design"
       onClose={close}
@@ -80,8 +132,7 @@ export function SavedDesignDialog({ open, onClose }: Props) {
               required
               aria-invalid={invalid}
               aria-describedby={invalid ? `${id}-error` : `${id}-hint`}
-              className="project-name-input design-code-input"
-              autoCapitalize="characters"
+              className="design-code-input"
               spellCheck={false}
               onChange={(event) => {
                 setCode(event.target.value);

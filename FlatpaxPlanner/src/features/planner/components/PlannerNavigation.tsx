@@ -15,6 +15,7 @@ interface Props {
   onItemList: () => void;
 }
 
+// Navbar Component
 export function PlannerNavigation({
   projectName,
   step,
@@ -40,9 +41,9 @@ export function PlannerNavigation({
                 type="button"
                 aria-current={step === label ? 'step' : undefined}
                 data-complete={index < plannerSteps.indexOf(step)}
-                // onClick={() => {
-                //   onStepChange(label);
-                // }}
+              // onClick={() => {
+              //   onStepChange(label);
+              // }}
               >
                 <span className="planner-step-number" aria-hidden="true">
                   {index < plannerSteps.indexOf(step) ? (
