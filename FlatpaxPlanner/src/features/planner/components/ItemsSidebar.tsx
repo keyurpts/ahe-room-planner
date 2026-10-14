@@ -12,9 +12,8 @@ import {
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
-import { ConfiguratorEventType, Events } from 'three-configurator';
+import { ConfiguratorEventType, Events, type ConfiguratorCore } from 'configurator-library-wrapper';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
-
 
 interface Props {
   active?: boolean;
@@ -131,31 +130,32 @@ function Product({
         id: product.id,
       };
 
-      let callbacks = {
-        onModelLoading: (xhr: any) => {
-          const percent = Math.round((xhr.loaded / xhr.total) * 100);
-          console.log("model loading:", percent + "%");
+      const callbacks: NonNullable<Parameters<ConfiguratorCore['loadModel']>[4]> = {
+        onModelLoading: (xhr) => {
+          const percent = xhr.total > 0 ? Math.round((xhr.loaded / xhr.total) * 100) : 0;
+          console.log('model loading:', `${String(percent)}%`);
         },
 
-        onModelLoaded: (model: any) => {
-          console.log("Model successfully loaded:", model);
+        onModelLoaded: (model) => {
+          console.log('Model successfully loaded:', model);
         },
 
-        onModelError: (error: any) => {
-          console.error("Error while loading model:", error);
+        onModelError: (error) => {
+          console.error('Error while loading model:', error);
           window.alert(error);
         },
       };
 
       onModelAdding(product.textureId);
-      await configuratorCore!.loadModel(
+      if (!configuratorCore) throw new Error('The configurator is not ready.');
+      await configuratorCore.loadModel(
         downloadUrl,
         true,
         undefined,
         undefined,
         callbacks,
         true,
-        modelData
+        modelData,
       );
     } catch (error) {
       onModelAddFailed();
@@ -284,9 +284,9 @@ export function ItemsSidebar({
   const activeCategory =
     category === undefined
       ? (
-        categories.data?.find((item) => item.categoryName === 'Floor Cupboard') ??
-        categories.data?.[0]
-      )?.id
+          categories.data?.find((item) => item.categoryName === 'Floor Cupboard') ??
+          categories.data?.[0]
+        )?.id
       : category;
   const activeTexture =
     textures.data?.find((item) => item.id === texture)?.id ?? textures.data?.[0]?.id;
@@ -296,7 +296,7 @@ export function ItemsSidebar({
       const textureId = pendingTextureId.current;
       if (!metadata || !textureId) return;
       pendingTextureId.current = null;
-      console.log("selected texture", textureId);
+      console.log('selected texture', textureId);
 
       void getTextureDownloadUrl({ textureId })
         .unwrap()

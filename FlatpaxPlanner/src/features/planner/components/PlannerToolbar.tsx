@@ -1,7 +1,7 @@
 import drawIcon from '@/assets/icons/draw.svg';
 import deleteIcon from '@/assets/icons/delete.svg';
 import { useState, useEffect } from 'react';
-import { LengthUnit } from 'three-configurator';
+import { LengthUnit } from 'configurator-library-wrapper';
 import doorIcon from '@/assets/icons/door.svg';
 import windowIcon from '@/assets/icons/window.svg';
 import fitIcon from '@/assets/icons/zoom-fit.svg';
@@ -61,7 +61,9 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
                 ? 'edit'
                 : null;
       setActiveMode(nextMode);
-      onSelect(nextMode === 'draw' || nextMode === 'door' || nextMode === 'window' ? nextMode : null);
+      onSelect(
+        nextMode === 'draw' || nextMode === 'door' || nextMode === 'window' ? nextMode : null,
+      );
     };
     return () => {
       floorPlanManager.on2DModeChange = undefined;
@@ -75,13 +77,13 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
           type="button"
           aria-label={tool.label}
           title={tool.label}
-            aria-pressed={
-              tool.id === 'snap'
-                ? snapping
-                : tool.id === 'draw' || tool.id === 'door' || tool.id === 'window'
-                  ? activeMode === tool.id
-                  : undefined
-            }
+          aria-pressed={
+            tool.id === 'snap'
+              ? snapping
+              : tool.id === 'draw' || tool.id === 'door' || tool.id === 'window'
+                ? activeMode === tool.id
+                : undefined
+          }
           disabled={tool.id === 'delete' && activeMode !== 'edit'}
           onClick={() => {
             if (tool.id === 'snap') {

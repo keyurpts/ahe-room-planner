@@ -1,6 +1,6 @@
-import { useAppDispatch } from '@/app/store-hooks';
+import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
-import { FloorplanManager } from 'three-configurator';
+import { FloorplanManager } from 'configurator-library-wrapper';
 import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
 
 export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
   const dispatch = useAppDispatch();
+  const shape = useAppSelector((state) => state.project.draft?.shape);
 
   useEffect(() => {
     console.log('2D viewer ref.current:', viewer2DRef.current);
@@ -21,7 +22,13 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
     if (!viewer2DRef.current || !viewer3DRef.current) return;
 
     const floorPlanManagerInstance = new FloorplanManager();
-    floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
+    try {
+      floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
+      if (shape) floorPlanManagerInstance.createRoom(shape);
+    } catch (error) {
+      floorPlanManagerInstance.dispose();
+      throw error;
+    }
     const configuratorCoreInstance = floorPlanManagerInstance.getConfiguratorCore();
     if (!configuratorCoreInstance) {
       floorPlanManagerInstance.dispose();
@@ -43,7 +50,7 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
       dispatch(setFloorPlanManager(null));
       dispatch(setConfiguratorCore(null));
     };
-  }, [dispatch, viewer2DRef, viewer3DRef]);
+  }, [dispatch, viewer2DRef, viewer3DRef, shape]);
 
   return (
     <>

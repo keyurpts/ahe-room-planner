@@ -7,9 +7,14 @@ import hide from '@/assets/icons/wall-hide.svg';
 import view from '@/assets/icons/camera.svg';
 import measure from '@/assets/icons/measure.svg';
 // import { Fragment, useState } from 'react';
-// import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
+// import { LengthUnit, type ConfiguratorCore } from 'configurator-library-wrapper';
 import { Fragment, useEffect, useState } from 'react';
-import { ConfiguratorEventType, Events, LengthUnit, type ConfiguratorCore } from 'three-configurator';
+import {
+  ConfiguratorEventType,
+  Events,
+  LengthUnit,
+  type ConfiguratorCore,
+} from 'configurator-library-wrapper';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
@@ -71,7 +76,6 @@ function configureMeasurements(core: ConfiguratorCore, mode: MeasurementMode | n
   core.measurementState = {
     isActive: mode !== null,
     isWallsOnly: mode === 'walls',
-    isObjectToObject: false,
   };
 }
 
@@ -139,8 +143,6 @@ export function ItemsToolbar({
     setCamera(mode);
   }
 
-
-
   return (
     <div role="group" aria-label="Item editing tools" className="planner-toolbar items-toolbar">
       {tools.map((tool) => (
@@ -158,34 +160,31 @@ export function ItemsToolbar({
                     ? hideWallsSelected
                     : undefined
             }
-            disabled={
-              (tool.id === 'delete' && !canUseSelectedModelTools) ||
-              (tool.id === 'copy' && !canUseSelectedModelTools)
-            }
+            disabled={tool.id === 'copy' && !canUseSelectedModelTools}
             onClick={() => {
               console.log(`${tool.label} button clicked.`);
-              if (tool.id === 'delete') {
-                onRemove();
-                const isRemoved = configuratorCore?.deleteModel();
-                console.log(isRemoved);
-              }
-              else if (tool.id === 'move' || tool.id === 'rotate') {
+              if (tool.id === 'move' || tool.id === 'rotate') {
                 onTransformToolChange(tool.id);
-                if (tool.id === "move") {
-                  configuratorCore?.setTransformMode("translate");
+                if (tool.id === 'move') {
+                  // The SDK accepts this value but does not export its enum.
+                  configuratorCore?.setTransformMode(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
+                    'translate' as Parameters<ConfiguratorCore['setTransformMode']>[0],
+                  );
                   configuratorCore?.setTransformSize(0.7);
-                  configuratorCore?.toggleTransformAxis("y", false);
-                  configuratorCore?.toggleTransformAxis("x", true);
-                  configuratorCore?.toggleTransformAxis("z", true);
+                  configuratorCore?.toggleTransformAxis('y', false);
+                  configuratorCore?.toggleTransformAxis('x', true);
+                  configuratorCore?.toggleTransformAxis('z', true);
+                } else {
+                  configuratorCore?.setTransformMode(
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
+                    'rotate' as Parameters<ConfiguratorCore['setTransformMode']>[0],
+                  );
+                  configuratorCore?.toggleTransformAxis('y', true);
+                  configuratorCore?.toggleTransformAxis('x', false);
+                  configuratorCore?.toggleTransformAxis('z', false);
                 }
-                else if (tool.id === "rotate") {
-                  configuratorCore?.setTransformMode("rotate");
-                  configuratorCore?.toggleTransformAxis("y", true);
-                  configuratorCore?.toggleTransformAxis("x", false);
-                  configuratorCore?.toggleTransformAxis("z", false);
-                }
-              }
-              else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
+              } else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
               else if (tool.id === 'copy') {
                 onCopy();
                 const isCopied = configuratorCore?.duplicateModel();
@@ -194,7 +193,7 @@ export function ItemsToolbar({
                 }
               }
               // else onHideWallsSelectedChange(!hideWallsSelected);
-              else if (tool.id === "hidewalls") {
+              else {
                 configuratorCore?.enableWallHiding(!hideWallsSelected);
                 onHideWallsSelectedChange(!hideWallsSelected);
               }

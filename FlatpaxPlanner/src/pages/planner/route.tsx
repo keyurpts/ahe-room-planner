@@ -86,15 +86,15 @@ export function Component() {
   const [items, setItems] = useState<readonly { product: CatalogueProduct; quantity: number }[]>(
     [],
   );
-  
+
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
-  
+
   function addItem(product: CatalogueProduct) {
     setItems((current) =>
       current.some((item) => item.product.id === product.id)
         ? current.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
+            item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+          )
         : [...current, { product, quantity: 1 }],
     );
     setAnnouncement(`${product.name} added to the item list.`);
@@ -129,7 +129,7 @@ export function Component() {
             : paths.design,
       ),
     )
-      .then(async () => {
+      .then(() => {
         // Reset panels after the destination commits so the launcher cannot flash on the old page.
         setCustomising(false);
       })
@@ -149,11 +149,10 @@ export function Component() {
         setAnnouncement('Unable to open the 3D design. Please try again.');
         return;
       }
-    }
-    else if (step === 'Walls & floors') {
-      configuratorCore?.enableWallColoringMode?.(false);
-      configuratorCore?.enableWallTextureMode?.(false);
-      configuratorCore?.enableWallMaterialResetMode?.(false);
+    } else if (step === 'Walls & floors') {
+      configuratorCore?.enableWallColoringMode(false);
+      configuratorCore?.enableWallTextureMode(false);
+      configuratorCore?.enableWallMaterialResetMode(false);
     }
     changeStep(
       step === 'Room setup'
@@ -248,9 +247,9 @@ export function Component() {
                 changeStep('Room setup');
                 floorPlanManager?.switchTo2D();
 
-                configuratorCore?.enableWallColoringMode?.(false);
-                configuratorCore?.enableWallTextureMode?.(false);
-                configuratorCore?.enableWallMaterialResetMode?.(false);
+                configuratorCore?.enableWallColoringMode(false);
+                configuratorCore?.enableWallTextureMode(false);
+                configuratorCore?.enableWallMaterialResetMode(false);
               }}
             >
               <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">

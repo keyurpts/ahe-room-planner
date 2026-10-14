@@ -15,14 +15,7 @@ interface Props {
   onItemList: () => void;
 }
 
-export function PlannerNavigation({
-  projectName,
-  step,
-  onStepChange,
-  onSave,
-  onItemList,
-  total,
-}: Props) {
+export function PlannerNavigation({ projectName, step, onSave, onItemList, total }: Props) {
   const formattedTotal = total === null ? 'Unavailable' : `$${total.toFixed(2)}`;
   return (
     <header className="planner-navigation" data-step={step}>
