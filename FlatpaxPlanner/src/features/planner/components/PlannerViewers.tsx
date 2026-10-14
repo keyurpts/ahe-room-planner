@@ -2,16 +2,21 @@ import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
 import { FloorplanManager, Predefined2DShapes } from 'configurator-library-wrapper';
 import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
+import { colorPresets, floorPresets, wallPresets } from '../finishes/presets';
+import { useLazyGetModelDownloadUrlQuery, useLazyGetTextureDownloadUrlQuery } from '../catalogue/catalogue-api';
 
 interface Props {
   viewer2DRef: RefObject<HTMLDivElement | null>;
   viewer3DRef: RefObject<HTMLDivElement | null>;
   mode: '2d' | '3d';
+  p2dJSON: any;
+  p3dJSON: any;
 }
 
-export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
+export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSON }: Props) => {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((state) => state.project.draft);
+  const shape = draft?.shape;
   const floorplanManager = useAppSelector((state) => state.configurator.floorPlanManager);
   const shape = draft?.shape;
 
@@ -55,21 +60,39 @@ export function PlannerViewers({ viewer2DRef, viewer3DRef, mode }: Props) {
     };
   }, [dispatch, viewer2DRef, viewer3DRef, shape]);
 
+  const isRoomDetected = () => {
+    console.log("is room detected");
+  }
+
   useEffect(() => {
+    const fetchData = async () => {
+      if (floorplanManager && draft && draft.shape !== "custom") {
+        if (draft.shape === "rectangle") {
+          floorplanManager.addPredefinedShape(Predefined2DShapes.RECTANGLE);
+        }
+        else if (draft.shape === "square") {
+          floorplanManager.addPredefinedShape(Predefined2DShapes.SQUARE);
+        }
+        else {
+          floorplanManager.addPredefinedShape(Predefined2DShapes.L_SHAPE);
+        }
+      }
+      else if (floorplanManager && draft && draft.shape === "custom") {
+        if (mode === "2d") {
+          const result2d = await floorplanManager!.importJson(p2dJSON);
+        }
+        else if (mode === "3d") {
+          const configuratorCoreInstance = floorplanManager.getConfiguratorCore();
+          const result2d = await floorplanManager!.importJson(p2dJSON);
+          const success = await floorplanManager?.switchTo3D(isRoomDetected);
+          const p3dJSON_updated = await enrichConfig3DWithRoomData(JSON.parse(p3dJSON));
+          const result3d = await configuratorCoreInstance!.import3DConfig(p3dJSON_updated);
+        }
+      }
+    };
 
-    if (floorplanManager && draft && draft.shape !== "custom") {
-      if (draft.shape === "rectangle") {
-        floorplanManager.addPredefinedShape(Predefined2DShapes.RECTANGLE);
-      }
-      else if (draft.shape === "square") {
-        floorplanManager.addPredefinedShape(Predefined2DShapes.SQUARE);
-      }
-      else {
-        floorplanManager.addPredefinedShape(Predefined2DShapes.L_SHAPE);
-      }
-    }
-
-  }, [draft?.shape, floorplanManager])
+    fetchData();
+  }, [draft?.shape, floorplanManager]);
 
   return (
     <>

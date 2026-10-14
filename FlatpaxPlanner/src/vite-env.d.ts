@@ -6,4 +6,6 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string | undefined;
   readonly VITE_ENABLE_ANALYTICS: string | undefined;
   readonly VITE_ANALYTICS_ID: string | undefined;
+  readonly VITE_DEV_LOGIN_EMAIL: string | undefined;
+  readonly VITE_DEV_LOGIN_PASSWORD: string | undefined;
 }
