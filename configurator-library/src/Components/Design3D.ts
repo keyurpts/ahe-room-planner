@@ -14,7 +14,7 @@ export class Design3D {
   /**
    * ConfiguratorCore instance handling the 3D scene, rendering, and camera controls.
    */
-  private core: ConfiguratorCore | undefined;
+  public core: ConfiguratorCore | undefined;
 
   /**
    * Converter instance for transforming 2D floorplan data into 3D objects.
@@ -70,15 +70,20 @@ export class Design3D {
    */
   constructor(container: HTMLDivElement) {
     // Initialize the 3D core
-    this.core = new ConfiguratorCore({
+    this.core = this.createConfiguratorCore(container);
+    // Instantiate the converter
+    this.converter = new Converter();
+    this.wallCutter = new WallCutter();
+  }
+
+  /** Public creation point for core extensions. */
+  public createConfiguratorCore(container: HTMLDivElement): ConfiguratorCore {
+    return new ConfiguratorCore({
       container: container,
       backgroundColor: 0xefefef,
       cameraType: "perspective",
       enableShadows: true,
     });
-    // Instantiate the converter
-    this.converter = new Converter();
-    this.wallCutter = new WallCutter();
   }
 
   /**

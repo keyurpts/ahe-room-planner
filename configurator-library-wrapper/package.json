@@ -26,7 +26,9 @@
   "devDependencies": {
     "vite": "8.3.3",
     "typescript": "5.9.3",
-    "@types/node": "^24.19.1"
+    "@types/node": "^24.19.1",
+    "konva": "^10.0.12",
+    "@types/three": "^0.176.0"
   },
   "engines": {
     "node": "^22.13.0 || >=24.0.0"

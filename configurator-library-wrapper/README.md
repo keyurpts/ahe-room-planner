@@ -1,14 +1,24 @@
 # Configurator library wrapper
 
-FlatpaxPlanner imports this package. This package consumes the fixed configurator-library npm package (named three-configurator) without changing its files.
+FlatpaxPlanner imports this package, which consumes configurator-library (npm package name: three-configurator).
 
-Run npm install, npm run build, and npm test. Build before starting FlatpaxPlanner. There is no demo or development server in this package.
+Run npm install, npm run build, and npm test. Build the base library first whenever its public API changes, then build this wrapper and start FlatpaxPlanner. There is no demo server.
 
-- src/FloorplanManager.ts: viewer lifecycle, room setup and frontend methods.
-- src/units.ts: display units and conversions moved from the modified library.
-- src/unit-bridge.ts: instance hooks needed because the fixed SDK does not expose unit-display extensions. These hooks depend on the current SDK implementation, validate at initialization, and are restored on disposal. They do not change physical drawing scale, SDK files, or prototypes.
-- src/index.ts: package entry point and SDK event/type forwarding.
+## Unit display
 
-The local file dependency is for development. Replace it with a tested immutable registry version before publishing. Vite leaves the SDK external to the wrapper bundle.
+FloorplanManager supplies wrapper-owned Design2DWrapper and Design3DWrapper instances through public SDK creation methods. Design3DWrapper supplies ConfiguratorCoreWrapper through the public core creation method.
 
-The comparison found other reference-only changes: worktops, automatic placement, collision behavior, lighting/ceilings, object-to-object measurements and serialization. They are not yet moved. Keep Frontend/Library/three-configurator as a reference until these features have been ported and verified; do not discard its changes wholesale.
+The wrapper overrides public dimension methods for 2D display/input conversion and the public measurement method for 3D labels. Physical drawing scale remains unchanged. No private-field casts, runtime method replacement, guarded SDK bridge, or prototype changes are used.
+
+The base library changes are limited to public access/export declarations and exposing its existing constructor calls as public creation methods. Their default implementations retain the original constructor arguments and behavior. All unit logic remains here.
+
+## Files
+
+- src/FloorplanManager.ts: wrapper entry point and lifecycle.
+- src/Design2DWrapper.ts: 2D display/input conversion.
+- src/Design3DWrapper.ts: creates the wrapper-owned 3D core.
+- src/ConfiguratorCoreWrapper.ts: 3D measurement label formatting.
+- src/units.ts: shared unit conversions.
+- src/room-templates.ts: predefined room orientations.
+
+Other modified-library features remain in Frontend/Library/three-configurator as reference material for later migration.

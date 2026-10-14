@@ -56,7 +56,7 @@ export class Design2D {
   /**
    *  Konva stage that manages the 2D canvas and coordinate system
    */
-  private stage: Konva.Stage;
+  public stage: Konva.Stage;
 
   /**
    * Group that holds all grid line elements
@@ -109,7 +109,7 @@ export class Design2D {
   /**
    * Unit conversion factor (e.g. 30/30 since 30 is the default grid size)
    */
-  private unit_conversion_factor: number = 1;
+  public unit_conversion_factor: number = 1;
 
   /**
    * Stores the last placed point while drawing walls
@@ -1007,7 +1007,7 @@ export class Design2D {
    * @param wallEditPoint - The edit reference point.
    * @returns True if the edit was successful, false otherwise.
    */
-  private editWallDimensions(
+  public editWallDimensions(
     wallGroup: Konva.Group,
     newLength: number,
     wallEditPoint: string
@@ -2503,7 +2503,7 @@ export class Design2D {
    *
    * @returns A Konva.Group containing the dimension or null if the wall is too short.
    */
-  private createDimension(
+  public createDimension(
     x1: number,
     y1: number,
     x2: number,
@@ -2975,7 +2975,7 @@ export class Design2D {
   /**
    * Refreshes all existing dimension labels on the floorplan.
    */
-  private refreshDimensions() {
+  public refreshDimensions() {
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (!floorplanLayer) return;
 
@@ -4880,7 +4880,7 @@ export class Design2D {
    *
    * @returns {void}
    */
-  private placePreview() {
+  public placePreview() {
     if (!this.previewGroup) return;
 
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);

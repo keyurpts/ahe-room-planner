@@ -1,71 +1,65 @@
-import { FloorplanManager as LibraryManager, type ConfiguratorCore, type RoomEditorMode } from 'three-configurator';
+import { FloorplanManager as LibraryManager } from 'three-configurator';
 import { LengthUnit, normalizeLengthUnit } from './units';
-import { installUnitBridge } from './unit-bridge';
+import { Design2DWrapper } from './Design2DWrapper';
+import { Design3DWrapper } from './Design3DWrapper';
+import { ConfiguratorCoreWrapper } from './ConfiguratorCoreWrapper';
 import { roomTemplate } from './room-templates';
 
 export type RoomShape = 'rectangle' | 'square' | 'l-top-left' | 'l-top-right' | 'l-bottom-left' | 'l-bottom-right';
 
-/** Frontend entry point. SDK ownership and application extensions live here. */
-export class FloorplanManager {
-  private manager: LibraryManager | null = null;
+/** The SDK owns base behavior; the wrapper supplies unit-aware viewers. */
+export class FloorplanManager extends LibraryManager {
+  private editor: Design2DWrapper | null = null;
+  private viewer: Design3DWrapper | null = null;
   private unit = LengthUnit.MM;
-  private unitBridge: ReturnType<typeof installUnitBridge> | null = null;
+  private initialized = false;
 
-  init(viewer2D: HTMLDivElement, viewer3D: HTMLDivElement): void {
-    if (this.manager) throw new Error('The configurator is already initialized.');
-    const manager = new LibraryManager();
+  override createDesign2D(container: HTMLDivElement): Design2DWrapper {
+    this.editor = new Design2DWrapper(container);
+    this.editor.setLengthUnit(this.unit);
+    return this.editor;
+  }
+
+  override createDesign3D(container: HTMLDivElement): Design3DWrapper {
+    this.viewer = new Design3DWrapper(container);
+    this.viewer.core?.setLengthUnit(this.unit);
+    return this.viewer;
+  }
+
+  override init(viewer2D: HTMLDivElement, viewer3D: HTMLDivElement): void {
+    if (this.initialized) throw new Error('The configurator is already initialized.');
     try {
-      manager.init(viewer2D, viewer3D);
-      const core = manager.getConfiguratorCore();
-      if (!core) throw new Error('The configurator core could not be initialized.');
-      this.unitBridge = installUnitBridge(manager, core, () => this.unit);
-      this.manager = manager;
-      this.unitBridge.refresh();
+      super.init(viewer2D, viewer3D);
+      this.initialized = true;
     } catch (error) {
-      manager.dispose();
-      this.manager = null;
-      this.unitBridge = null;
+      this.dispose();
       throw error;
     }
   }
 
   createRoom(shape: RoomShape): void {
-    const manager = this.getManager();
-    manager.switchTo2D();
-    manager.clear2DLayout();
-    manager.addPredefinedShape(roomTemplate(shape));
-    this.unitBridge!.placeRoom();
-    manager.fitToView();
+    if (!this.editor || !this.initialized) throw new Error('Call init() before creating a room.');
+    this.switchTo2D();
+    this.clear2DLayout();
+    this.addPredefinedShape(roomTemplate(shape));
+    this.editor.placePreview();
+    this.fitToView();
   }
 
   getLengthUnit(): LengthUnit { return this.unit; }
+
   setLengthUnit(unit: LengthUnit | string): void {
     this.unit = normalizeLengthUnit(unit);
-    this.unitBridge?.refresh();
+    this.editor?.setLengthUnit(this.unit);
+    this.viewer?.core?.setLengthUnit(this.unit);
   }
-  getConfiguratorCore(): ConfiguratorCore | undefined { return this.manager?.getConfiguratorCore(); }
-  set on2DModeChange(callback: ((mode: RoomEditorMode | null) => void) | undefined) {
-    this.getManager().on2DModeChange = callback;
-  }
-  set2DMode(mode: RoomEditorMode | string, active: boolean): void { this.getManager().set2DMode(mode, active); }
-  enableSnapping(enabled: boolean): boolean { return this.getManager().enableSnapping(enabled); }
-  deleteSelectedEntity(): void { this.getManager().deleteSelectedEntity(); }
-  clear2DLayout(): void { this.getManager().clear2DLayout(); }
-  fitToView(): void { this.getManager().fitToView(); }
-  switchTo2D(): void { this.getManager().switchTo2D(); }
-  async switchTo3D(callback?: (detected: boolean) => void): Promise<boolean> {
-    const result = await this.getManager().switchTo3D(callback);
-    this.unitBridge?.refresh();
-    return result;
-  }
-  dispose(): void {
-    this.unitBridge?.dispose();
-    this.unitBridge = null;
-    this.manager?.dispose();
-    this.manager = null;
-  }
-  private getManager(): LibraryManager {
-    if (!this.manager) throw new Error('Call init() before using the configurator.');
-    return this.manager;
+
+  override getConfiguratorCore(): ConfiguratorCoreWrapper | undefined { return this.viewer?.core; }
+
+  override dispose(): void {
+    super.dispose();
+    this.editor = null;
+    this.viewer = null;
+    this.initialized = false;
   }
 }
