@@ -16,10 +16,7 @@ interface Props {
 export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSON }: Props) => {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((state) => state.project.draft);
-  const shape = draft?.shape;
   const floorplanManager = useAppSelector((state) => state.configurator.floorPlanManager);
-  const shape = draft?.shape;
-
 
   useEffect(() => {
     console.log('2D viewer ref.current:', viewer2DRef.current);
@@ -32,7 +29,6 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
     const floorPlanManagerInstance = new FloorplanManager();
     try {
       floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
-      if (shape) floorPlanManagerInstance.createRoom(shape);
     } catch (error) {
       floorPlanManagerInstance.dispose();
       throw error;
@@ -58,7 +54,7 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
       dispatch(setFloorPlanManager(null));
       dispatch(setConfiguratorCore(null));
     };
-  }, [dispatch, viewer2DRef, viewer3DRef, shape]);
+  }, [dispatch, viewer2DRef, viewer3DRef]);
 
   const isRoomDetected = () => {
     console.log("is room detected");
