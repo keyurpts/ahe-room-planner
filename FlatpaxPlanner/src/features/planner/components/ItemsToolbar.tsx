@@ -9,7 +9,13 @@ import measure from '@/assets/icons/measure.svg';
 // import { Fragment, useState } from 'react';
 // import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
 import { Fragment, useEffect, useState } from 'react';
-import { ConfiguratorEventType, Events, LengthUnit, type ConfiguratorCore } from 'three-configurator';
+import {
+  ConfiguratorEventType,
+  Events,
+  LengthUnit,
+  TransformControlsMode,
+  type ConfiguratorCore,
+} from 'three-configurator';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
@@ -50,7 +56,7 @@ const tools = [
   { id: 'rotate', label: 'Rotate item', icon: rotate, hoverIcon: rotateHover },
   { id: 'replace', label: 'Replace item', icon: flip, hoverIcon: swapHover },
   { id: 'copy', label: 'Copy item', icon: images, hoverIcon: duplicateHover },
-
+  { id: 'delete', label: 'Delete item', icon: remove, hoverIcon: deleteHover },
   { id: 'hidewalls', label: 'Hide walls', icon: hide, hoverIcon: wallhideHover },
 ] as const;
 export type ItemsTool = (typeof tools)[number]['id'];
@@ -99,12 +105,24 @@ export function ItemsToolbar({
     if (!configuratorCore) return;
     const handleModelSelected = (metadata: unknown) => {
       setHasSelectedModel(metadata !== null && metadata !== undefined);
+      if (transformTool === 'move') {
+        configuratorCore.setTransformMode(TransformControlsMode.TRANSLATE);
+        configuratorCore.setTransformSize(0.7);
+        configuratorCore.toggleTransformAxis('y', false);
+        configuratorCore.toggleTransformAxis('x', true);
+        configuratorCore.toggleTransformAxis('z', true);
+      } else {
+        configuratorCore.setTransformMode(TransformControlsMode.ROTATE);
+        configuratorCore.toggleTransformAxis('y', true);
+        configuratorCore.toggleTransformAxis('x', false);
+        configuratorCore.toggleTransformAxis('z', false);
+      }
     };
     Events.on(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
     return () => {
       Events.off(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
     };
-  }, [configuratorCore]);
+  }, [configuratorCore, transformTool]);
   function changeMeasurement(mode: MeasurementMode | null) {
     if (!configuratorCore?.isModelSelected()) {
       setMessage('Select an item in the viewer to show its measurements.');
@@ -171,18 +189,17 @@ export function ItemsToolbar({
               }
               else if (tool.id === 'move' || tool.id === 'rotate') {
                 onTransformToolChange(tool.id);
-                if (tool.id === "move") {
-                  configuratorCore?.setTransformMode("translate");
+                if (tool.id === 'move') {
+                  configuratorCore?.setTransformMode(TransformControlsMode.TRANSLATE);
                   configuratorCore?.setTransformSize(0.7);
-                  configuratorCore?.toggleTransformAxis("y", false);
-                  configuratorCore?.toggleTransformAxis("x", true);
-                  configuratorCore?.toggleTransformAxis("z", true);
-                }
-                else if (tool.id === "rotate") {
-                  configuratorCore?.setTransformMode("rotate");
-                  configuratorCore?.toggleTransformAxis("y", true);
-                  configuratorCore?.toggleTransformAxis("x", false);
-                  configuratorCore?.toggleTransformAxis("z", false);
+                  configuratorCore?.toggleTransformAxis('y', false);
+                  configuratorCore?.toggleTransformAxis('x', true);
+                  configuratorCore?.toggleTransformAxis('z', true);
+                } else {
+                  configuratorCore?.setTransformMode(TransformControlsMode.ROTATE);
+                  configuratorCore?.toggleTransformAxis('y', true);
+                  configuratorCore?.toggleTransformAxis('x', false);
+                  configuratorCore?.toggleTransformAxis('z', false);
                 }
               }
               else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
@@ -241,7 +258,7 @@ export function ItemsToolbar({
           </>
         }
       />
-      <button
+      {/* <button
         type="button"
         aria-label="Delete item"
         title="Delete item"
@@ -250,7 +267,7 @@ export function ItemsToolbar({
       >
         <img src={remove} width={52} height={52} alt="" className="item-tool-default" />
         <img src={deleteHover} width={52} height={52} alt="" className="item-tool-hover" />
-      </button>
+      </button> */}
       <UnitSelector
         unit={unit}
         onChange={(next) => {
