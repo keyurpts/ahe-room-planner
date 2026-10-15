@@ -113,6 +113,10 @@ function thumbnail(value: unknown): Thumbnail {
   if (!Number.isFinite(Date.parse(expiresAt))) throw new Error('Invalid thumbnail expiry date.');
   return { downloadUrl, expiresAt };
 }
+const thumbnailObjectUrls = new Map<string, string>();
+const thumbnailKey = (arg: { categoryId: string; modelId: string; textureId: string }) =>
+  JSON.stringify([arg.categoryId, arg.modelId, arg.textureId]);
+
 export const catalogueApi = createApi({
   reducerPath: 'catalogueApi',
   baseQuery: async (
@@ -146,25 +150,48 @@ export const catalogueApi = createApi({
       Thumbnail,
       { categoryId: string; modelId: string; textureId: string }
     >({
-      query: ({ categoryId, modelId, textureId }) => ({
-        path: `/storage/thumbnails/${encodeURIComponent(categoryId)}/${encodeURIComponent(modelId)}/${encodeURIComponent(textureId)}/download-url`,
-        parse: thumbnail,
-      }),
-      keepUnusedDataFor: 0,
+      async queryFn({ categoryId, modelId, textureId }, { signal }) {
+        try {
+          const signed = await apiClient.request(
+            `/storage/thumbnails/${encodeURIComponent(categoryId)}/${encodeURIComponent(modelId)}/${encodeURIComponent(textureId)}/download-url`,
+            { parse: thumbnail, signal },
+          );
+          const response = await fetch(signed.downloadUrl, { signal });
+          if (!response.ok) throw new Error('Unable to download thumbnail.');
+          const blob = await response.blob();
+          const key = thumbnailKey({ categoryId, modelId, textureId });
+          const previous = thumbnailObjectUrls.get(key);
+          const downloadUrl = URL.createObjectURL(blob);
+          thumbnailObjectUrls.set(key, downloadUrl);
+          if (previous) URL.revokeObjectURL(previous);
+          return { data: { ...signed, downloadUrl } };
+        } catch (error) {
+          return { error: { message: error instanceof Error ? error.message : 'Thumbnail request failed.' } };
+        }
+      },
+      // Cache the downloaded image per category/model/texture, including across colour switches.
+      keepUnusedDataFor: 30 * 60,
+      async onCacheEntryAdded(arg, { cacheEntryRemoved }) {
+        await cacheEntryRemoved;
+        const key = thumbnailKey(arg);
+        const url = thumbnailObjectUrls.get(key);
+        if (url) URL.revokeObjectURL(url);
+        thumbnailObjectUrls.delete(key);
+      },
     }),
     getModelDownloadUrl: builder.query<DownloadUrl, string>({
       query: (modelId) => ({
         path: `/storage/${encodeURIComponent(modelId)}/download-url`,
         parse: parseDownloadUrl,
       }),
-      keepUnusedDataFor: 0,
+      keepUnusedDataFor: 60,
     }),
     getTextureDownloadUrl: builder.query<TextureDownloadUrl, { textureId: string }>({
       query: ({ textureId }) => ({
         path: `/storage/${encodeURIComponent(textureId)}/texture/download-url`,
         parse: parseTextureDownloadUrl,
       }),
-      keepUnusedDataFor: 0,
+      keepUnusedDataFor: 60,
     }),
   }),
 });

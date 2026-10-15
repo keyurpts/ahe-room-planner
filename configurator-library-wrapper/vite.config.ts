@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   build: {
     lib: {
-      entry: { index: fileURLToPath(new URL('./src/index.ts', import.meta.url)), units: fileURLToPath(new URL('./src/units.ts', import.meta.url)) },
+      entry: { index: fileURLToPath(new URL('./src/index.ts', import.meta.url)), units: fileURLToPath(new URL('./src/units.ts', import.meta.url)), background: fileURLToPath(new URL('./src/background.ts', import.meta.url)) },
       formats: ['es'],
       fileName: (_format, name) => name + '.js',
     },

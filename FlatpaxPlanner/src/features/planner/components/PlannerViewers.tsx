@@ -47,12 +47,11 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
 
   /**
    * Enriches a single config3D entry (leaf node with children: []) with signed url and modelData
-   * using /api/storage/{modelId}/download-url and roomConfig fallback lookup. Mutates the entry in place.
+   * using /api/storage/{modelId}/download-url. Mutates the entry in place.
    */
   async function enrichLeafEntry(
     key: string,
     entry: any,
-    // lookup: Map<string, any>,
     cache: Map<string, Promise<string>>
   ): Promise<void> {
     if (!Array.isArray(entry.children) || entry.children.length !== 0) return;
@@ -70,10 +69,8 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
       cache.set(modelId, request);
     }
     const signedUrl = await request;
-    if (signedUrl) {
-      entry.url = signedUrl;
-      entry.uri = signedUrl;
-    }
+    entry.url = signedUrl;
+    entry.uri = signedUrl;
     if (!entry.modelData) {
       entry.modelData = {
         id: modelId,
@@ -91,30 +88,24 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
     const downloadUrlCache = new Map<string, Promise<string>>();
     const textureUrlCache = new Map<string, Promise<string | null>>();
     const enrichPromises: Promise<void>[] = [];
+    const enrichModel = async (key: string, entry: any): Promise<void> => {
+      await enrichLeafEntry(key.replace(/_node\d+$/, ''), entry, downloadUrlCache);
+      await enrichTextureEntry(entry, textureUrlCache);
+    };
 
     for (const [key, entry] of Object.entries(config3D)) {
       if (!entry || typeof entry !== "object") continue;
 
       if (Array.isArray(entry.children) && entry.children.length === 0) {
         // Leaf model — enrich directly
-        const keyUpdated = key.replace(/_node\d+$/, "");
-        enrichPromises.push(
-          enrichLeafEntry(keyUpdated, entry, downloadUrlCache).then(() => {
-            return enrichTextureEntry(entry, textureUrlCache);
-          })
-        );
+        enrichPromises.push(enrichModel(key, entry));
       } else if (Array.isArray(entry.children) && entry.children.length > 0) {
         // Group — enrich each child object
         for (const childObj of entry.children) {
           if (childObj && typeof childObj === "object") {
             for (const [childKey, childEntry] of Object.entries(childObj)) {
               if (childEntry && typeof childEntry === "object") {
-                const childKeyUpdated = childKey.replace(/_node\d+$/, "");
-                enrichPromises.push(
-                  enrichLeafEntry(childKeyUpdated, childEntry as any, downloadUrlCache).then(() => {
-                    return enrichTextureEntry(childEntry, textureUrlCache);
-                  })
-                );
+                enrichPromises.push(enrichModel(childKey, childEntry));
               }
             }
           }
@@ -228,14 +219,14 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
       }
       else if (floorplanManager && draft && draft.shape === "custom") {
         if (mode === "2d") {
-          const result2d = await floorplanManager!.importJson(p2dJSON);
+          await floorplanManager!.importJson(p2dJSON);
         }
         else if (mode === "3d") {
           const configuratorCoreInstance = floorplanManager.getConfiguratorCore();
-          const result2d = await floorplanManager!.importJson(p2dJSON);
-          const success = await floorplanManager?.switchTo3D(isRoomDetected);
+          await floorplanManager!.importJson(p2dJSON);
+          await floorplanManager?.switchTo3D(isRoomDetected);
           const p3dJSON_updated = await enrichConfig3DWithRoomData(JSON.parse(p3dJSON));
-          const result3d = await configuratorCoreInstance!.import3DConfig(p3dJSON_updated);
+          await configuratorCoreInstance!.import3DConfig(p3dJSON_updated);
         }
       }
     };

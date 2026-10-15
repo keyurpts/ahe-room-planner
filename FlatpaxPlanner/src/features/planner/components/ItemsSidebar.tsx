@@ -85,24 +85,10 @@ function Product({
   const [getModelDownloadUrl] = useLazyGetModelDownloadUrlQuery();
   const thumbnail = useGetThumbnailQuery(
     { categoryId: model.categoryId, modelId: model.id, textureId: variant.textureId },
-    { skip: !variant.thumbnailPath, refetchOnMountOrArgChange: true },
+    { skip: !variant.thumbnailPath, refetchOnFocus: false, refetchOnReconnect: false },
   );
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const { data: thumbnailData, isError: thumbnailError, refetch: refetchThumbnail } = thumbnail;
-  useEffect(() => {
-    if (!thumbnailData || thumbnailError) return;
-    const delay = Date.parse(thumbnailData.expiresAt) - Date.now() - 30_000;
-    if (delay <= 0) return;
-    const timer = setTimeout(
-      () => {
-        void refetchThumbnail();
-      },
-      Math.min(delay, 2_147_483_647),
-    );
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [thumbnailData, thumbnailError, refetchThumbnail]);
+  const refetchThumbnail = thumbnail.refetch;
 
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const downloadUrl = thumbnail.currentData?.downloadUrl;
@@ -121,7 +107,7 @@ function Product({
     onSelect(product.id);
     onAdd(product);
     try {
-      const { downloadUrl } = await getModelDownloadUrl(model.id).unwrap();
+      const { downloadUrl } = await getModelDownloadUrl(model.id, true).unwrap();
       console.log('Model download URL:', downloadUrl);
 
       const modelData = {
@@ -291,24 +277,38 @@ export function ItemsSidebar({
   const activeTexture =
     textures.data?.find((item) => item.id === texture)?.id ?? textures.data?.[0]?.id;
   useEffect(() => {
+    if (!active || !configuratorCore || !activeTexture) return;
+    void getTextureDownloadUrl({ textureId: activeTexture }, true).unwrap()
+      .then((response) => {
+        if (response?.downloadUrl) {
+          return configuratorCore.preloadTexture(response.downloadUrl, activeTexture);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Unable to preload the selected cupboard texture.', error);
+      });
+  }, [active, activeTexture, configuratorCore, getTextureDownloadUrl]);
+  useEffect(() => {
     if (!configuratorCore) return;
     const handleModelPlaced = (metadata: unknown) => {
       const textureId = pendingTextureId.current;
       if (!metadata || !textureId) return;
       pendingTextureId.current = null;
+      const placedModelId = configuratorCore.getModelId();
       console.log('selected texture', textureId);
 
-      void getTextureDownloadUrl({ textureId })
+      void getTextureDownloadUrl({ textureId }, true)
         .unwrap()
-        .then(({ downloadUrl }) => {
+        .then((response) => {
+          const downloadUrl = response?.downloadUrl;
           if (!downloadUrl) {
             console.warn('The selected cupboard texture has no download URL.');
             return;
           }
           console.log('Cupboard texture download URL:', downloadUrl);
-          setTimeout(() => {
+          if (configuratorCore.getModelId() === placedModelId) {
             configuratorCore.applyTextureToModel(downloadUrl, textureId);
-          }, 100);
+          }
         })
         .catch((error: unknown) => {
           console.error('Unable to get the cupboard texture download URL.', error);

@@ -1,10 +1,123 @@
-import { ConfiguratorCore } from 'three-configurator';
-import type { Sprite } from 'three';
+import { restoreTexture } from './restore-texture';
+import { TextureLoader, RepeatWrapping, type Texture } from 'three';
+import { prefetchModels } from './model-prefetch';
+import { ConfiguratorCore, Events, ConfiguratorEventType } from 'three-configurator';
+import type { Sprite, Object3D } from 'three';
 import { LengthUnit, formatLength } from './units';
 import { removeGroundPlane } from './background';
 
 /** Application-specific scene behavior and measurement formatting. */
 export class ConfiguratorCoreWrapper extends ConfiguratorCore {
+  private trackedModels = new Set<WeakRef<Object3D>>();
+  private trackModelLoads = false;
+
+  private selectedTextureTarget(): Object3D | undefined {
+    const id = this.getModelId();
+    if (!id) return undefined;
+    for (const reference of this.trackedModels) {
+      const model = reference.deref();
+      if (!model) { this.trackedModels.delete(reference); continue; }
+      if (model.parent && model.userData.metadata?.id === id) return model;
+    }
+    return undefined;
+  }
+
+  private restoredTextures = new Map<string, Promise<Texture>>();
+  private textureWork: Promise<void> = Promise.resolve();
+  private textureGeneration = 0;
+
+  override applyTextureToModel(...args: Parameters<ConfiguratorCore['applyTextureToModel']>): void {
+    const [url, id, price, explicitModel] = args;
+    const model = explicitModel ?? this.selectedTextureTarget();
+    if (!model) {
+      super.applyTextureToModel(...args);
+      return;
+    }
+    const generation = this.textureGeneration;
+    this.textureWork = this.textureWork.then(async () => {
+      if (generation !== this.textureGeneration || !model.parent) return;
+      const texture = await this.preloadTexture(url, id);
+      if (generation === this.textureGeneration && model.parent) {
+        await restoreTexture(model, texture, id, price);
+        if (!this.modelDownloads) Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
+      }
+    }).catch(error => { console.error('Unable to apply model texture.', error); });
+  }
+
+  /** Warm a cupboard finish once per texture ID, even if its signed URL changes. */
+  preloadTexture(url: string, id: string): Promise<Texture> {
+    let request = this.restoredTextures.get(id);
+    if (!request) {
+      const generation = this.textureGeneration;
+      request = new TextureLoader().loadAsync(url).then(texture => {
+        texture.wrapS = texture.wrapT = RepeatWrapping;
+        texture.repeat.set(2, 2);
+        texture.anisotropy = 16;
+        if (generation !== this.textureGeneration) texture.dispose();
+        return texture;
+      }).catch(error => { this.restoredTextures.delete(id); throw error; });
+      this.restoredTextures.set(id, request);
+    }
+    return request;
+  }
+
+  private modelFiles = new Map<string, Promise<string>>();
+
+  override dispose(): void {
+    this.textureGeneration++;
+    super.dispose();
+    this.restoredTextures.forEach(request => { void request.then(texture => texture.dispose()).catch(() => {}); });
+    this.restoredTextures.clear();
+    this.trackedModels.clear();
+    this.modelFiles.forEach(request => { void request.then(url => {
+      if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+    }).catch(() => {}); });
+    this.modelFiles.clear();
+  }
+
+  private modelDownloads: ReturnType<typeof prefetchModels> | null = null;
+
+  override async import3DConfig(config: Parameters<ConfiguratorCore['import3DConfig']>[0]) {
+    const prepared = prefetchModels(typeof config === 'string' ? JSON.parse(config) : config, fetch, this.modelFiles);
+    this.modelDownloads = prepared;
+    let result: Awaited<ReturnType<ConfiguratorCore['import3DConfig']>>;
+    try {
+      result = await super.import3DConfig(prepared.config);
+    } finally {
+      await this.textureWork;
+      this.modelDownloads = null;
+      await prepared.release();
+    }
+    Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
+    return result;
+  }
+
+  override async loadModel(...args: Parameters<ConfiguratorCore['loadModel']>) {
+    // Observe the public loader result, including cache hits and preview models.
+    // Capture the actual object before the core assigns metadata and places it.
+    if (!this.trackModelLoads) {
+      const loader = this.getAssetLoader();
+      const load = loader.loadGLB.bind(loader);
+      loader.loadGLB = async (...parameters: Parameters<typeof load>) => {
+        const model = await load(...parameters);
+        this.trackedModels.add(new WeakRef(model));
+        return model;
+      };
+      this.trackModelLoads = true;
+    }
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    const ownDownload = this.modelDownloads ? null : prefetchModels({ model: {
+      url: args[0], children: [], modelData: args[6],
+    } }, fetch, this.modelFiles);
+    try {
+      const url = await (this.modelDownloads ?? ownDownload)!.resolveUrl(args[0]);
+      const [, isPreview, position, rotation, callbacks, isSelectable, metadata] = args;
+      return await super.loadModel(url, isPreview, position, rotation, callbacks, isSelectable, metadata);
+    } finally {
+      await ownDownload?.release();
+    }
+  }
+
   private solidBackgroundColor = 0xffffff;
 
   override async loadEnvironmentMap(...args: Parameters<ConfiguratorCore['loadEnvironmentMap']>): Promise<void> {
