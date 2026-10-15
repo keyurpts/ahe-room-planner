@@ -17,6 +17,152 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
   const dispatch = useAppDispatch();
   const draft = useAppSelector((state) => state.project.draft);
   const floorplanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+  const [getModelDownloadUrl] = useLazyGetModelDownloadUrlQuery();
+  const [getTextureDownloadUrl] = useLazyGetTextureDownloadUrlQuery();
+  
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function enrichTextureEntry(
+    entry: any,
+    textureLookup: Map<string, any> | null
+  ): void {
+    if (!Array.isArray(entry.children) || entry.children.length !== 0) {
+      return;
+    }
+    const textureId = entry.textureId;
+    if (!textureId) {
+      return;
+    }
+    // in place of this make API using texture Id and append the url from response
+    void getTextureDownloadUrl({ textureId })
+      .unwrap()
+      .then(({ downloadUrl }) => {
+        if (!downloadUrl) {
+          console.warn('The selected cupboard texture has no download URL.');
+          return;
+        }
+        entry.textureUrl = downloadUrl;
+      })
+      .catch((error: unknown) => {
+        console.error('Unable to get the cupboard texture download URL.', error);
+      });
+  }
+
+  /**
+   * Enriches a single config3D entry (leaf node with children: []) with signed url and modelData
+   * using /api/storage/{modelId}/download-url and roomConfig fallback lookup. Mutates the entry in place.
+   */
+  async function enrichLeafEntry(
+    key: string,
+    entry: any,
+    // lookup: Map<string, any>,
+    cache?: Map<string, Promise<string | null>>
+  ): Promise<void> {
+    if (!Array.isArray(entry.children) || entry.children.length !== 0) return;
+    const modelId = entry.modelData?.id || entry.id || key;
+    const { downloadUrl } = await getModelDownloadUrl(modelId).unwrap();
+    const signedUrl = downloadUrl;
+    if (signedUrl) {
+      entry.url = signedUrl;
+      entry.uri = signedUrl;
+    }
+    if (!entry.modelData) {
+      entry.modelData = {
+        id: modelId,
+        name: entry.name || modelId,
+        format: "glb",
+      };
+    }
+  }
+
+  /**
+   * Walks the config3D object and enriches all leaf models (children: []) with signed url from
+   * /api/storage/{modelId}/download-url and modelData. Handles both top-level entries and nested children within groups.
+   */
+  async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promise<Record<string, any>> {
+    const downloadUrlCache = new Map<string, Promise<string | null>>();
+    const enrichPromises: Promise<void>[] = [];
+
+    for (const [key, entry] of Object.entries(config3D)) {
+      if (!entry || typeof entry !== "object") continue;
+
+      if (Array.isArray(entry.children) && entry.children.length === 0) {
+        // Leaf model — enrich directly
+        const keyUpdated = key.replace(/_node\d+$/, "");
+        enrichPromises.push(
+          enrichLeafEntry(keyUpdated, entry, downloadUrlCache).then(() => {
+            // enrichTextureEntry(entry, textureLookup);
+            enrichTextureEntry(entry, null);
+          })
+        );
+      } else if (Array.isArray(entry.children) && entry.children.length > 0) {
+        // Group — enrich each child object
+        for (const childObj of entry.children) {
+          if (childObj && typeof childObj === "object") {
+            for (const [childKey, childEntry] of Object.entries(childObj)) {
+              if (childEntry && typeof childEntry === "object") {
+                const childKeyUpdated = childKey.replace(/_node\d+$/, "");
+                enrichPromises.push(
+                  enrichLeafEntry(childKeyUpdated, childEntry as any, downloadUrlCache).then(() => {
+                    // enrichTextureEntry(childEntry as any, textureLookup);
+                    enrichTextureEntry(childEntry as any, null);
+                  })
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+
+    await Promise.all(enrichPromises);
+
+    // Enrich walls if present by searching finishId in wallPresets, colorPresets, and floorPresets
+    const wallsList = Array.isArray(config3D.walls)
+      ? config3D.walls
+      : config3D.walls && typeof config3D.walls === "object"
+        ? Object.values(config3D.walls)
+        : [];
+
+    for (const wall of wallsList) {
+      if (wall && Array.isArray(wall.materials)) {
+        for (const material of wall.materials) {
+          if (material && material.finishId) {
+            const wallPreset = wallPresets.find((p) => p.id === material.finishId);
+            if (wallPreset) {
+              material.url = wallPreset.url;
+            } else {
+              const colorPreset = colorPresets.find((c) => c.id === material.finishId);
+              if (colorPreset) {
+                material.url = colorPreset.color;
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+    const floor = config3D.floor;
+    if (floor) {
+      const floorPreset = floorPresets.find((f) => f.id === floor.floorId);
+      if (floorPreset) {
+        floor.url = floorPreset.url;
+        floor.repeatX = floorPreset.repeatX;
+        floor.repeatY = floorPreset.repeatY;
+      }
+      else {
+        const colorPreset = colorPresets.find((c) => c.id === floor.floorId);
+        if (colorPreset) {
+          floor.url = colorPreset.color;
+        }
+      }
+    }
+
+    return config3D;
+  }
+
+  // //////////////////////////////////////////////////////////////////////////////////////////////
 
   useEffect(() => {
     console.log('2D viewer ref.current:', viewer2DRef.current);
