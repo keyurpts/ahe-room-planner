@@ -16,5 +16,9 @@ namespace AHE.DAL.Interfaces.Repositories
         Task UpdateAsync(Project project);
 
         Task<Project?> GetByIdAsync(Guid id);
+
+        Task<string> GenerateUniqueDesignCodeAsync();
+
+        Task<Project?> GetByDesignCodeAsync(string designCode);
     }
 }

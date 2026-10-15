@@ -8,7 +8,7 @@ namespace AHE.PL.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _projectService;
@@ -51,7 +51,7 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet("my")]
-    [Authorize]
+    //[Authorize]
     public async Task<ActionResult<IEnumerable<ProjectDto>>> GetMyProjects()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -120,5 +120,21 @@ public class ProjectsController : ControllerBase
         }
 
         return Ok(project);
+    }
+
+    [HttpGet("{designCode}")]
+    public async Task<IActionResult> GetByDesignCode(string designCode)
+    {
+        var design = await _projectService.GetByDesignCodeAsync(designCode);
+
+        if (design == null)
+        {
+            return NotFound(new
+            {
+                message = $"Design with code '{designCode}' was not found."
+            });
+        }
+
+        return Ok(design);
     }
 }

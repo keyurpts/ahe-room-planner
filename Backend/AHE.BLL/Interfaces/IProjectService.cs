@@ -25,5 +25,7 @@ namespace AHE.BLL.Interfaces
           Guid projectId,
           Guid userId,
           UpdateProject3DJsonRequest request);
+
+        Task<ProjectDto?> GetByDesignCodeAsync(string designCode);
     }
 }

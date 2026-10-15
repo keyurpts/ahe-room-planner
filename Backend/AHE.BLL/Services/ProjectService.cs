@@ -2,8 +2,10 @@
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace AHE.BLL.Services
@@ -60,6 +62,8 @@ namespace AHE.BLL.Services
 
             var now = DateTime.UtcNow;
 
+            var designCode = await _projectRepository.GenerateUniqueDesignCodeAsync();
+
             var project = new Project
             {
                 Id = Guid.NewGuid(),
@@ -79,7 +83,10 @@ namespace AHE.BLL.Services
 
                 Status = "Active",
 
+                DesignCode = designCode,
+
                 CreatedAt = now,
+
                 UpdatedAt = now,
 
                 DeletedAt = null
@@ -102,7 +109,37 @@ namespace AHE.BLL.Services
 
                 CreatedAt = createdProject.CreatedAt,
 
-                UpdatedAt = createdProject.UpdatedAt
+                UpdatedAt = createdProject.UpdatedAt,
+
+                DesignCode = createdProject.DesignCode,
+            };
+        }
+
+        public async Task<ProjectDto?> GetByDesignCodeAsync(string designCode)
+        {
+            var createdProject = await _projectRepository.GetByDesignCodeAsync(designCode);
+
+            return new ProjectDto
+            {
+                Id = createdProject.Id,
+
+                ProjectName = createdProject.ProjectName,
+
+                UserId = createdProject.UserId,
+
+                RegionId = createdProject.RegionId,
+
+                Status = createdProject.Status,
+
+                CreatedAt = createdProject.CreatedAt,
+
+                UpdatedAt = createdProject.UpdatedAt,
+
+                DesignCode = createdProject.DesignCode,
+
+                Project2DJson = createdProject.Project2DJson,
+
+                Project3DJson = createdProject.Project3DJson,
             };
         }
 
