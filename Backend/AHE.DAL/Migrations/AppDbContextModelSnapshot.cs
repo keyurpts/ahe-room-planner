@@ -226,6 +226,10 @@ namespace AHE.DAL.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DesignCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<JsonDocument>("Project2DJson")
                         .IsRequired()
                         .HasColumnType("jsonb");

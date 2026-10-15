@@ -24,6 +24,8 @@ namespace AHE.BLL.DTOs.Projects
 
             public string Status { get; set; } = null!;
 
+            public string DesignCode { get; set; } = null!;
+
             public DateTime CreatedAt { get; set; }
 
             public DateTime UpdatedAt { get; set; }

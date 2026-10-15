@@ -36,6 +36,9 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.DesignCode)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

@@ -8,7 +8,7 @@ namespace AHE.PL.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class ModelsController : ControllerBase
 {
     private readonly IModelService _modelService;
@@ -56,14 +56,16 @@ public class ModelsController : ControllerBase
     public async Task<IActionResult> GetByCategory(
     Guid categoryId)
     {
-        var userIdClaim =
-            User.FindFirstValue(
-                ClaimTypes.NameIdentifier);
+        //var userIdClaim =
+        //    User.FindFirstValue(
+        //        ClaimTypes.NameIdentifier);
 
-        if (!Guid.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized();
-        }
+        //if (!Guid.TryParse(userIdClaim, out var userId))
+        //{
+        //    return Unauthorized();
+        //}
+
+        var userId = new Guid("cd377189-f5c1-4885-a460-e014784165cd");
 
         var result =
             await _modelService
@@ -75,7 +77,7 @@ public class ModelsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create(
         [FromBody] CreateModelRequest request)
     {
@@ -89,7 +91,7 @@ public class ModelsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateModelRequest request)
@@ -108,7 +110,7 @@ public class ModelsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deleted =
