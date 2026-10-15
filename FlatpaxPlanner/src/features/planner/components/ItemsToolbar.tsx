@@ -6,8 +6,6 @@ import remove from '@/assets/icons/delete.svg';
 import hide from '@/assets/icons/wall-hide.svg';
 import view from '@/assets/icons/camera.svg';
 import measure from '@/assets/icons/measure.svg';
-// import { Fragment, useState } from 'react';
-// import { LengthUnit, type ConfiguratorCore } from 'configurator-library-wrapper';
 import { Fragment, useEffect, useState } from 'react';
 import {
   ConfiguratorEventType,
@@ -77,6 +75,7 @@ function configureMeasurements(core: ConfiguratorCore, mode: MeasurementMode | n
   core.measurementState = {
     isActive: mode !== null,
     isWallsOnly: mode === 'walls',
+    isObjectToObject: false,
   };
 }
 
@@ -173,10 +172,18 @@ export function ItemsToolbar({
                     ? hideWallsSelected
                     : undefined
             }
-            disabled={tool.id === 'copy' && !canUseSelectedModelTools}
+            disabled={
+              (tool.id === 'delete' && !canUseSelectedModelTools) ||
+              (tool.id === 'copy' && !canUseSelectedModelTools)
+            }
             onClick={() => {
               console.log(`${tool.label} button clicked.`);
-              if (tool.id === 'move' || tool.id === 'rotate') {
+              if (tool.id === 'delete') {
+                onRemove();
+                const isRemoved = configuratorCore?.deleteModel();
+                console.log(isRemoved);
+              }
+              else if (tool.id === 'move' || tool.id === 'rotate') {
                 onTransformToolChange(tool.id);
                 if (tool.id === 'move') {
                   configuratorCore?.setTransformMode(TransformControlsMode.TRANSLATE);
@@ -190,7 +197,8 @@ export function ItemsToolbar({
                   configuratorCore?.toggleTransformAxis('x', false);
                   configuratorCore?.toggleTransformAxis('z', false);
                 }
-              } else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
+              }
+              else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
               else if (tool.id === 'copy') {
                 onCopy();
                 const isCopied = configuratorCore?.duplicateModel();
@@ -199,7 +207,7 @@ export function ItemsToolbar({
                 }
               }
               // else onHideWallsSelectedChange(!hideWallsSelected);
-              else {
+              else if (tool.id === "hidewalls") {
                 configuratorCore?.enableWallHiding(!hideWallsSelected);
                 onHideWallsSelectedChange(!hideWallsSelected);
               }

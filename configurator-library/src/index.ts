@@ -8,7 +8,7 @@ export type { ConfigState, ConfiguratorOptions } from './types/types';
 export { FloorplanManager } from './Components/FloorplanManager';
 
 // Export room editor interaction modes
-export { RoomEditorMode } from './Constants';
+export { RoomEditorMode, TransformControlsMode } from './Constants';
 
 // Export predefined 2D floorplan shape templates
 export { Predefined2DShapes } from './shapeTemplates';
