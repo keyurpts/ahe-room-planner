@@ -1,9 +1,27 @@
 import { ConfiguratorCore } from 'three-configurator';
 import type { Sprite } from 'three';
 import { LengthUnit, formatLength } from './units';
+import { removeGroundPlane } from './background';
 
-/** Format measurement labels using the SDK's public measurement methods. */
+/** Application-specific scene behavior and measurement formatting. */
 export class ConfiguratorCoreWrapper extends ConfiguratorCore {
+  private solidBackgroundColor = 0xffffff;
+
+  override async loadEnvironmentMap(...args: Parameters<ConfiguratorCore['loadEnvironmentMap']>): Promise<void> {
+    await super.loadEnvironmentMap(...args);
+    // The SDK also uses the HDR as its visible background. Keep its lighting,
+    // but restore the latest chosen solid color after asynchronous loading.
+    super.setBackgroundColor(this.solidBackgroundColor);
+  }
+  /** Keep the room and its floor, but remove the exterior textured plane. */
+  override load2DTo3DMesh(...args: Parameters<ConfiguratorCore['load2DTo3DMesh']>): void {
+    try {
+      super.load2DTo3DMesh(...args);
+    } finally {
+      removeGroundPlane(args[1]);
+    }
+  }
+
   private unit = LengthUnit.MM;
 
   setLengthUnit(unit: LengthUnit): void {
