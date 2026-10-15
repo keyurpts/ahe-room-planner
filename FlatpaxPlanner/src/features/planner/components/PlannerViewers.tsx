@@ -52,7 +52,6 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
   async function enrichLeafEntry(
     key: string,
     entry: any,
-    // lookup: Map<string, any>,
     cache: Map<string, Promise<string>>
   ): Promise<void> {
     if (!Array.isArray(entry.children) || entry.children.length !== 0) return;
@@ -99,24 +98,14 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
 
       if (Array.isArray(entry.children) && entry.children.length === 0) {
         // Leaf model — enrich directly
-        const keyUpdated = key.replace(/_node\d+$/, "");
-        enrichPromises.push(
-          enrichLeafEntry(keyUpdated, entry, downloadUrlCache).then(() => {
-            return enrichTextureEntry(entry, textureUrlCache);
-          })
-        );
+        enrichPromises.push(enrichModel(key, entry));
       } else if (Array.isArray(entry.children) && entry.children.length > 0) {
         // Group — enrich each child object
         for (const childObj of entry.children) {
           if (childObj && typeof childObj === "object") {
             for (const [childKey, childEntry] of Object.entries(childObj)) {
               if (childEntry && typeof childEntry === "object") {
-                const childKeyUpdated = childKey.replace(/_node\d+$/, "");
-                enrichPromises.push(
-                  enrichLeafEntry(childKeyUpdated, childEntry as any, downloadUrlCache).then(() => {
-                    return enrichTextureEntry(childEntry, textureUrlCache);
-                  })
-                );
+                enrichPromises.push(enrichModel(childKey, childEntry));
               }
             }
           }
