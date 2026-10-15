@@ -3,7 +3,7 @@ import { useEffect, type RefObject } from 'react';
 import { ConfiguratorCore, FloorplanManager, Predefined2DShapes } from "three-configurator";
 import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
 import { colorPresets, floorPresets, wallPresets } from '../finishes/presets';
-import { useLazyGetModelDownloadUrlQuery, useLazyGetTextureDownloadUrlQuery } from '../catalogue/catalogue-api';
+import { catalogueApi } from '../catalogue/catalogue-api';
 
 interface Props {
   viewer2DRef: RefObject<HTMLDivElement | null>;
@@ -17,16 +17,13 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
   const dispatch = useAppDispatch();
   const draft = useAppSelector((state) => state.project.draft);
   const floorplanManager = useAppSelector((state) => state.configurator.floorPlanManager);
-  const [getModelDownloadUrl] = useLazyGetModelDownloadUrlQuery();
-  const [getTextureDownloadUrl] = useLazyGetTextureDownloadUrlQuery();
-
-
+  
   // ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function enrichTextureEntry(
+  async function enrichTextureEntry(
     entry: any,
-    textureLookup: Map<string, any> | null
-  ): void {
+    cache: Map<string, Promise<string | null>>
+  ): Promise<void> {
     if (!Array.isArray(entry.children) || entry.children.length !== 0) {
       return;
     }
@@ -34,19 +31,18 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
     if (!textureId) {
       return;
     }
-    // in place of this make API using texture Id and append the url from response
-    void getTextureDownloadUrl({ textureId })
-      .unwrap()
-      .then(({ downloadUrl }) => {
-        if (!downloadUrl) {
-          console.warn('The selected cupboard texture has no download URL.');
-          return;
-        }
-        entry.textureUrl = downloadUrl;
-      })
-      .catch((error: unknown) => {
+    let request = cache.get(textureId);
+    if (!request) {
+      request = dispatch(catalogueApi.endpoints.getTextureDownloadUrl.initiate(
+        { textureId }, { subscribe: false }
+      )).unwrap().then((response) => response?.downloadUrl ?? null).catch((error: unknown) => {
         console.error('Unable to get the cupboard texture download URL.', error);
+        return null;
       });
+      cache.set(textureId, request);
+    }
+    const downloadUrl = await request;
+    if (downloadUrl) entry.textureUrl = downloadUrl;
   }
 
   /**
@@ -57,12 +53,23 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
     key: string,
     entry: any,
     // lookup: Map<string, any>,
-    cache?: Map<string, Promise<string | null>>
+    cache: Map<string, Promise<string>>
   ): Promise<void> {
     if (!Array.isArray(entry.children) || entry.children.length !== 0) return;
     const modelId = entry.modelData?.id || entry.id || key;
-    const { downloadUrl } = await getModelDownloadUrl(modelId).unwrap();
-    const signedUrl = downloadUrl;
+    let request = cache.get(modelId);
+    if (!request) {
+      request = dispatch(catalogueApi.endpoints.getModelDownloadUrl.initiate(
+        modelId, { subscribe: false }
+      )).unwrap().then((response) => {
+        if (!response?.downloadUrl) {
+          throw new Error(`No download URL returned for saved model ${modelId}.`);
+        }
+        return response.downloadUrl;
+      });
+      cache.set(modelId, request);
+    }
+    const signedUrl = await request;
     if (signedUrl) {
       entry.url = signedUrl;
       entry.uri = signedUrl;
@@ -81,7 +88,8 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
    * /api/storage/{modelId}/download-url and modelData. Handles both top-level entries and nested children within groups.
    */
   async function enrichConfig3DWithRoomData(config3D: Record<string, any>): Promise<Record<string, any>> {
-    const downloadUrlCache = new Map<string, Promise<string | null>>();
+    const downloadUrlCache = new Map<string, Promise<string>>();
+    const textureUrlCache = new Map<string, Promise<string | null>>();
     const enrichPromises: Promise<void>[] = [];
 
     for (const [key, entry] of Object.entries(config3D)) {
@@ -92,8 +100,7 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
         const keyUpdated = key.replace(/_node\d+$/, "");
         enrichPromises.push(
           enrichLeafEntry(keyUpdated, entry, downloadUrlCache).then(() => {
-            // enrichTextureEntry(entry, textureLookup);
-            enrichTextureEntry(entry, null);
+            return enrichTextureEntry(entry, textureUrlCache);
           })
         );
       } else if (Array.isArray(entry.children) && entry.children.length > 0) {
@@ -105,8 +112,7 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
                 const childKeyUpdated = childKey.replace(/_node\d+$/, "");
                 enrichPromises.push(
                   enrichLeafEntry(childKeyUpdated, childEntry as any, downloadUrlCache).then(() => {
-                    // enrichTextureEntry(childEntry as any, textureLookup);
-                    enrichTextureEntry(childEntry as any, null);
+                    return enrichTextureEntry(childEntry, textureUrlCache);
                   })
                 );
               }
@@ -169,7 +175,12 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
     if (!viewer2DRef.current || !viewer3DRef.current) return;
 
     const floorPlanManagerInstance = new FloorplanManager();
-    floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
+    try {
+      floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
+    } catch (error) {
+      floorPlanManagerInstance.dispose();
+      throw error;
+    }
     const configuratorCoreInstance = floorPlanManagerInstance.getConfiguratorCore();
     if (!configuratorCoreInstance) {
       floorPlanManagerInstance.dispose();
@@ -224,7 +235,9 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
       }
     };
 
-    fetchData();
+    void fetchData().catch((error: unknown) => {
+      console.error('Unable to load the saved project.', error);
+    });
   }, [draft?.shape, floorplanManager]);
 
   return (
