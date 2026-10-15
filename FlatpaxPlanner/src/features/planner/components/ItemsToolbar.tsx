@@ -13,6 +13,7 @@ import {
   ConfiguratorEventType,
   Events,
   LengthUnit,
+  TransformControlsMode,
   type ConfiguratorCore,
 } from 'configurator-library-wrapper';
 import { useAppSelector } from '@/app/store-hooks';
@@ -55,7 +56,7 @@ const tools = [
   { id: 'rotate', label: 'Rotate item', icon: rotate, hoverIcon: rotateHover },
   { id: 'replace', label: 'Replace item', icon: flip, hoverIcon: swapHover },
   { id: 'copy', label: 'Copy item', icon: images, hoverIcon: duplicateHover },
-
+  { id: 'delete', label: 'Delete item', icon: remove, hoverIcon: deleteHover },
   { id: 'hidewalls', label: 'Hide walls', icon: hide, hoverIcon: wallhideHover },
 ] as const;
 export type ItemsTool = (typeof tools)[number]['id'];
@@ -103,12 +104,24 @@ export function ItemsToolbar({
     if (!configuratorCore) return;
     const handleModelSelected = (metadata: unknown) => {
       setHasSelectedModel(metadata !== null && metadata !== undefined);
+      if (transformTool === 'move') {
+        configuratorCore.setTransformMode(TransformControlsMode.TRANSLATE);
+        configuratorCore.setTransformSize(0.7);
+        configuratorCore.toggleTransformAxis('y', false);
+        configuratorCore.toggleTransformAxis('x', true);
+        configuratorCore.toggleTransformAxis('z', true);
+      } else {
+        configuratorCore.setTransformMode(TransformControlsMode.ROTATE);
+        configuratorCore.toggleTransformAxis('y', true);
+        configuratorCore.toggleTransformAxis('x', false);
+        configuratorCore.toggleTransformAxis('z', false);
+      }
     };
     Events.on(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
     return () => {
       Events.off(ConfiguratorEventType.MODEL_SELECTED, handleModelSelected);
     };
-  }, [configuratorCore]);
+  }, [configuratorCore, transformTool]);
   function changeMeasurement(mode: MeasurementMode | null) {
     if (!configuratorCore?.isModelSelected()) {
       setMessage('Select an item in the viewer to show its measurements.');
@@ -166,20 +179,13 @@ export function ItemsToolbar({
               if (tool.id === 'move' || tool.id === 'rotate') {
                 onTransformToolChange(tool.id);
                 if (tool.id === 'move') {
-                  // The SDK accepts this value but does not export its enum.
-                  configuratorCore?.setTransformMode(
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
-                    'translate' as Parameters<ConfiguratorCore['setTransformMode']>[0],
-                  );
+                  configuratorCore?.setTransformMode(TransformControlsMode.TRANSLATE);
                   configuratorCore?.setTransformSize(0.7);
                   configuratorCore?.toggleTransformAxis('y', false);
                   configuratorCore?.toggleTransformAxis('x', true);
                   configuratorCore?.toggleTransformAxis('z', true);
                 } else {
-                  configuratorCore?.setTransformMode(
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
-                    'rotate' as Parameters<ConfiguratorCore['setTransformMode']>[0],
-                  );
+                  configuratorCore?.setTransformMode(TransformControlsMode.ROTATE);
                   configuratorCore?.toggleTransformAxis('y', true);
                   configuratorCore?.toggleTransformAxis('x', false);
                   configuratorCore?.toggleTransformAxis('z', false);
@@ -240,7 +246,7 @@ export function ItemsToolbar({
           </>
         }
       />
-      <button
+      {/* <button
         type="button"
         aria-label="Delete item"
         title="Delete item"
@@ -249,7 +255,7 @@ export function ItemsToolbar({
       >
         <img src={remove} width={52} height={52} alt="" className="item-tool-default" />
         <img src={deleteHover} width={52} height={52} alt="" className="item-tool-hover" />
-      </button>
+      </button> */}
       <UnitSelector
         unit={unit}
         onChange={(next) => {
