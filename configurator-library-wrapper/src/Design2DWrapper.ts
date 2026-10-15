@@ -1,10 +1,12 @@
-import { Design2D, Config, NodeName } from 'three-configurator';
+import { Design2D, Config, NodeName, RoomEditorMode } from 'three-configurator';
 import type Konva from 'konva';
 import { LengthUnit, formatLength, toCentimeters } from './units';
 
 /** Unit display and input conversion belong to the wrapper. */
 export class Design2DWrapper extends Design2D {
   private unit = LengthUnit.MM;
+  private previousRoomCount = 0;
+  private isDrawModeActive = false;
 
   setLengthUnit(unit: LengthUnit): void {
     this.unit = unit;
@@ -40,6 +42,44 @@ export class Design2DWrapper extends Design2D {
   override placePreview(): void {
     super.placePreview();
     this.refreshDimensions();
+  }
+
+  override setMode(
+    mode: RoomEditorMode,
+    active: boolean,
+    isExplicit: boolean = false
+  ): void {
+
+    super.setMode(mode, active, isExplicit);
+
+    this.isDrawModeActive =
+      mode === RoomEditorMode.DRAW && active;
+
+    if (this.isDrawModeActive) {
+      void super.detectRooms().then((rooms : any) => {
+        if (this.isDrawModeActive) {
+          this.previousRoomCount = rooms.length;
+        }
+      });
+    }
+  }
+
+  protected override async detectRooms(
+    ...args: Parameters<Design2D['detectRooms']>
+  ) {
+    const rooms = await super.detectRooms(...args);
+    const currentRoomCount = rooms.length;
+
+    if (
+      this.isDrawModeActive &&
+      currentRoomCount > this.previousRoomCount
+    ) {
+      this.setMode(RoomEditorMode.DRAW, false);
+    }
+
+    this.previousRoomCount = currentRoomCount;
+
+    return rooms;
   }
 
   private updateLabel(group: Konva.Group, x1: number, y1: number, x2: number, y2: number): void {

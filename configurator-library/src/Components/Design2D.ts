@@ -3191,7 +3191,7 @@ export class Design2D {
    * @param wallData - Optional array of structured wall data. If not provided, it scans the floorplan layer.
    * @returns A promise resolving to the list of detected rooms.
    */
-  private async detectRooms(wallData?: WallUserData[]): Promise<Room[]> {
+  protected async detectRooms(wallData?: WallUserData[]): Promise<Room[]> {
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (!floorplanLayer) return [];
 
