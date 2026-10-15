@@ -3,9 +3,7 @@ import { LengthUnit, normalizeLengthUnit } from './units';
 import { Design2DWrapper } from './Design2DWrapper';
 import { Design3DWrapper } from './Design3DWrapper';
 import { ConfiguratorCoreWrapper } from './ConfiguratorCoreWrapper';
-import { roomTemplate } from './room-templates';
 
-export type RoomShape = 'rectangle' | 'square' | 'l-top-left' | 'l-top-right' | 'l-bottom-left' | 'l-bottom-right';
 
 /** The SDK owns base behavior; the wrapper supplies unit-aware viewers. */
 export class FloorplanManager extends LibraryManager {
@@ -35,15 +33,6 @@ export class FloorplanManager extends LibraryManager {
       this.dispose();
       throw error;
     }
-  }
-
-  createRoom(shape: RoomShape): void {
-    if (!this.editor || !this.initialized) throw new Error('Call init() before creating a room.');
-    this.switchTo2D();
-    this.clear2DLayout();
-    this.addPredefinedShape(roomTemplate(shape));
-    this.editor.placePreview();
-    this.fitToView();
   }
 
   getLengthUnit(): LengthUnit { return this.unit; }

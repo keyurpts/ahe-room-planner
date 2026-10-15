@@ -15,7 +15,15 @@ interface Props {
   onItemList: () => void;
 }
 
-export function PlannerNavigation({ projectName, step, onSave, onItemList, total }: Props) {
+// Navbar Component
+export function PlannerNavigation({
+  projectName,
+  step,
+  onStepChange,
+  onSave,
+  onItemList,
+  total,
+}: Props) {
   const formattedTotal = total === null ? 'Unavailable' : `$${total.toFixed(2)}`;
   return (
     <header className="planner-navigation" data-step={step}>
@@ -33,9 +41,9 @@ export function PlannerNavigation({ projectName, step, onSave, onItemList, total
                 type="button"
                 aria-current={step === label ? 'step' : undefined}
                 data-complete={index < plannerSteps.indexOf(step)}
-                // onClick={() => {
-                //   onStepChange(label);
-                // }}
+              // onClick={() => {
+              //   onStepChange(label);
+              // }}
               >
                 <span className="planner-step-number" aria-hidden="true">
                   {index < plannerSteps.indexOf(step) ? (

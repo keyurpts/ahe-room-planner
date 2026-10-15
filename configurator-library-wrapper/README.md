@@ -19,6 +19,7 @@ The base library changes are limited to public access/export declarations and ex
 - src/Design3DWrapper.ts: creates the wrapper-owned 3D core.
 - src/ConfiguratorCoreWrapper.ts: 3D measurement label formatting.
 - src/units.ts: shared unit conversions.
-- src/room-templates.ts: predefined room orientations.
 
 Other modified-library features remain in Frontend/Library/three-configurator as reference material for later migration.
+
+Predefined shapes use the base library's Predefined2DShapes and addPredefinedShape API. The wrapper does not create or automatically place custom room templates.

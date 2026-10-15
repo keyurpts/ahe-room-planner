@@ -18,30 +18,50 @@ function isDraft(value: unknown): value is PlannerDraft {
       'square',
       'l-bottom-right',
       'l-bottom-left',
+      'custom',
     ].includes(value.shape)
   );
 }
 
 const storageKey = 'flatpax-planner-draft';
 
-export function restoreDraft(): PlannerDraft | null {
+export interface PersistedProjectState {
+  draft: PlannerDraft | null;
+  projectID: string | null;
+  designCode: string | null;
+}
+
+function isProjectID(value: unknown): value is string {
+  return typeof value === 'string' && Boolean(value.trim());
+}
+
+function isDesignCode(value: unknown): value is string {
+  return typeof value === 'string' && Boolean(value.trim());
+}
+
+export function restoreProjectState(): PersistedProjectState {
   try {
     const stored = sessionStorage.getItem(storageKey);
-    if (!stored) return null;
+    if (!stored) return { draft: null, projectID: null, designCode: null };
     const value: unknown = JSON.parse(stored);
-    if (!value || typeof value !== 'object' || !('state' in value)) return null;
+    if (!value || typeof value !== 'object' || !('state' in value))
+      return { draft: null, projectID: null, designCode: null };
     const state = value.state;
-    return state && typeof state === 'object' && 'draft' in state && isDraft(state.draft)
-      ? state.draft
-      : null;
+    if (!state || typeof state !== 'object') return { draft: null, projectID: null, designCode: null };
+
+    return {
+      draft: 'draft' in state && isDraft(state.draft) ? state.draft : null,
+      projectID: 'projectID' in state && isProjectID(state.projectID) ? state.projectID : null,
+      designCode: 'designCode' in state && isDesignCode(state.designCode) ? state.designCode : null,
+    };
   } catch {
-    return null;
+    return { draft: null, projectID: null, designCode: null };
   }
 }
 
-export function persistDraft(draft: PlannerDraft | null) {
+export function persistProjectState(project: PersistedProjectState) {
   try {
-    sessionStorage.setItem(storageKey, JSON.stringify({ state: { draft }, version: 1 }));
+    sessionStorage.setItem(storageKey, JSON.stringify({ state: project, version: 1 }));
   } catch {
     // Storage restrictions must not interrupt editing in the current session.
   }

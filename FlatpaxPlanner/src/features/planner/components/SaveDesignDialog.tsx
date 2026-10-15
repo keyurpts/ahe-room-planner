@@ -2,6 +2,7 @@ import { useId, useState, type SubmitEvent } from 'react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import '@/styles/save-design.css';
+import { useAppSelector } from '@/app/store-hooks';
 
 interface SaveDesignDialogProps {
   open: boolean;
@@ -9,19 +10,22 @@ interface SaveDesignDialogProps {
   designCode?: string;
 }
 
-export function SaveDesignDialog({ open, onClose, designCode }: SaveDesignDialogProps) {
+export function SaveDesignDialog({ open, onClose }: SaveDesignDialogProps) {
   const id = useId();
   const [email, setEmail] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [status, setStatus] = useState('');
-  const code = designCode ?? 'RP7N4L';
+
+  const code = useAppSelector((state) => state.project.designCode);
+  const designCode = code ? code : 'RP7N4L';
+
   async function copyCode() {
     try {
-      await navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(designCode);
       setStatus(
         designCode
           ? 'Code copied.'
-          : 'Sample code copied. Saving will be available when the backend is connected.',
+          : 'Error while copying code',
       );
     } catch {
       setStatus('Unable to copy. Select the code and copy it manually.');
@@ -43,7 +47,7 @@ export function SaveDesignDialog({ open, onClose, designCode }: SaveDesignDialog
       }}
     >
       <section className="save-design-code-section" aria-label="Design code">
-        <p className="save-design-code">{code}</p>
+        <p className="save-design-code">{designCode}</p>
         {!designCode && <p className="sr-only">Sample design code for preview only.</p>}
         <Button
           variant="brand-outline"

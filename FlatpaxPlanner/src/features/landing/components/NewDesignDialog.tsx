@@ -78,6 +78,13 @@ export function NewDesignDialog({ open, onClose }: Props) {
     setStep('shape');
   }
 
+  function startDesign(selectedShape: RoomShape) {
+    if (!roomType) return;
+    dispatch(startProject({ projectName: projectName.trim(), roomType, shape: selectedShape }));
+    close();
+    void navigate(paths.roomSetup);
+  }
+
   return (
     <Dialog
       open={open}
@@ -119,10 +126,12 @@ export function NewDesignDialog({ open, onClose }: Props) {
               className="room-shape-next text-base uppercase"
               disabled={!shape}
               onClick={() => {
-                if (!shape || !roomType) return;
-                dispatch(startProject({ projectName: projectName.trim(), roomType, shape }));
-                close();
-                void navigate(paths.roomSetup);
+                if (shape) {
+                  startDesign(shape);
+                }
+                else {
+                  startDesign('custom');
+                }
               }}
             >
               Next
@@ -148,7 +157,7 @@ export function NewDesignDialog({ open, onClose }: Props) {
             setShapeMessage('');
           }}
           onCustom={() => {
-            setShapeMessage('Custom wall drawing is not available yet.');
+            startDesign('custom');
           }}
           message={shapeMessage}
         />

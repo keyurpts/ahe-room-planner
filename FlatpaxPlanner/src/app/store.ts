@@ -3,8 +3,14 @@ import {
   projectReducer,
   startProject,
   discardProject,
+  setProjectID,
+  setDesignCode,
 } from '@/features/planner/state/project-slice';
-import { persistDraft, restoreDraft } from '@/features/planner/state/project-persistence';
+import {
+  persistProjectState,
+  restoreProjectState,
+  type PersistedProjectState,
+} from '@/features/planner/state/project-persistence';
 import { uiReducer } from '@/state/ui-slice';
 import { configuratorReducer } from '@/features/planner/state/configurator-slice';
 
@@ -13,11 +19,13 @@ import { catalogueApi } from '@/features/planner/catalogue/catalogue-api';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 const persistence = createListenerMiddleware();
+const restoredProject = restoreProjectState();
 
 persistence.startListening({
-  matcher: isAnyOf(startProject, discardProject),
-  effect: (action) => {
-    persistDraft(startProject.match(action) ? action.payload : null);
+  matcher: isAnyOf(startProject, discardProject, setProjectID, setDesignCode),
+  effect: (_action, listenerApi) => {
+    const { project } = listenerApi.getState() as { project: PersistedProjectState };
+    persistProjectState(project);
   },
 });
 
@@ -32,7 +40,9 @@ export const store = configureStore({
 
   preloadedState: {
     project: {
-      draft: restoreDraft(),
+      draft: restoredProject.draft,
+      projectID: restoredProject.projectID,
+      designCode: restoredProject.designCode,
       activeStep: 'Room setup' as const,
     },
   },
