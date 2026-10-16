@@ -49,4 +49,12 @@ public class TextureRepository : ITextureRepository
 
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<Texture>> GetByRegionIdAsync(Guid regionId)
+    {
+        return await _context.Textures
+            .Where(x => x.RegionId == regionId && x.DeletedAt == null)
+            .OrderBy(x => x.TextureName)
+            .ToListAsync();
+    }
 }

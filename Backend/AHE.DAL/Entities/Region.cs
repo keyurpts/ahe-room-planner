@@ -27,5 +27,11 @@ namespace AHE.DAL.Entities
 
         public ICollection<ModelVariantRegion> ModelVariantRegions { get; set; }
           = new List<ModelVariantRegion>();
+
+        public ICollection<BenchtopColour> BenchtopColours { get; set; }
+          = new List<BenchtopColour>();
+
+        public ICollection<Texture> Texture { get; set; }
+          = new List<Texture>();
     }
 }

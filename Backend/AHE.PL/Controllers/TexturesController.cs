@@ -1,5 +1,6 @@
 ﻿using AHE.BLL.DTOs.Textures;
 using AHE.BLL.Interfaces;
+using AHE.DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -78,5 +79,13 @@ public class TexturesController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    [HttpGet("region/{regionId:guid}")]
+    public async Task<ActionResult<List<Texture>>> GetByRegionId(Guid regionId)
+    {
+        var textures = await _textureService.GetByRegionIdAsync(regionId);
+
+        return Ok(textures);
     }
 }

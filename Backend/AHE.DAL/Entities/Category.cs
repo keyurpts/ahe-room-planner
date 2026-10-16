@@ -28,5 +28,11 @@ namespace AHE.DAL.Entities
 
         public ICollection<Material> Materials { get; set; }
             = new List<Material>();
+
+        // Foreign Key
+        public Guid MasterCategoryId { get; set; }
+
+        // Navigation Property
+        public MasterCategory MasterCategory { get; set; } = null!;
     }
 }

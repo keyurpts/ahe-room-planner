@@ -16,5 +16,7 @@ namespace AHE.DAL.Interfaces.Repositories
         Task UpdateAsync(Texture texture);
 
         Task DeleteAsync(Texture texture);
+
+        Task<List<Texture>> GetByRegionIdAsync(Guid regionId);
     }
 }

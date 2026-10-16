@@ -16,9 +16,12 @@ public class AppDbContext : DbContext
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<MasterCategory> MasterCategories => Set<MasterCategory>();
     public DbSet<Model> Models => Set<Model>();
     public DbSet<Material> Materials => Set<Material>();
     public DbSet<Texture> Textures => Set<Texture>();
+    public DbSet<BenchtopColour> BenchtopColour => Set<BenchtopColour>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

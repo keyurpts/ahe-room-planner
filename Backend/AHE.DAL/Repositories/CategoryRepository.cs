@@ -24,6 +24,14 @@ namespace AHE.DAL.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Category>> GetByMasterCategoryAsync()
+        {
+            return await _context.Categories
+                .Where(c => c.IsActive && c.DeletedAt == null)
+                .OrderBy(c => c.CategoryName)
+                .ToListAsync();
+        }
+
         public async Task<Category?> GetByIdAsync(Guid id)
         {
             return await _context.Categories

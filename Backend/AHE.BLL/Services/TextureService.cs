@@ -2,6 +2,7 @@
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace AHE.BLL.Services;
 
@@ -181,6 +182,15 @@ public class TextureService : ITextureService
         return true;
     }
 
+    public async Task<List<TextureResponse>> GetByRegionIdAsync(Guid regionId)
+    {
+        var textures = await _textureRepository.GetByRegionIdAsync(regionId);
+
+        return textures
+            .Select(MapToResponse)
+            .ToList();
+    }
+
     private static TextureResponse MapToResponse(
     Texture texture)
     {
@@ -201,5 +211,4 @@ public class TextureService : ITextureService
             UpdatedAt = texture.UpdatedAt
         };
     }
-
 }

@@ -39,5 +39,14 @@ public class CategoryConfiguration
 
         builder.HasIndex(x => x.CategoryName)
             .IsUnique();
+
+        // MasterCategory relationship
+        builder.HasOne(x => x.MasterCategory)
+            .WithMany(x => x.Category)
+            .HasForeignKey(x => x.MasterCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Index
+        builder.HasIndex(x => x.MasterCategoryId);
     }
 }

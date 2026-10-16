@@ -38,5 +38,13 @@ public class TextureConfiguration
             .IsRequired();
 
         builder.Property(x => x.DeletedAt);
+
+        // Region Relationship (One-to-Many)
+        builder.HasOne(x => x.Region)
+            .WithMany(x => x.Texture)
+            .HasForeignKey(x => x.RegionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.RegionId);
     }
 }

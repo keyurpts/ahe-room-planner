@@ -24,6 +24,46 @@ namespace AHE.DAL.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AHE.DAL.Entities.BenchtopColour", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AssetPath")
+                        .HasColumnType("text");
+
+                    b.Property<JsonDocument>("BenchtopColourMetadata")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("BenchtopColourName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("RegionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("BenchtopColours", (string)null);
+                });
+
             modelBuilder.Entity("AHE.DAL.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -48,6 +88,9 @@ namespace AHE.DAL.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid>("MasterCategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -56,7 +99,44 @@ namespace AHE.DAL.Migrations
                     b.HasIndex("CategoryName")
                         .IsUnique();
 
+                    b.HasIndex("MasterCategoryId");
+
                     b.ToTable("categories", (string)null);
+                });
+
+            modelBuilder.Entity("AHE.DAL.Entities.MasterCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MasterCategoryName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MasterCategoryName")
+                        .IsUnique();
+
+                    b.ToTable("MasterCategories", (string)null);
                 });
 
             modelBuilder.Entity("AHE.DAL.Entities.Material", b =>
@@ -437,6 +517,9 @@ namespace AHE.DAL.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid>("RegionId")
+                        .HasColumnType("uuid");
+
                     b.Property<JsonDocument>("TextureMetadata")
                         .HasColumnType("jsonb");
 
@@ -452,6 +535,8 @@ namespace AHE.DAL.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RegionId");
 
                     b.ToTable("textures", (string)null);
                 });
@@ -515,6 +600,28 @@ namespace AHE.DAL.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("AHE.DAL.Entities.BenchtopColour", b =>
+                {
+                    b.HasOne("AHE.DAL.Entities.Region", "Region")
+                        .WithMany("BenchtopColours")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
+            modelBuilder.Entity("AHE.DAL.Entities.Category", b =>
+                {
+                    b.HasOne("AHE.DAL.Entities.MasterCategory", "MasterCategory")
+                        .WithMany("Category")
+                        .HasForeignKey("MasterCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MasterCategory");
                 });
 
             modelBuilder.Entity("AHE.DAL.Entities.Material", b =>
@@ -613,6 +720,17 @@ namespace AHE.DAL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AHE.DAL.Entities.Texture", b =>
+                {
+                    b.HasOne("AHE.DAL.Entities.Region", "Region")
+                        .WithMany("Texture")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Region");
+                });
+
             modelBuilder.Entity("AHE.DAL.Entities.User", b =>
                 {
                     b.HasOne("AHE.DAL.Entities.Region", "Region")
@@ -639,6 +757,11 @@ namespace AHE.DAL.Migrations
                     b.Navigation("Models");
                 });
 
+            modelBuilder.Entity("AHE.DAL.Entities.MasterCategory", b =>
+                {
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("AHE.DAL.Entities.Model", b =>
                 {
                     b.Navigation("ModelRegions");
@@ -653,9 +776,13 @@ namespace AHE.DAL.Migrations
 
             modelBuilder.Entity("AHE.DAL.Entities.Region", b =>
                 {
+                    b.Navigation("BenchtopColours");
+
                     b.Navigation("ModelVariantRegions");
 
                     b.Navigation("Projects");
+
+                    b.Navigation("Texture");
 
                     b.Navigation("Users");
                 });
