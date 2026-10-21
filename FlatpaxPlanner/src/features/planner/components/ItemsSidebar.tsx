@@ -165,7 +165,7 @@ function Product({
       onModelAdding(product.textureId);
       await configuratorCore!.loadModel(
         downloadUrl,
-        true,
+        false,
         undefined,
         undefined,
         callbacks,

@@ -17,6 +17,7 @@ import fitHover from '@/assets/icons/zoom-fit-h.svg';
 import clearHover from '@/assets/icons/clear-h.svg';
 import snapIcon from '@/assets/icons/snap.svg';
 import snapHover from '@/assets/icons/snap-h.svg';
+import { ClearLayoutDialog } from './ClearLayoutDialog';
 
 const tools = [
   { id: 'draw', label: 'Draw walls', icon: drawIcon, hoverIcon: drawHover },
@@ -44,6 +45,8 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
 
   const [unit, setUnit] = useState(() => floorPlanManager?.getLengthUnit() ?? LengthUnit.MM);
   const [activeMode, setActiveMode] = useState<ActiveMode>(null);
+  const [clearLayout, setClearLayout] = useState<string | null>(null);
+
   useEffect(() => {
     if (!floorPlanManager) return;
     floorPlanManager.setLengthUnit(unit);
@@ -75,13 +78,13 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
           type="button"
           aria-label={tool.label}
           title={tool.label}
-            aria-pressed={
-              tool.id === 'snap'
-                ? snapping
-                : tool.id === 'draw' || tool.id === 'door' || tool.id === 'window'
-                  ? activeMode === tool.id
-                  : undefined
-            }
+          aria-pressed={
+            tool.id === 'snap'
+              ? snapping
+              : tool.id === 'draw' || tool.id === 'door' || tool.id === 'window'
+                ? activeMode === tool.id
+                : undefined
+          }
           disabled={tool.id === 'delete' && activeMode !== 'edit'}
           onClick={() => {
             if (tool.id === 'snap') {
@@ -110,8 +113,10 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
               floorPlanManager?.set2DMode('Window', true);
               return;
             }
-            floorPlanManager?.clear2DLayout();
-            onSelect(selected === tool.id ? null : tool.id);
+
+            // display Modal
+            setClearLayout(tool.id);
+            
           }}
         >
           <span className="planner-tool-icon">
@@ -125,6 +130,17 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
         onChange={(next) => {
           floorPlanManager?.setLengthUnit(next);
           setUnit(next);
+        }}
+      />
+      <ClearLayoutDialog
+        open={clearLayout !== null}
+        onCancel={() => {
+          setClearLayout(null);
+        }}
+        onConfirm={() => {
+          floorPlanManager?.clear2DLayout();
+          onSelect(selected === clearLayout ? null : (clearLayout as "erase"));
+          setClearLayout(null);
         }}
       />
     </div>
