@@ -1,8 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { FloorplanManagerWrapper, ConfiguratorCore } from 'wrapper';
+import type { FloorplanManager, ConfiguratorCore } from 'wrapper';
 
 interface ConfiguratorState {
-  floorPlanManager: FloorplanManagerWrapper | null;
+  floorPlanManager: FloorplanManager | null;
   configuratorCore: ConfiguratorCore | null;
 }
 
@@ -15,7 +15,7 @@ const configuratorSlice = createSlice({
   name: 'configurator',
   initialState,
   reducers: {
-    setFloorPlanManager(state, action: PayloadAction<FloorplanManagerWrapper | null>) {
+    setFloorPlanManager(state, action: PayloadAction<FloorplanManager | null>) {
       state.floorPlanManager = action.payload;
     },
 

@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
-import { FloorplanManagerWrapper, Predefined2DShapes } from 'wrapper';
+import { FloorplanManager, Predefined2DShapes } from 'wrapper';
 import { setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
 import { colorPresets, floorPresets, wallPresets } from '../finishes/presets';
 import { catalogueApi } from '../catalogue/catalogue-api';
@@ -170,7 +170,7 @@ export const PlannerViewers = ({ viewer2DRef, viewer3DRef, mode, p2dJSON, p3dJSO
   useEffect(() => {
     if (!viewer2DRef.current || !viewer3DRef.current) return;
 
-    const floorPlanManagerInstance = new FloorplanManagerWrapper();
+    const floorPlanManagerInstance = new FloorplanManager();
     try {
       floorPlanManagerInstance.init(viewer2DRef.current, viewer3DRef.current);
     } catch (error) {

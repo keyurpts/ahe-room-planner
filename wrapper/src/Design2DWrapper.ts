@@ -1,5 +1,8 @@
 import { Design2D, RoomEditorMode } from 'three-configurator';
 
+/**
+ * Wrapper around Design2D.
+ */
 export class Design2DWrapper extends Design2D {
   private initialRooms = 0;
 
