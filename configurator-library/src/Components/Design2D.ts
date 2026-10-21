@@ -56,7 +56,7 @@ export class Design2D {
   /**
    *  Konva stage that manages the 2D canvas and coordinate system
    */
-  public stage: Konva.Stage;
+  private stage: Konva.Stage;
 
   /**
    * Group that holds all grid line elements
@@ -109,7 +109,7 @@ export class Design2D {
   /**
    * Unit conversion factor (e.g. 30/30 since 30 is the default grid size)
    */
-  public unit_conversion_factor: number = 1;
+  private unit_conversion_factor: number = 1;
 
   /**
    * Stores the last placed point while drawing walls
@@ -1007,7 +1007,7 @@ export class Design2D {
    * @param wallEditPoint - The edit reference point.
    * @returns True if the edit was successful, false otherwise.
    */
-  public editWallDimensions(
+  private editWallDimensions(
     wallGroup: Konva.Group,
     newLength: number,
     wallEditPoint: string
@@ -2503,7 +2503,7 @@ export class Design2D {
    *
    * @returns A Konva.Group containing the dimension or null if the wall is too short.
    */
-  public createDimension(
+  private createDimension(
     x1: number,
     y1: number,
     x2: number,
@@ -2975,7 +2975,7 @@ export class Design2D {
   /**
    * Refreshes all existing dimension labels on the floorplan.
    */
-  public refreshDimensions() {
+  private refreshDimensions() {
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (!floorplanLayer) return;
 
@@ -3191,7 +3191,7 @@ export class Design2D {
    * @param wallData - Optional array of structured wall data. If not provided, it scans the floorplan layer.
    * @returns A promise resolving to the list of detected rooms.
    */
-  protected async detectRooms(wallData?: WallUserData[]): Promise<Room[]> {
+  private async detectRooms(wallData?: WallUserData[]): Promise<Room[]> {
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (!floorplanLayer) return [];
 
@@ -4880,7 +4880,7 @@ export class Design2D {
    *
    * @returns {void}
    */
-  public placePreview() {
+  private placePreview() {
     if (!this.previewGroup) return;
 
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);

@@ -329,7 +329,7 @@ export class ConfiguratorCore {
   /**
    * Group to hold all measurement elements (lines, arrows, labels).
    */
-  public measurementGroup: Group | null = null;
+  private measurementGroup: Group | null = null;
 
   /**
    * Stores the default animation loop callback used in normal (non-VR) mode.
@@ -2043,7 +2043,7 @@ export class ConfiguratorCore {
    * @param {number} distance - Calculated distance between start and end.
    * @returns {void}
    */
-  public drawMeasurementLine(
+  private drawMeasurementLine(
     startPoint: Vector3,
     endPoint: Vector3,
     direction: Vector3,

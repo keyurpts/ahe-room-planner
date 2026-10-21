@@ -124,15 +124,13 @@ export class AssetLoader {
    * @returns A new THREE.Object3D copy
    */
   private cloneGLTF(gltf: GLTF, selectable: boolean): THREE.Object3D {
-    // Keep the cached scene pristine: attach() changes its parent and local transform.
-    const scene = gltf.scene.clone(true);
     const box = new THREE.Box3();
-    box.setFromObject(scene);
+    box.setFromObject(gltf.scene);
     const center = new THREE.Vector3();
     box.getCenter(center);
     let modelWrapper = new THREE.Group();
     modelWrapper.position.copy(center);
-    modelWrapper.attach(scene);
+    modelWrapper.attach(gltf.scene);
 
     modelWrapper.rotateX(Math.PI / 2);
 

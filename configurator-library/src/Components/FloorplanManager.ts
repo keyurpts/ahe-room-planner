@@ -33,18 +33,8 @@ export class FloorplanManager {
    *
    */
   public init(container2D: HTMLDivElement, container3D: HTMLDivElement): void {
-    this.design2D = this.createDesign2D(container2D);
-    this.design3D = this.createDesign3D(container3D);
-  }
-
-  /** Public creation point for 2D extensions. */
-  public createDesign2D(container: HTMLDivElement): Design2D {
-    return new Design2D(container);
-  }
-
-  /** Public creation point for 3D extensions. */
-  public createDesign3D(container: HTMLDivElement): Design3D {
-    return new Design3D(container);
+    this.design2D = new Design2D(container2D);
+    this.design3D = new Design3D(container3D);
   }
 
   /**
