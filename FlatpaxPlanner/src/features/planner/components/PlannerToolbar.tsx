@@ -1,7 +1,7 @@
 import drawIcon from '@/assets/icons/draw.svg';
 import deleteIcon from '@/assets/icons/delete.svg';
 import { useState, useEffect } from 'react';
-import { LengthUnit } from 'configurator-library-wrapper';
+import { LengthUnit } from 'wrapper';
 import doorIcon from '@/assets/icons/door.svg';
 import windowIcon from '@/assets/icons/window.svg';
 import fitIcon from '@/assets/icons/zoom-fit.svg';

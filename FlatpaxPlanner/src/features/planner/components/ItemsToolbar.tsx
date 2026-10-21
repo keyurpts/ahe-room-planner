@@ -13,7 +13,7 @@ import {
   LengthUnit,
   TransformControlsMode,
   type ConfiguratorCore,
-} from 'configurator-library-wrapper';
+} from 'wrapper';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';

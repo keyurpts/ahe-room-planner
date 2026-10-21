@@ -12,7 +12,7 @@ import {
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
-import { ConfiguratorEventType, Events, type ConfiguratorCore } from 'configurator-library-wrapper';
+import { ConfiguratorEventType, Events, type ConfiguratorCore } from 'wrapper';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
 
 interface Props {

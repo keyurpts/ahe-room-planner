@@ -1,0 +1,27 @@
+{
+  "name": "wrapper",
+  "version": "0.1.0",
+  "description": "Configurator library wrapper",
+  "type": "module",
+  "main": "./dist/wrapper.cjs.js",
+  "module": "./dist/wrapper.es.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.12",
+    "@types/three": "^0.176.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "three": "^0.176.0",
+    "three-configurator": "file:../configurator-library"
+  }
+}
