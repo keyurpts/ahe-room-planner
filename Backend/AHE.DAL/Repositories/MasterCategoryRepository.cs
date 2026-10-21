@@ -1,4 +1,4 @@
-﻿using AHE.DAL.Entities;
+using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -20,6 +20,7 @@ namespace AHE.DAL.Repositories
         {
             return await _context.MasterCategories
                 .AsNoTracking()
+                .Include(c => c.Category)
                 .Where(c => c.IsActive && c.DeletedAt == null)
                 .OrderBy(c => c.MasterCategoryName)
                 .ToListAsync();
@@ -28,6 +29,7 @@ namespace AHE.DAL.Repositories
         public async Task<MasterCategory?> GetByIdAsync(Guid id)
         {
             return await _context.MasterCategories
+                .Include(c => c.Category)
                 .FirstOrDefaultAsync(c =>
                     c.Id == id &&
                     c.DeletedAt == null);

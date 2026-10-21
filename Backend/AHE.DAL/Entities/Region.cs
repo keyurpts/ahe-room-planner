@@ -31,7 +31,7 @@ namespace AHE.DAL.Entities
         public ICollection<BenchtopColour> BenchtopColours { get; set; }
           = new List<BenchtopColour>();
 
-        public ICollection<Texture> Texture { get; set; }
-          = new List<Texture>();
+        public ICollection<Texture> Textures { get; set; }
+            = new List<Texture>();
     }
 }

@@ -1,4 +1,4 @@
-﻿using AHE.BLL.Interfaces;
+using AHE.BLL.Interfaces;
 using AHE.BLL.Services;
 using AHE.DAL;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +29,8 @@ public static class DependencyInjection
         services.AddScoped<ITextureService, TextureService>();
         services.AddScoped<IMaterialService, MaterialService>();
         services.AddScoped<IStorageService, StorageService>();
+        services.AddScoped<IBenchtopColourService, BenchtopColourService>();
+        services.AddScoped<IMasterCategoryService, MasterCategoryService>();
 
         return services;
     }

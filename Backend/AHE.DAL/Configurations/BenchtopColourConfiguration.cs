@@ -1,4 +1,4 @@
-﻿using AHE.DAL.Entities;
+using AHE.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -36,12 +36,25 @@ public class BenchtopColourConfiguration
         builder.Property(x => x.DeletedAt)
             .IsRequired(false);
 
-        // Region Relationship (One-to-Many)
-        builder.HasOne(x => x.Region)
+        // Region Relationship (Many-to-Many)
+        builder.HasMany(x => x.Regions)
             .WithMany(x => x.BenchtopColours)
-            .HasForeignKey(x => x.RegionId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasIndex(x => x.RegionId);
+            .UsingEntity<Dictionary<string, object>>(
+                "benchtop_colour_regions",
+                right => right
+                    .HasOne<Region>()
+                    .WithMany()
+                    .HasForeignKey("RegionId")
+                    .OnDelete(DeleteBehavior.Restrict),
+                left => left
+                    .HasOne<BenchtopColour>()
+                    .WithMany()
+                    .HasForeignKey("BenchtopColourId")
+                    .OnDelete(DeleteBehavior.Cascade),
+                join =>
+                {
+                    join.ToTable("benchtop_colour_regions");
+                    join.HasKey("BenchtopColourId", "RegionId");
+                });
     }
 }

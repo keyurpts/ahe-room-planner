@@ -6,6 +6,13 @@ export interface ItemSummaryRow {
   unitPrice: number | null;
 }
 
+export interface RawModelSummaryItem {
+  id: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+}
+
 export const sampleItemSummary: readonly ItemSummaryRow[] = Array.from(
   { length: 6 },
   (_, index) => ({
@@ -16,6 +23,35 @@ export const sampleItemSummary: readonly ItemSummaryRow[] = Array.from(
     unitPrice: 0,
   }),
 );
+
+export function formatModelsSummary(
+  rawModels: readonly RawModelSummaryItem[],
+  itemCodeLookup: Record<string, string> = {},
+): ItemSummaryRow[] {
+  const map = new Map<string, ItemSummaryRow>();
+
+  for (const item of rawModels) {
+    const baseId = item.id.replace(/_node\d+$/iu, '');
+    const cleanDescription = item.name.replace(/_node\d+$/iu, '').trim();
+    const itemCode = itemCodeLookup[baseId] ?? '—';
+    const key = `${baseId}:${cleanDescription}:${String(item.unitPrice)}`;
+
+    const existing = map.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      map.set(key, {
+        id: baseId,
+        description: cleanDescription,
+        itemCode,
+        quantity: item.quantity,
+        unitPrice: typeof item.unitPrice === 'number' ? item.unitPrice : null,
+      });
+    }
+  }
+
+  return Array.from(map.values());
+}
 
 export function itemSummaryCsv(rows: readonly ItemSummaryRow[]) {
   const escape = (value: string) => {

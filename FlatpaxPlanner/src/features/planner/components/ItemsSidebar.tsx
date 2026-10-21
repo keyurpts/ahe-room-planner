@@ -1,9 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { useAppSelector } from '@/app/store-hooks';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import type { CatalogueProduct } from '@/features/planner/catalogue/catalogue';
 import {
   useGetCategoriesQuery,
+  useGetMasterCategoriesQuery,
   useGetTexturesQuery,
+  useGetBenchtopColoursQuery,
   useGetModelsQuery,
   useGetThumbnailQuery,
   useLazyGetModelDownloadUrlQuery,
@@ -14,6 +16,7 @@ import {
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
 import { ConfiguratorEventType, Events } from 'three-configurator';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
+import { registerItemCodes } from '../state/configurator-slice';
 
 
 interface Props {
@@ -105,7 +108,9 @@ function Product({
     };
   }, [thumbnailData, thumbnailError, refetchThumbnail]);
 
+  const dispatch = useAppDispatch();
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+  const regionId = useAppSelector((state) => state.ui.regionId);
   const downloadUrl = thumbnail.currentData?.downloadUrl;
   const image = downloadUrl && failedUrl !== downloadUrl ? downloadUrl : placeholder;
   const product: CatalogueProduct = {
@@ -119,6 +124,12 @@ function Product({
     regions: variant.regions,
   };
   async function addProduct() {
+    const region = variant.regions.find((r) => r.regionId === regionId);
+    const itemPrice = region?.price ?? 0;
+    const itemCode = region?.itemNumber ?? variant.skuNumber;
+
+    dispatch(registerItemCodes({ [product.modelId]: itemCode }));
+
     onSelect(product.id);
     onAdd(product);
     try {
@@ -129,6 +140,10 @@ function Product({
         category: product.categoryId,
         name: product.name,
         id: product.modelId,
+        price: String(itemPrice),
+        itemCode,
+        skuNumber: variant.skuNumber,
+        format: 'glb',
       };
 
       let callbacks = {
@@ -267,29 +282,67 @@ export function ItemsSidebar({
   hidden = false,
   active = true,
 }: Props) {
+  const regionId = useAppSelector((state) => state.ui.regionId);
+  const masterCategories = useGetMasterCategoriesQuery(undefined, { skip: !active });
   const categories = useGetCategoriesQuery(undefined, { skip: !active });
-  const textures = useGetTexturesQuery(undefined, { skip: !active });
+  const textures = useGetTexturesQuery(regionId, { skip: !active || !regionId });
+  const benchtopColours = useGetBenchtopColoursQuery(regionId, {
+    skip: !active || !regionId,
+  });
   const [openSections, setOpenSections] = useState<readonly string[]>([
     'cupboard',
     'benchtop',
-    'cabinets',
   ]);
+  const [initializedSections, setInitializedSections] = useState(false);
   const [category, setCategory] = useState<string | null | undefined>();
   const [texture, setTexture] = useState<string>();
-  const [benchtopColour, setBenchtopColour] = useState('white');
+  const [benchtopColour, setBenchtopColour] = useState<string>();
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const [getTextureDownloadUrl] = useLazyGetTextureDownloadUrlQuery();
   const pendingTextureId = useRef<string | null>(null);
   const id = useId();
+
+  const masterCategoryList = useMemo(() => {
+    if (!masterCategories.data?.length) return [];
+    return masterCategories.data.map((mc) => {
+      const assignedCategories =
+        mc.categories?.length > 0
+          ? mc.categories
+          : (categories.data?.filter((c) => c.masterCategoryId === mc.id) ?? []);
+      return {
+        ...mc,
+        categories: assignedCategories,
+      };
+    });
+  }, [masterCategories.data, categories.data]);
+
+  useEffect(() => {
+    if (!initializedSections && masterCategoryList.length) {
+      setOpenSections((current) => [
+        ...current,
+        ...masterCategoryList.map((mc) => `master-category-${mc.id}`),
+      ]);
+      setInitializedSections(true);
+    }
+  }, [masterCategoryList, initializedSections]);
+
+  const allCategories = useMemo(() => {
+    const fromMaster = masterCategoryList.flatMap((mc) => mc.categories);
+    return fromMaster.length ? fromMaster : (categories.data ?? []);
+  }, [masterCategoryList, categories.data]);
+
   const activeCategory =
     category === undefined
       ? (
-        categories.data?.find((item) => item.categoryName === 'Floor Cupboard') ??
-        categories.data?.[0]
+        allCategories.find((item) => item.categoryName === 'Floor Cupboard') ??
+        allCategories[0]
       )?.id
       : category;
   const activeTexture =
     textures.data?.find((item) => item.id === texture)?.id ?? textures.data?.[0]?.id;
+  const activeBenchtopColour =
+    benchtopColours.data?.find((item) => item.id === benchtopColour)?.id ??
+    benchtopColours.data?.[0]?.id;
   useEffect(() => {
     if (!configuratorCore) return;
     const handleModelPlaced = (metadata: unknown) => {
@@ -395,92 +448,194 @@ export function ItemsSidebar({
             className="catalogue-colour-panel"
             hidden={!openSections.includes('benchtop')}
           >
-            <ColourOptions
-              label="Benchtop colour"
-              options={[
-                { id: 'white', name: 'White' },
-                { id: 'grey', name: 'Grey' },
-              ]}
-              selected={benchtopColour}
-              onChange={setBenchtopColour}
-            />
-          </div>
-        </section>
-        <section className="catalogue-section">
-          <h2>
-            <button
-              type="button"
-              className="catalogue-section-toggle"
-              aria-expanded={openSections.includes('cabinets')}
-              aria-controls={`${id}-cabinets`}
-              onClick={() => {
-                toggle('cabinets');
-              }}
-            >
-              Cabinets
-              <SidebarChevron expanded={openSections.includes('cabinets')} />
-            </button>
-          </h2>
-          <div
-            id={`${id}-cabinets`}
-            hidden={!openSections.includes('cabinets')}
-            className="cabinet-categories"
-          >
-            {categories.isLoading ? (
-              <p className="catalogue-empty" role="status">
-                Loading categories…
-              </p>
-            ) : categories.isError ? (
+            {benchtopColours.isLoading ? (
+              <p role="status">Loading colours…</p>
+            ) : benchtopColours.isError ? (
               <Retry
-                label="categories"
+                label="benchtop colours"
                 retry={() => {
-                  void categories.refetch();
+                  void benchtopColours.refetch();
                 }}
               />
-            ) : !categories.data?.length ? (
-              <p className="catalogue-empty">No categories available.</p>
+            ) : benchtopColours.data?.length ? (
+              <ColourOptions
+                label="Benchtop colour"
+                options={benchtopColours.data.map((item) => ({
+                  id: item.id,
+                  name: item.benchtopColourName,
+                }))}
+                selected={activeBenchtopColour}
+                onChange={setBenchtopColour}
+              />
             ) : (
-              categories.data.map((group) => (
-                <section key={group.id}>
-                  <h3>
-                    <button
-                      type="button"
-                      className="catalogue-category-toggle"
-                      aria-expanded={activeCategory === group.id}
-                      aria-controls={`${id}-${group.id}`}
-                      onClick={() => {
-                        setCategory(activeCategory === group.id ? null : group.id);
-                      }}
-                    >
-                      {group.categoryName}
-                      <SidebarChevron
-                        expanded={activeCategory === group.id}
-                        closedDirection="right"
-                      />
-                    </button>
-                  </h3>
-                  <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
-                    {active && activeCategory === group.id && activeTexture && (
-                      <CategoryProducts
-                        categoryId={group.id}
-                        textureId={activeTexture}
-                        onAdd={onAdd}
-                        onSelect={onSelect}
-                        selected={selected}
-                        onModelAdding={(textureId) => {
-                          pendingTextureId.current = textureId;
-                        }}
-                        onModelAddFailed={() => {
-                          pendingTextureId.current = null;
-                        }}
-                      />
-                    )}
-                  </div>
-                </section>
-              ))
+              <p>No colours available.</p>
             )}
           </div>
         </section>
+        {masterCategories.isLoading ? (
+          <section className="catalogue-section">
+            <p className="catalogue-empty" role="status">
+              Loading categories…
+            </p>
+          </section>
+        ) : masterCategories.isError && !categories.data?.length ? (
+          <section className="catalogue-section">
+            <Retry
+              label="categories"
+              retry={() => {
+                void masterCategories.refetch();
+                void categories.refetch();
+              }}
+            />
+          </section>
+        ) : masterCategoryList.length > 0 ? (
+          masterCategoryList.map((mc) => {
+            const sectionKey = `master-category-${mc.id}`;
+            const isExpanded = openSections.includes(sectionKey);
+            return (
+              <section key={mc.id} className="catalogue-section">
+                <h2>
+                  <button
+                    type="button"
+                    className="catalogue-section-toggle"
+                    aria-expanded={isExpanded}
+                    aria-controls={`${id}-${sectionKey}`}
+                    onClick={() => {
+                      toggle(sectionKey);
+                    }}
+                  >
+                    {mc.masterCategoryName}
+                    <SidebarChevron expanded={isExpanded} />
+                  </button>
+                </h2>
+                <div
+                  id={`${id}-${sectionKey}`}
+                  hidden={!isExpanded}
+                  className="cabinet-categories"
+                >
+                  {!mc.categories?.length ? (
+                    <p className="catalogue-empty">No categories available.</p>
+                  ) : (
+                    mc.categories.map((group) => (
+                      <section key={group.id}>
+                        <h3>
+                          <button
+                            type="button"
+                            className="catalogue-category-toggle"
+                            aria-expanded={activeCategory === group.id}
+                            aria-controls={`${id}-${group.id}`}
+                            onClick={() => {
+                              setCategory(activeCategory === group.id ? null : group.id);
+                            }}
+                          >
+                            {group.categoryName}
+                            <SidebarChevron
+                              expanded={activeCategory === group.id}
+                              closedDirection="right"
+                            />
+                          </button>
+                        </h3>
+                        <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
+                          {active && activeCategory === group.id && activeTexture && (
+                            <CategoryProducts
+                              categoryId={group.id}
+                              textureId={activeTexture}
+                              onAdd={onAdd}
+                              onSelect={onSelect}
+                              selected={selected}
+                              onModelAdding={(textureId) => {
+                                pendingTextureId.current = textureId;
+                              }}
+                              onModelAddFailed={() => {
+                                pendingTextureId.current = null;
+                              }}
+                            />
+                          )}
+                        </div>
+                      </section>
+                    ))
+                  )}
+                </div>
+              </section>
+            );
+          })
+        ) : (
+          <section className="catalogue-section">
+            <h2>
+              <button
+                type="button"
+                className="catalogue-section-toggle"
+                aria-expanded={openSections.includes('cabinets')}
+                aria-controls={`${id}-cabinets`}
+                onClick={() => {
+                  toggle('cabinets');
+                }}
+              >
+                Cabinets
+                <SidebarChevron expanded={openSections.includes('cabinets')} />
+              </button>
+            </h2>
+            <div
+              id={`${id}-cabinets`}
+              hidden={!openSections.includes('cabinets')}
+              className="cabinet-categories"
+            >
+              {categories.isLoading ? (
+                <p className="catalogue-empty" role="status">
+                  Loading categories…
+                </p>
+              ) : categories.isError ? (
+                <Retry
+                  label="categories"
+                  retry={() => {
+                    void categories.refetch();
+                  }}
+                />
+              ) : !categories.data?.length ? (
+                <p className="catalogue-empty">No categories available.</p>
+              ) : (
+                categories.data.map((group) => (
+                  <section key={group.id}>
+                    <h3>
+                      <button
+                        type="button"
+                        className="catalogue-category-toggle"
+                        aria-expanded={activeCategory === group.id}
+                        aria-controls={`${id}-${group.id}`}
+                        onClick={() => {
+                          setCategory(activeCategory === group.id ? null : group.id);
+                        }}
+                      >
+                        {group.categoryName}
+                        <SidebarChevron
+                          expanded={activeCategory === group.id}
+                          closedDirection="right"
+                        />
+                      </button>
+                    </h3>
+                    <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
+                      {active && activeCategory === group.id && activeTexture && (
+                        <CategoryProducts
+                          categoryId={group.id}
+                          textureId={activeTexture}
+                          onAdd={onAdd}
+                          onSelect={onSelect}
+                          selected={selected}
+                          onModelAdding={(textureId) => {
+                            pendingTextureId.current = textureId;
+                          }}
+                          onModelAddFailed={() => {
+                            pendingTextureId.current = null;
+                          }}
+                        />
+                      )}
+                    </div>
+                  </section>
+                ))
+              )}
+            </div>
+          </section>
+        )}
       </div>
       {canCustomise && (
         <button

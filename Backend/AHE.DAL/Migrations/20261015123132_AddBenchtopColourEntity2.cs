@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -12,13 +12,6 @@ namespace AHE.DAL.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "RegionId",
-                table: "textures",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
             migrationBuilder.CreateTable(
                 name: "BenchtopColours",
                 columns: table => new
@@ -45,41 +38,16 @@ namespace AHE.DAL.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_textures_RegionId",
-                table: "textures",
-                column: "RegionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_BenchtopColours_RegionId",
                 table: "BenchtopColours",
                 column: "RegionId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_textures_regions_RegionId",
-                table: "textures",
-                column: "RegionId",
-                principalTable: "regions",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_textures_regions_RegionId",
-                table: "textures");
-
             migrationBuilder.DropTable(
                 name: "BenchtopColours");
-
-            migrationBuilder.DropIndex(
-                name: "IX_textures_RegionId",
-                table: "textures");
-
-            migrationBuilder.DropColumn(
-                name: "RegionId",
-                table: "textures");
         }
     }
 }

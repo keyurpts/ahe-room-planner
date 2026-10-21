@@ -1,4 +1,4 @@
-﻿using AHE.BLL.DTOs.MasterCategories;
+using AHE.BLL.DTOs.MasterCategories;
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
@@ -22,15 +22,7 @@ public class MasterCategoryService : IMasterCategoryService
         var masterCategories =
             await _masterCategoryRepository.GetAllAsync();
 
-        return masterCategories.Select(c => new MasterCategoryResponse
-        {
-            Id = c.Id,
-            MasterCategoryName = c.MasterCategoryName,
-            Description = c.Description,
-            IsActive = c.IsActive,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt
-        }).ToList();
+        return masterCategories.Select(MapToResponse).ToList();
     }
 
     public async Task<MasterCategoryResponse?> GetByIdAsync(Guid id)
@@ -150,7 +142,20 @@ public class MasterCategoryService : IMasterCategoryService
             Description = masterCategory.Description,
             IsActive = masterCategory.IsActive,
             CreatedAt = masterCategory.CreatedAt,
-            UpdatedAt = masterCategory.UpdatedAt
+            UpdatedAt = masterCategory.UpdatedAt,
+            Categories = (masterCategory.Category ?? Enumerable.Empty<Category>())
+                .Where(cat => cat.IsActive && cat.DeletedAt == null)
+                .OrderBy(cat => cat.CategoryName)
+                .Select(cat => new DTOs.Categories.CategoryResponse
+                {
+                    Id = cat.Id,
+                    CategoryName = cat.CategoryName,
+                    Description = cat.Description,
+                    MasterCategoryId = cat.MasterCategoryId,
+                    IsActive = cat.IsActive,
+                    CreatedAt = cat.CreatedAt,
+                    UpdatedAt = cat.UpdatedAt
+                }).ToList()
         };
     }
 }

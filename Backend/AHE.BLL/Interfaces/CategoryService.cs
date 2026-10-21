@@ -1,4 +1,4 @@
-﻿using AHE.BLL.DTOs.Categories;
+using AHE.BLL.DTOs.Categories;
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
@@ -25,6 +25,7 @@ public class CategoryService : ICategoryService
             Id = c.Id,
             CategoryName = c.CategoryName,
             Description = c.Description,
+            MasterCategoryId = c.MasterCategoryId,
             IsActive = c.IsActive,
             CreatedAt = c.CreatedAt,
             UpdatedAt = c.UpdatedAt
@@ -146,6 +147,7 @@ public class CategoryService : ICategoryService
             Id = category.Id,
             CategoryName = category.CategoryName,
             Description = category.Description,
+            MasterCategoryId = category.MasterCategoryId,
             IsActive = category.IsActive,
             CreatedAt = category.CreatedAt,
             UpdatedAt = category.UpdatedAt

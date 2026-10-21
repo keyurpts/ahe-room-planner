@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
@@ -23,10 +23,7 @@ namespace AHE.DAL.Entities
 
         public DateTime? DeletedAt { get; set; }
 
-        // Foreign Key
-        public Guid RegionId { get; set; }
-
-        // Navigation Property
-        public Region Region { get; set; } = null!;
+        // Navigation Property (Many-to-Many)
+        public ICollection<Region> Regions { get; set; } = new List<Region>();
     }
 }

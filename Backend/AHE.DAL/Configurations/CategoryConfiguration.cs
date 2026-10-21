@@ -44,6 +44,7 @@ public class CategoryConfiguration
         builder.HasOne(x => x.MasterCategory)
             .WithMany(x => x.Category)
             .HasForeignKey(x => x.MasterCategoryId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Index

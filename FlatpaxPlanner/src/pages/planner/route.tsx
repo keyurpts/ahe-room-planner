@@ -1,7 +1,12 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useViewportScale } from '@/hooks/useViewportScale';
 import { PlannerViewers } from '@/features/planner/components/PlannerViewers';
 import { ItemListDialog } from '@/features/planner/components/ItemListDialog';
+import {
+  formatModelsSummary,
+  type RawModelSummaryItem,
+} from '@/features/planner/item-summary';
+import { ConfiguratorEventType, Events } from 'three-configurator';
 import {
   Navigate,
   Outlet,
@@ -48,7 +53,6 @@ export function Component() {
   const scale = useViewportScale();
   const draft = useAppSelector((state) => state.project.draft);
   const projectID = useAppSelector((state) => state.project.projectID);
-  const regionId = useAppSelector((state) => state.ui.regionId);
   const dispatch = useAppDispatch();
   // Drafts are unsaved until a backend confirms a successful save.
   const blocker = useBlocker(
@@ -95,9 +99,6 @@ export function Component() {
   const [hideWallsSelected, setHideWallsSelected] = useState(false);
   const [customising, setCustomising] = useState(false);
   const [itemFinishes, setItemFinishes] = useState<ItemFinishes>({ sink: null, benchtop: null });
-  const [items, setItems] = useState<readonly { product: CatalogueProduct; quantity: number }[]>(
-    [],
-  );
   const savedProject = location.state?.savedProject;
   let p2dJSON, p3dJSON;
   if (savedProject) {
@@ -106,36 +107,61 @@ export function Component() {
   }
 
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+  const itemCodeLookup = useAppSelector((state) => state.configurator.itemCodeLookup);
+  const [rawModels, setRawModels] = useState<readonly RawModelSummaryItem[]>(
+    () => configuratorCore?.getModelsSummary().models ?? [],
+  );
+
+  useEffect(() => {
+    if (!configuratorCore) return;
+
+    const handleSummaryUpdate = (summaryData: { models?: RawModelSummaryItem[] } | null | undefined) => {
+      setRawModels(summaryData?.models ?? []);
+    };
+
+    Events.on(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, handleSummaryUpdate);
+
+    return () => {
+      Events.off(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, handleSummaryUpdate);
+    };
+  }, [configuratorCore]);
+
+  const summaryRows = useMemo(
+    () => formatModelsSummary(rawModels, itemCodeLookup),
+    [rawModels, itemCodeLookup],
+  );
 
   function addItem(product: CatalogueProduct) {
-    setItems((current) =>
-      current.some((item) => item.product.id === product.id)
-        ? current.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
-        : [...current, { product, quantity: 1 }],
-    );
-    setAnnouncement(`${product.name} added to the item list.`);
+    setAnnouncement(`${product.name} selected. Click on the floor to place it.`);
   }
+
   function removeItem() {
-    if (items.length === 1 && items[0]?.product.id === selectedProduct && items[0].quantity === 1) {
+    if (summaryRows.length <= 1) {
       setCustomising(false);
     }
-    setItems((current) =>
-      current.flatMap((item) =>
-        item.product.id !== selectedProduct
-          ? [item]
-          : item.quantity > 1
-            ? [{ ...item, quantity: item.quantity - 1 }]
-            : [],
-      ),
-    );
-    setAnnouncement('Item removed from the item list.');
+    setAnnouncement('Item removed from the room.');
   }
 
   function serializeProjectJson(value: unknown): string {
     if (typeof value === 'string') return value;
-    return JSON.stringify(value) ?? '{}';
+    return JSON.stringify(value);
+  }
+
+  function getExported3DConfig(): Record<string, unknown> {
+    const rawConfig = configuratorCore?.export3DConfig() ?? {};
+    const result: Record<string, unknown> = { ...rawConfig };
+    for (const [key, value] of Object.entries(result)) {
+      if (!value || typeof value !== 'object' || key === 'walls' || key === 'floor') continue;
+      const baseId = key.replace(/_node\d+$/iu, '');
+      const record = value as Record<string, unknown>;
+      record.modelData ??= {
+        id: baseId,
+        name: typeof record.name === 'string' ? record.name : baseId,
+        itemCode: itemCodeLookup[baseId] ?? '—',
+        format: 'glb',
+      };
+    }
+    return result;
   }
 
   async function saveProject() {
@@ -144,7 +170,7 @@ export function Component() {
 
     try {
       if (projectID) {
-        const mode = location.pathname === paths.design ? '3d' : '2d'
+        const mode = location.pathname === paths.design ? '3d' : '2d';
         if (mode === "2d") {
           const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
           await updateProject2DJson(projectID, project2DJson);
@@ -154,12 +180,26 @@ export function Component() {
         else if (mode === "3d") {
           const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
           await updateProject2DJson(projectID, project2DJson);
-          // const project3DJson = serializeProjectJson(configuratorCore?.export3DConfig() ?? {});
-          const project3DJson = configuratorCore?.export3DConfig() ?? {};
+          const project3DJson = getExported3DConfig();
           await updateProject3DJson(projectID, project3DJson);
         }
       } else {
         const { id, designCode } = await createProject(draft.projectName);
+
+        const mode = location.pathname === paths.design ? '3d' : '2d';
+        if (mode === "2d") {
+          const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
+          await updateProject2DJson(id, project2DJson);
+          const project3DJson = serializeProjectJson({});
+          await updateProject3DJson(id, project3DJson);
+        }
+        else if (mode === "3d") {
+          const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
+          await updateProject2DJson(id, project2DJson);
+          const project3DJson = getExported3DConfig();
+          await updateProject3DJson(id, project3DJson);
+        }
+
         dispatch(setProjectID(id));
         dispatch(setDesignCode(designCode));
       }
@@ -223,9 +263,8 @@ export function Component() {
     );
   }
   if (!draft) return <Navigate to={paths.home} replace />;
-  const total = items.reduce<number | null>((sum, item) => {
-    const region = item.product.regions.find((value) => value.regionId === regionId);
-    return sum === null || !region ? null : sum + region.price * item.quantity;
+  const total = summaryRows.reduce<number | null>((sum, row) => {
+    return sum === null || row.unitPrice === null ? null : sum + row.unitPrice * row.quantity;
   }, 0);
 
   return (
@@ -259,13 +298,13 @@ export function Component() {
             onAdd={addItem}
             onSelect={setSelectedProduct}
             selected={selectedProduct}
-            canCustomise={items.length > 0}
-            hidden={customising && items.length > 0}
+            canCustomise={summaryRows.length > 0}
+            hidden={customising && summaryRows.length > 0}
             onCustomise={() => {
               setCustomising(true);
             }}
           />
-          {customising && items.length > 0 && (
+          {customising && summaryRows.length > 0 && (
             <ItemCustomisationSidebar
               finishes={itemFinishes}
               onChange={setItemFinishes}
@@ -402,15 +441,7 @@ export function Component() {
           setPanel(null);
         }}
         draft={draft}
-        rows={items.map(({ product, quantity }) => ({
-          id: product.id,
-          description: product.name,
-          itemCode:
-            product.regions.find((region) => region.regionId === regionId)?.itemNumber ??
-            product.skuNumber,
-          quantity,
-          unitPrice: product.regions.find((region) => region.regionId === regionId)?.price ?? null,
-        }))}
+        rows={summaryRows}
       />
     </div>
   );

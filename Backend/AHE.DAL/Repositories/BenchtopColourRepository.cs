@@ -1,4 +1,4 @@
-﻿using AHE.DAL.Entities;
+using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -20,7 +20,7 @@ public class BenchtopColourRepository : IBenchtopColourRepository
     {
         return await _context.BenchtopColour
             .AsNoTracking()
-            .Where(x => x.RegionId == regionId && x.DeletedAt == null)
+            .Where(x => x.DeletedAt == null && x.Regions.Any(r => r.Id == regionId))
             .OrderBy(x => x.BenchtopColourName)
             .ToListAsync();
     }

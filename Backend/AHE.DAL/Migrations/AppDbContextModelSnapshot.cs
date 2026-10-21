@@ -51,15 +51,10 @@ namespace AHE.DAL.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<Guid>("RegionId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RegionId");
 
                     b.ToTable("BenchtopColours", (string)null);
                 });
@@ -88,7 +83,7 @@ namespace AHE.DAL.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("MasterCategoryId")
+                    b.Property<Guid?>("MasterCategoryId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -517,9 +512,6 @@ namespace AHE.DAL.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("RegionId")
-                        .HasColumnType("uuid");
-
                     b.Property<JsonDocument>("TextureMetadata")
                         .HasColumnType("jsonb");
 
@@ -535,8 +527,6 @@ namespace AHE.DAL.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RegionId");
 
                     b.ToTable("textures", (string)null);
                 });
@@ -602,15 +592,34 @@ namespace AHE.DAL.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("AHE.DAL.Entities.BenchtopColour", b =>
+            modelBuilder.Entity("benchtop_colour_regions", b =>
                 {
-                    b.HasOne("AHE.DAL.Entities.Region", "Region")
-                        .WithMany("BenchtopColours")
-                        .HasForeignKey("RegionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Property<Guid>("BenchtopColourId")
+                        .HasColumnType("uuid");
 
-                    b.Navigation("Region");
+                    b.Property<Guid>("RegionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("BenchtopColourId", "RegionId");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("benchtop_colour_regions", (string)null);
+                });
+
+            modelBuilder.Entity("texture_regions", b =>
+                {
+                    b.Property<Guid>("TextureId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RegionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TextureId", "RegionId");
+
+                    b.HasIndex("RegionId");
+
+                    b.ToTable("texture_regions", (string)null);
                 });
 
             modelBuilder.Entity("AHE.DAL.Entities.Category", b =>
@@ -618,8 +627,7 @@ namespace AHE.DAL.Migrations
                     b.HasOne("AHE.DAL.Entities.MasterCategory", "MasterCategory")
                         .WithMany("Category")
                         .HasForeignKey("MasterCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("MasterCategory");
                 });
@@ -720,17 +728,6 @@ namespace AHE.DAL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AHE.DAL.Entities.Texture", b =>
-                {
-                    b.HasOne("AHE.DAL.Entities.Region", "Region")
-                        .WithMany("Texture")
-                        .HasForeignKey("RegionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Region");
-                });
-
             modelBuilder.Entity("AHE.DAL.Entities.User", b =>
                 {
                     b.HasOne("AHE.DAL.Entities.Region", "Region")
@@ -748,6 +745,36 @@ namespace AHE.DAL.Migrations
                     b.Navigation("Region");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("benchtop_colour_regions", b =>
+                {
+                    b.HasOne("AHE.DAL.Entities.BenchtopColour", null)
+                        .WithMany()
+                        .HasForeignKey("BenchtopColourId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AHE.DAL.Entities.Region", null)
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("texture_regions", b =>
+                {
+                    b.HasOne("AHE.DAL.Entities.Region", null)
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AHE.DAL.Entities.Texture", null)
+                        .WithMany()
+                        .HasForeignKey("TextureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AHE.DAL.Entities.Category", b =>
@@ -776,13 +803,9 @@ namespace AHE.DAL.Migrations
 
             modelBuilder.Entity("AHE.DAL.Entities.Region", b =>
                 {
-                    b.Navigation("BenchtopColours");
-
                     b.Navigation("ModelVariantRegions");
 
                     b.Navigation("Projects");
-
-                    b.Navigation("Texture");
 
                     b.Navigation("Users");
                 });

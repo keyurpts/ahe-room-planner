@@ -30,9 +30,9 @@ namespace AHE.DAL.Entities
             = new List<Material>();
 
         // Foreign Key
-        public Guid MasterCategoryId { get; set; }
+        public Guid? MasterCategoryId { get; set; }
 
         // Navigation Property
-        public MasterCategory MasterCategory { get; set; } = null!;
+        public MasterCategory? MasterCategory { get; set; }
     }
 }

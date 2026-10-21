@@ -1,4 +1,5 @@
-﻿using System;
+using AHE.BLL.DTOs.Categories;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -17,5 +18,7 @@ namespace AHE.BLL.DTOs.MasterCategories
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        public List<CategoryResponse> Categories { get; set; } = new();
     }
 }
