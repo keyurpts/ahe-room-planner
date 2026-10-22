@@ -32,9 +32,29 @@ export class FloorplanManager {
    * should toggle visibility dynamically, showing one and hiding the other.
    *
    */
-  public init(container2D: HTMLDivElement, container3D: HTMLDivElement): void {
-    this.design2D = new Design2D(container2D);
-    this.design3D = new Design3D(container3D);
+  public init(container2D: HTMLDivElement, container3D: HTMLDivElement):     void {
+    this.design2D = this.createDesign2D(container2D);
+    this.design3D = this.createDesign3D(container3D);
+  }
+
+  /**
+   * Creates a 2D design instance using the container.
+   *
+   * @param container - The HTML element that hosts the 2D design.
+   * @returns A new Design2D instance.
+   */
+  protected createDesign2D(container: HTMLDivElement): Design2D {
+    return new Design2D(container);
+  }
+
+  /**
+   * Creates a 3D design instance using the container.
+   *
+   * @param container - The HTML element that hosts the 3D design.
+   * @returns A new Design3D instance.
+   */
+  protected createDesign3D(container: HTMLDivElement): Design3D {
+    return new Design3D(container);
   }
 
   /**

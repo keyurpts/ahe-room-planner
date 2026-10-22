@@ -15,3 +15,8 @@ export { Predefined2DShapes } from './shapeTemplates';
 
 // Export configurator event classes and event types
 export { Events, ConfiguratorEventType } from './event';
+
+// Export Design2D and Design3D for wrapper extensions
+export { Design2D } from './Components/Design2D';
+export { Design3D } from './Components/Design3D';
+
