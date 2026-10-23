@@ -147,6 +147,18 @@ function thumbnail(value: unknown): Thumbnail {
   if (!Number.isFinite(Date.parse(expiresAt))) throw new Error('Invalid thumbnail expiry date.');
   return { downloadUrl, expiresAt };
 }
+
+// createApi() – Creates the API service.
+// reducerPath – Defines the API's name in the Redux store.
+// baseQuery – Handles API requests and errors in one place.
+// apiClient.request() – Sends the request to the backend.
+// parse – Validates or transforms the response data.
+// endpoints – Defines which APIs are available.
+// builder.query() – Fetches data from the backend.
+// refetchOnFocus: true – Refreshes data when the app regains focus.
+// refetchOnReconnect: true – Refreshes data when the internet reconnects.
+// keepUnusedDataFor: 0 – Removes cached data when no component is using it.
+
 export const catalogueApi = createApi({
   reducerPath: 'catalogueApi',
   baseQuery: async (

@@ -124,8 +124,11 @@ export function ItemsToolbar({
     };
   }, [configuratorCore, transformTool]);
   function changeMeasurement(mode: MeasurementMode | null) {
-    if (!configuratorCore?.isModelSelected()) {
-      setMessage('Select an item in the viewer to show its measurements.');
+    // if (!configuratorCore?.isModelSelected()) {
+    //   setMessage('Select an item in the viewer to show its measurements.');
+    //   return;
+    // }
+    if (!configuratorCore) {
       return;
     }
     setMeasurement(mode);
@@ -241,7 +244,7 @@ export function ItemsToolbar({
                   />
                 </>
               }
-              disabled={!canUseSelectedModelTools}
+            // disabled={!canUseSelectedModelTools}
             />
           )}
         </Fragment>

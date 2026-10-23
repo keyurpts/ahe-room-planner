@@ -46,6 +46,7 @@ import {
   ItemCustomisationSidebar,
   type ItemFinishes,
 } from '@/features/planner/components/ItemCustomisationSidebar';
+import { LeaveDesignDialog2 } from '@/features/planner/components/LeaveDesignDialog2';
 
 export function Component() {
   const viewer2DRef = useRef<HTMLDivElement>(null);
@@ -267,6 +268,8 @@ export function Component() {
     return sum === null || row.unitPrice === null ? null : sum + row.unitPrice * row.quantity;
   }, 0);
 
+  const [displayLeaveDialog, setDisplayLeaveDialog] = useState(false);
+
   return (
     <div
       className={`planner-page ${step === 'Add items' ? 'planner-items-page' : ''}`}
@@ -345,12 +348,7 @@ export function Component() {
               type="button"
               className="planner-next planner-stage-back"
               onClick={() => {
-                changeStep('Room setup');
-                floorPlanManager?.switchTo2D();
-
-                configuratorCore?.enableWallColoringMode?.(false);
-                configuratorCore?.enableWallTextureMode?.(false);
-                configuratorCore?.enableWallMaterialResetMode?.(false);
+                setDisplayLeaveDialog(true);
               }}
             >
               <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">
@@ -424,15 +422,30 @@ export function Component() {
         }}
       />
       <LeaveDesignDialog
-        open={blocker.state === 'blocked'}
+        open={(blocker.state === 'blocked') || (displayLeaveDialog)}
         onCancel={() => {
           if (blocker.state === 'blocked') blocker.reset();
+          setDisplayLeaveDialog(false);
         }}
         onConfirm={() => {
           if (blocker.state === 'blocked') {
             blocker.proceed();
             dispatch(discardProject());
           }
+        }}
+      />
+      <LeaveDesignDialog2
+        open={displayLeaveDialog}
+        onCancel={() => {
+          setDisplayLeaveDialog(false);
+        }}
+        onConfirm={() => {
+          changeStep('Room setup');
+          floorPlanManager?.switchTo2D();
+          configuratorCore?.enableWallColoringMode?.(false);
+          configuratorCore?.enableWallTextureMode?.(false);
+          configuratorCore?.enableWallMaterialResetMode?.(false);
+          setDisplayLeaveDialog(false);
         }}
       />
       <ItemListDialog
