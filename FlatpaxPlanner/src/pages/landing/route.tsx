@@ -1,3 +1,4 @@
+// LANDING PAGE
 import { useEffect } from 'react';
 import logo from '@/assets/images/flatpax-utility-logo.png';
 import { env } from '@/config/env';
