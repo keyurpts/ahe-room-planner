@@ -144,7 +144,7 @@ export function Component() {
 
     try {
       if (projectID) {
-        const mode = location.pathname === paths.design ? '3d' : '2d'
+        const mode = location.pathname === paths.design ? '3d' : '2d';
         if (mode === "2d") {
           const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
           await updateProject2DJson(projectID, project2DJson);
@@ -154,12 +154,26 @@ export function Component() {
         else if (mode === "3d") {
           const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
           await updateProject2DJson(projectID, project2DJson);
-          // const project3DJson = serializeProjectJson(configuratorCore?.export3DConfig() ?? {});
-          const project3DJson = configuratorCore?.export3DConfig() ?? {};
+          const project3DJson = getExported3DConfig();
           await updateProject3DJson(projectID, project3DJson);
         }
       } else {
         const { id, designCode } = await createProject(draft.projectName);
+
+        const mode = location.pathname === paths.design ? '3d' : '2d';
+        if (mode === "2d") {
+          const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
+          await updateProject2DJson(id, project2DJson);
+          const project3DJson = serializeProjectJson({});
+          await updateProject3DJson(id, project3DJson);
+        }
+        else if (mode === "3d") {
+          const project2DJson = serializeProjectJson(floorPlanManager?.exportJson() ?? {});
+          await updateProject2DJson(id, project2DJson);
+          const project3DJson = getExported3DConfig();
+          await updateProject3DJson(id, project3DJson);
+        }
+
         dispatch(setProjectID(id));
         dispatch(setDesignCode(designCode));
       }
