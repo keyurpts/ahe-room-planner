@@ -2,6 +2,8 @@ using AHE.BLL.DTOs.Models;
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
+using AHE.DAL.Repositories;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,105 +17,168 @@ public class ModelService : IModelService
     private readonly IRegionRepository _regionRepository;
     private readonly IUserRepository _userRepository;
     private readonly ITextureRepository _textureRepository;
+    private readonly ILogger<ModelService> _logger;
 
     public ModelService(
         IModelRepository modelRepository,
         ICategoryRepository categoryRepository,
         IRegionRepository regionRepository,
         IUserRepository userRepository,
-        ITextureRepository textureRepository)
+        ITextureRepository textureRepository,
+        ILogger<ModelService> logger)
     {
         _modelRepository = modelRepository;
         _categoryRepository = categoryRepository;
         _regionRepository = regionRepository;
         _userRepository = userRepository;
         _textureRepository = textureRepository;
+        _logger = logger;
     }
 
     public async Task<List<ModelResponse>> GetAllAsync()
     {
-        var models =
-            await _modelRepository.GetAllAsync();
+        try
+        {
+            var models = await _modelRepository.GetAllAsync();
 
-        return models
-            .Select(MapToResponse)
-            .ToList();
+            if (models is null || !models.Any())
+            {
+                return new List<ModelResponse>();
+            }
+
+            return models
+                .Select(MapToResponse)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving models.");
+
+            throw new InvalidOperationException(
+                "An error occurred while retrieving models.",
+                ex);
+        }
     }
 
     public async Task<List<ModelResponse>> GetByCategoryIdAsync(
         Guid categoryId)
     {
-        var models =
-            await _modelRepository
-                .GetByCategoryIdAsync(categoryId);
+        if (categoryId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Category ID cannot be empty.",
+                nameof(categoryId));
+        }
 
-        return models
-            .Select(MapToResponse)
-            .ToList();
+        try
+        {
+            var models =
+                await _modelRepository
+                    .GetByCategoryIdAsync(categoryId);
+
+            if (models is null || !models.Any())
+            {
+                return new List<ModelResponse>();
+            }
+
+            return models
+                .Select(MapToResponse)
+                .ToList();
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving models for category {CategoryId}.",
+                categoryId);
+
+            throw new InvalidOperationException(
+                "An error occurred while retrieving models by category.",
+                ex);
+        }
     }
 
     public async Task<ModelResponse?> GetByIdAsync(Guid id)
     {
-        var model =
-            await _modelRepository.GetByIdAsync(id);
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Model ID cannot be empty.",
+                nameof(id));
+        }
 
-        return model == null
-            ? null
-            : MapToResponse(model);
+        try
+        {
+            var model = await _modelRepository.GetByIdAsync(id);
+
+            if (model is null)
+            {
+                _logger.LogWarning(
+                    "Model with ID {ModelId} was not found.",
+                    id);
+
+                return null;
+            }
+
+            return MapToResponse(model);
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving model with ID {ModelId}.",
+                id);
+
+            throw new InvalidOperationException(
+                "An error occurred while retrieving the model.",
+                ex);
+        }
     }
 
     public async Task<ModelResponse> CreateAsync(
         CreateModelRequest request)
     {
+        // -----------------------------
+        // Validate Request
+        // -----------------------------
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
         if (request.CategoryId == Guid.Empty)
         {
             throw new ArgumentException(
-                "Category ID is required.");
+                "Category ID is required.",
+                nameof(request.CategoryId));
         }
 
         if (string.IsNullOrWhiteSpace(request.ModelName))
         {
             throw new ArgumentException(
-                "Model name is required.");
+                "Model name is required.",
+                nameof(request.ModelName));
         }
 
-        if (request.Variants == null || request.Variants.Count == 0)
+        if (request.Variants is null ||
+            request.Variants.Count == 0)
         {
             throw new ArgumentException(
-                "At least one variant is required.");
+                "At least one variant is required.",
+                nameof(request.Variants));
         }
 
-        // Verify Category
-        var category =
-            await _categoryRepository
-                .GetByIdAsync(request.CategoryId);
-
-        if (category == null)
-        {
-            throw new InvalidOperationException(
-                "Category not found.");
-        }
-
-        if (!category.IsActive)
-        {
-            throw new InvalidOperationException(
-                "Category is inactive.");
-        }
-
-        // -----------------------------
-        // Validate Variants
-        // -----------------------------
-        var duplicateTexture =
-            request.Variants
-                .GroupBy(v => v.TextureId)
-                .Any(g => g.Count() > 1);
-
-        if (duplicateTexture)
-        {
-            throw new ArgumentException(
-                "Duplicate textures are not allowed across variants.");
-        }
-
+        // Validate variant fields before database access.
         foreach (var variantRequest in request.Variants)
         {
             if (variantRequest.TextureId == Guid.Empty)
@@ -122,266 +187,481 @@ public class ModelService : IModelService
                     "Texture ID is required for each variant.");
             }
 
-            var texture =
-                await _textureRepository
-                    .GetByIdAsync(variantRequest.TextureId);
-
-            if (texture == null)
-            {
-                throw new InvalidOperationException(
-                    $"Texture '{variantRequest.TextureId}' not found.");
-            }
-
-            if (!texture.IsActive)
-            {
-                throw new InvalidOperationException(
-                    $"Texture '{variantRequest.TextureId}' is inactive.");
-            }
-
             if (string.IsNullOrWhiteSpace(variantRequest.SkuNumber))
             {
                 throw new ArgumentException(
                     "SKU number is required for each variant.");
             }
 
-            if (variantRequest.Regions == null || variantRequest.Regions.Count == 0)
+            if (variantRequest.Regions is null ||
+                variantRequest.Regions.Count == 0)
             {
                 throw new ArgumentException(
                     $"At least one region is required for variant with SKU '{variantRequest.SkuNumber}'.");
             }
 
-            var duplicateRegion =
-                variantRequest.Regions
-                    .GroupBy(r => r.RegionId)
-                    .Any(g => g.Count() > 1);
+            if (variantRequest.Regions.Any(
+                    r => r.RegionId == Guid.Empty))
+            {
+                throw new ArgumentException(
+                    $"Region ID is required for each region in variant with SKU '{variantRequest.SkuNumber}'.");
+            }
 
-            if (duplicateRegion)
+            if (variantRequest.Regions.Any(
+                    r => string.IsNullOrWhiteSpace(r.ItemNumber)))
+            {
+                throw new ArgumentException(
+                    $"Item number is required for each region in variant with SKU '{variantRequest.SkuNumber}'.");
+            }
+
+            if (variantRequest.Regions.Any(r => r.Price < 0))
+            {
+                throw new ArgumentException(
+                    $"Price cannot be negative for variant with SKU '{variantRequest.SkuNumber}'.");
+            }
+
+            var duplicateRegions = variantRequest.Regions
+                .GroupBy(r => r.RegionId)
+                .Any(g => g.Count() > 1);
+
+            if (duplicateRegions)
             {
                 throw new ArgumentException(
                     $"Duplicate regions are not allowed in variant with SKU '{variantRequest.SkuNumber}'.");
             }
-
-            foreach (var regionRequest in variantRequest.Regions)
-            {
-                if (regionRequest.RegionId == Guid.Empty)
-                {
-                    throw new ArgumentException(
-                        "Region ID is required.");
-                }
-
-                var region =
-                    await _regionRepository
-                        .GetByIdAsync(regionRequest.RegionId);
-
-                if (region == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Region '{regionRequest.RegionId}' not found.");
-                }
-
-                if (!region.IsActive)
-                {
-                    throw new InvalidOperationException(
-                        $"Region '{regionRequest.RegionId}' is inactive.");
-                }
-
-                if (string.IsNullOrWhiteSpace(regionRequest.ItemNumber))
-                {
-                    throw new ArgumentException(
-                        $"Item number is required for region '{region.Name}' in variant with SKU '{variantRequest.SkuNumber}'.");
-                }
-
-                if (regionRequest.Price < 0)
-                {
-                    throw new ArgumentException(
-                        "Price cannot be negative.");
-                }
-            }
         }
 
-        // -----------------------------
-        // Create Model
-        // -----------------------------
-        var now = DateTime.UtcNow;
+        var duplicateTextures = request.Variants
+            .GroupBy(v => v.TextureId)
+            .Any(g => g.Count() > 1);
 
-        var model = new Model
+        if (duplicateTextures)
         {
-            Id = Guid.NewGuid(),
-            CategoryId = request.CategoryId,
-            ModelName = request.ModelName.Trim(),
-            ModelPath = string.IsNullOrWhiteSpace(request.ModelPath) ? "pending" : request.ModelPath.Trim(),
-            Description = request.Description?.Trim(),
-            ModelMetadata = request.ModelMetadata,
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now,
-            DeletedAt = null
-        };
+            throw new ArgumentException(
+                "Duplicate textures are not allowed across variants.");
+        }
 
-        // -----------------------------
-        // Add Variants and Regional Configs
-        // -----------------------------
-        foreach (var variantRequest in request.Variants)
+        try
         {
-            var variant = new ModelVariant
+            // -----------------------------
+            // Verify Category
+            // -----------------------------
+            var category =
+                await _categoryRepository.GetByIdAsync(
+                    request.CategoryId);
+
+            if (category is null)
+            {
+                throw new InvalidOperationException(
+                    "Category not found.");
+            }
+
+            if (!category.IsActive)
+            {
+                throw new InvalidOperationException(
+                    "Category is inactive.");
+            }
+
+            // -----------------------------
+            // Validate Textures
+            // -----------------------------
+            foreach (var variantRequest in request.Variants)
+            {
+                var texture =
+                    await _textureRepository.GetByIdAsync(
+                        variantRequest.TextureId);
+
+                if (texture is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Texture '{variantRequest.TextureId}' not found.");
+                }
+
+                if (!texture.IsActive ||
+                    texture.DeletedAt is not null)
+                {
+                    throw new InvalidOperationException(
+                        $"Texture '{variantRequest.TextureId}' is inactive or deleted.");
+                }
+
+                // -----------------------------
+                // Validate Regions
+                // -----------------------------
+                foreach (var regionRequest in variantRequest.Regions)
+                {
+                    var region =
+                        await _regionRepository.GetByIdAsync(
+                            regionRequest.RegionId);
+
+                    if (region is null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Region '{regionRequest.RegionId}' not found.");
+                    }
+
+                    if (!region.IsActive)
+                        // || region.DeletedAt is not null
+                    {
+                        throw new InvalidOperationException(
+                            $"Region '{regionRequest.RegionId}' is inactive or deleted.");
+                    }
+                }
+            }
+
+            // -----------------------------
+            // Create Model
+            // -----------------------------
+            var now = DateTime.UtcNow;
+
+            var model = new Model
             {
                 Id = Guid.NewGuid(),
-                ModelId = model.Id,
-                TextureId = variantRequest.TextureId,
-                SkuNumber = variantRequest.SkuNumber.Trim(),
-                ThumbnailPath = string.IsNullOrWhiteSpace(variantRequest.ThumbnailPath)
-                    ? StorageService.BuildThumbnailPath(model.CategoryId, model.Id, variantRequest.TextureId)
-                    : (variantRequest.ThumbnailPath.StartsWith("thumbnails/")
-                        ? variantRequest.ThumbnailPath.Trim()
-                        : StorageService.BuildThumbnailPath(model.CategoryId, model.Id, variantRequest.TextureId, variantRequest.ThumbnailPath.Trim()))
+                CategoryId = request.CategoryId,
+                ModelName = request.ModelName.Trim(),
+
+                ModelPath = string.IsNullOrWhiteSpace(
+                    request.ModelPath)
+                        ? "pending"
+                        : request.ModelPath.Trim(),
+
+                Description = request.Description?.Trim(),
+                ModelMetadata = request.ModelMetadata,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+                DeletedAt = null
             };
 
-            foreach (var regionRequest in variantRequest.Regions)
+            // -----------------------------
+            // Add Variants and Regional Configs
+            // -----------------------------
+            foreach (var variantRequest in request.Variants)
             {
-                var variantRegion = new ModelVariantRegion
+                var thumbnailPath =
+                    string.IsNullOrWhiteSpace(
+                        variantRequest.ThumbnailPath)
+                        ? StorageService.BuildThumbnailPath(
+                            model.CategoryId,
+                            model.Id,
+                            variantRequest.TextureId)
+                        : variantRequest.ThumbnailPath.StartsWith(
+                            "thumbnails/",
+                            StringComparison.OrdinalIgnoreCase)
+                            ? variantRequest.ThumbnailPath.Trim()
+                            : StorageService.BuildThumbnailPath(
+                                model.CategoryId,
+                                model.Id,
+                                variantRequest.TextureId,
+                                variantRequest.ThumbnailPath.Trim());
+
+                var variant = new ModelVariant
                 {
                     Id = Guid.NewGuid(),
                     ModelId = model.Id,
                     TextureId = variantRequest.TextureId,
-                    RegionId = regionRequest.RegionId,
-                    ItemNumber = regionRequest.ItemNumber.Trim(),
-                    Price = regionRequest.Price,
-                    IsActive = true,
-                    CreatedAt = now,
-                    UpdatedAt = now
+                    SkuNumber = variantRequest.SkuNumber.Trim(),
+                    ThumbnailPath = thumbnailPath
                 };
 
-                variant.ModelVariantRegions.Add(variantRegion);
-                model.ModelRegions.Add(variantRegion);
+                foreach (var regionRequest in variantRequest.Regions)
+                {
+                    var variantRegion = new ModelVariantRegion
+                    {
+                        Id = Guid.NewGuid(),
+                        ModelId = model.Id,
+                        TextureId = variantRequest.TextureId,
+                        RegionId = regionRequest.RegionId,
+                        ItemNumber = regionRequest.ItemNumber.Trim(),
+                        Price = regionRequest.Price,
+                        IsActive = true,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
+
+                    variant.ModelVariantRegions.Add(variantRegion);
+                    model.ModelRegions.Add(variantRegion);
+                }
+
+                model.ModelTextures.Add(variant);
             }
 
-            model.ModelTextures.Add(variant);
+            // -----------------------------
+            // Save
+            // -----------------------------
+            await _modelRepository.AddAsync(model);
+
+            _logger.LogInformation(
+                "Model created successfully. ModelId: {ModelId}, CategoryId: {CategoryId}, VariantCount: {VariantCount}.",
+                model.Id,
+                model.CategoryId,
+                model.ModelTextures.Count);
+
+            return MapToResponse(model);
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while creating model for category {CategoryId}.",
+                request.CategoryId);
 
-        // -----------------------------
-        // Save
-        // -----------------------------
-        await _modelRepository.AddAsync(model);
-
-        return MapToResponse(model);
+            // Preserve the original exception type and stack trace.
+            throw;
+        }
     }
 
     public async Task<ModelResponse?> UpdateAsync(
         Guid id,
         UpdateModelRequest request)
     {
-        var model =
-            await _modelRepository.GetByIdAsync(id);
-
-        if (model == null)
+        if (id == Guid.Empty)
         {
-            return null;
+            throw new ArgumentException(
+                "Model ID cannot be empty.",
+                nameof(id));
+        }
+
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
         }
 
         if (string.IsNullOrWhiteSpace(request.ModelName))
         {
             throw new ArgumentException(
-                "Model name is required.");
+                "Model name is required.",
+                nameof(request.ModelName));
         }
 
         if (string.IsNullOrWhiteSpace(request.ModelPath))
         {
             throw new ArgumentException(
-                "Model path is required.");
+                "Model path is required.",
+                nameof(request.ModelPath));
         }
 
-        // Verify Category
-        var category =
-            await _categoryRepository
+        if (request.CategoryId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Category ID cannot be empty.",
+                nameof(request.CategoryId));
+        }
+
+        try
+        {
+            var model = await _modelRepository.GetByIdAsync(id);
+
+            if (model is null)
+            {
+                _logger.LogWarning(
+                    "Model with ID {ModelId} was not found.",
+                    id);
+
+                return null;
+            }
+
+            // Verify category
+            var category = await _categoryRepository
                 .GetByIdAsync(request.CategoryId);
 
-        if (category == null)
-        {
-            throw new InvalidOperationException(
-                "Category not found.");
+            if (category is null)
+            {
+                throw new InvalidOperationException(
+                    "Category not found.");
+            }
+
+            if (!category.IsActive)
+            {
+                throw new InvalidOperationException(
+                    "Category is inactive.");
+            }
+
+            model.CategoryId = request.CategoryId;
+            model.ModelName = request.ModelName.Trim();
+            model.ModelPath = request.ModelPath.Trim();
+            model.ModelMetadata = request.ModelMetadata;
+            model.UpdatedAt = DateTime.UtcNow;
+
+            await _modelRepository.UpdateAsync(model);
+
+            _logger.LogInformation(
+                "Model with ID {ModelId} updated successfully.",
+                id);
+
+            return MapToResponse(model);
         }
-
-        if (!category.IsActive)
+        catch (ArgumentException)
         {
-            throw new InvalidOperationException(
-                "Category is inactive.");
+            throw;
         }
+        catch (InvalidOperationException)
+        {
+            // Preserve expected business validation exceptions.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while updating model with ID {ModelId}.",
+                id);
 
-        model.CategoryId = request.CategoryId;
-        model.ModelName = request.ModelName.Trim();
-        model.ModelPath = request.ModelPath.Trim();
-        model.ModelMetadata = request.ModelMetadata;
-        model.UpdatedAt = DateTime.UtcNow;
-
-        await _modelRepository.UpdateAsync(model);
-
-        return MapToResponse(model);
+            throw new InvalidOperationException(
+                "An error occurred while updating the model.",
+                ex);
+        }
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var model =
-            await _modelRepository.GetByIdAsync(id);
-
-        if (model == null)
+        if (id == Guid.Empty)
         {
-            return false;
+            throw new ArgumentException(
+                "Model ID cannot be empty.",
+                nameof(id));
         }
 
-        model.IsActive = false;
-        model.DeletedAt = DateTime.UtcNow;
-        model.UpdatedAt = DateTime.UtcNow;
+        try
+        {
+            var model = await _modelRepository.GetByIdAsync(id);
 
-        await _modelRepository.UpdateAsync(model);
+            if (model is null)
+            {
+                _logger.LogWarning(
+                    "Model with ID {ModelId} was not found.",
+                    id);
 
-        return true;
+                return false;
+            }
+
+            if (!model.IsActive)
+            {
+                _logger.LogWarning(
+                    "Model with ID {ModelId} is already inactive.",
+                    id);
+
+                return false;
+            }
+
+            var now = DateTime.UtcNow;
+
+            model.IsActive = false;
+            model.DeletedAt = now;
+            model.UpdatedAt = now;
+
+            await _modelRepository.UpdateAsync(model);
+
+            _logger.LogInformation(
+                "Model with ID {ModelId} was soft-deleted successfully.",
+                id);
+
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while deleting model with ID {ModelId}.",
+                id);
+
+            throw new InvalidOperationException(
+                "An error occurred while deleting the model.",
+                ex);
+        }
     }
 
     public async Task<List<ModelResponse>> GetByCategoryForUserAsync(
         Guid userId,
         Guid categoryId)
     {
-        // Get logged-in user
-        var user = await _userRepository.GetByIdAsync(userId);
-
-        if (user == null)
+        if (userId == Guid.Empty)
         {
-            throw new InvalidOperationException(
-                "User not found.");
+            throw new ArgumentException(
+                "User ID cannot be empty.",
+                nameof(userId));
         }
 
-        if (!user.IsActive)
+        if (categoryId == Guid.Empty)
         {
-            throw new InvalidOperationException(
-                "User is inactive.");
+            throw new ArgumentException(
+                "Category ID cannot be empty.",
+                nameof(categoryId));
         }
 
-        // Verify category
-        var category =
-            await _categoryRepository.GetByIdAsync(categoryId);
-
-        if (category == null)
+        try
         {
-            throw new InvalidOperationException(
-                "Category not found.");
-        }
+            // Get logged-in user
+            var user = await _userRepository.GetByIdAsync(userId);
 
-        if (!category.IsActive)
+            if (user is null)
+            {
+                throw new InvalidOperationException(
+                    "User not found.");
+            }
+
+            if (!user.IsActive)
+            {
+                throw new InvalidOperationException(
+                    "User is inactive.");
+            }
+
+            // Verify category
+            var category =
+                await _categoryRepository.GetByIdAsync(categoryId);
+
+            if (category is null)
+            {
+                throw new InvalidOperationException(
+                    "Category not found.");
+            }
+
+            if (!category.IsActive)
+            {
+                throw new InvalidOperationException(
+                    "Category is inactive.");
+            }
+
+            // Get models for category and user's region
+            var models =
+                await _modelRepository
+                    .GetByCategoryAndRegionAsync(
+                        categoryId,
+                        user.RegionId);
+
+            if (models is null || !models.Any())
+            {
+                return new List<ModelResponse>();
+            }
+
+            return models
+                .Select(MapToResponse)
+                .ToList();
+        }
+        catch (ArgumentException)
         {
-            throw new InvalidOperationException(
-                "Category is inactive.");
+            throw;
         }
+        catch (InvalidOperationException)
+        {
+            // Preserve expected validation exceptions.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving models for user {UserId} and category {CategoryId}.",
+                userId,
+                categoryId);
 
-        // Get models for category + user's region
-        var models =
-            await _modelRepository
-                .GetByCategoryAndRegionAsync(
-                    categoryId,
-                    user.RegionId);
-
-        return models
-            .Select(MapToResponse)
-            .ToList();
+            throw new InvalidOperationException(
+                "An error occurred while retrieving models for the user.",
+                ex);
+        }
     }
 
     private static ModelResponse MapToResponse(Model model)
