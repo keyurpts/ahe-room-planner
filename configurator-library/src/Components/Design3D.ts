@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { ConfiguratorCore } from "../ConfiguratorCore";
 import { Converter } from "./Converter";
 import type { Wall3DData } from "./Converter";
-import { Config, ImageAssets, FixtureType } from "../Constants";
+import { Config, ImageAssets, FixtureType, LengthUnit } from "../Constants";
 import { WallCutter, type DoorWindowData } from "./WallCutter";
 import { DoorWindowHelper } from "./DoorWindowHelper";
 
@@ -630,5 +630,16 @@ export class Design3D {
       return this.core;
     }
     return undefined;
+  }
+
+  /**
+   * Sets the length measurement unit used in the 3D scene (e.g. for distance measurements).
+   *
+   * @public
+   * @param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
+   * @returns {void}
+   */
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.core?.setLengthUnit(unit);
   }
 }

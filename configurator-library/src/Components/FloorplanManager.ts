@@ -1,6 +1,6 @@
 import type { ConfiguratorCore } from "../ConfiguratorCore";
 import { Design3D } from "./Design3D";
-import { RoomEditorMode } from "../Constants";
+import { RoomEditorMode, LengthUnit, normalizeLengthUnit } from "../Constants";
 import { Design2D } from "./Design2D";
 import { Predefined2DShapes } from "../shapeTemplates";
 
@@ -11,6 +11,7 @@ import { Predefined2DShapes } from "../shapeTemplates";
 export class FloorplanManager {
   private design2D: Design2D | null = null;
   private design3D: Design3D | null = null;
+  private initialUnit: LengthUnit = LengthUnit.MM;
 
   /**
    * Initializes both the 2D viewer and the 3D viewer
@@ -34,7 +35,9 @@ export class FloorplanManager {
    */
   public init(container2D: HTMLDivElement, container3D: HTMLDivElement):     void {
     this.design2D = this.createDesign2D(container2D);
+    this.design2D.setLengthUnit(this.initialUnit);
     this.design3D = this.createDesign3D(container3D);
+    this.design3D.setLengthUnit(this.initialUnit);
   }
 
   /**
@@ -500,5 +503,45 @@ export class FloorplanManager {
       | Predefined2DShapes.SQUARE
   ) {
     this.design2D?.addPredefinedShape(shapeType);
+  }
+
+  /**
+   * Sets the length unit for displaying dimensions across both 2D and 3D viewers.
+   * @public
+   * @param {LengthUnit | string} unit - The length unit to display ('mm', 'cm', 'inch', 'foot').
+   * @returns {void}
+   */
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.initialUnit = normalizeLengthUnit(unit);
+    this.design2D?.setLengthUnit(this.initialUnit);
+    this.design3D?.setLengthUnit(this.initialUnit);
+  }
+
+  /**
+   * Gets the currently active display length unit.
+   * @public
+   * @returns {LengthUnit} The current display length unit.
+   */
+  public getLengthUnit(): LengthUnit {
+    return this.design2D?.getLengthUnit() ?? this.initialUnit;
+  }
+
+  /**
+   * Sets the length unit for displaying dimensions across both 2D and 3D viewers.
+   * @public
+   * @param {LengthUnit | string} unit - The length unit to display ('mm', 'cm', 'inch', 'foot').
+   * @returns {void}
+   */
+  public setUnit(unit: LengthUnit | string): void {
+    this.setLengthUnit(unit);
+  }
+
+  /**
+   * Gets the currently active display length unit.
+   * @public
+   * @returns {LengthUnit} The current display length unit.
+   */
+  public getUnit(): LengthUnit {
+    return this.getLengthUnit();
   }
 }

@@ -91,7 +91,46 @@ export enum Config {
     DEFAULT_WINDOW_WIDTH = 100,
     DEFAULT_DOOR_WIDTH = 90,
     WORLD_SCALE = 0.01,
-    KONVA_UNIT_TO_CM = 0.6    // 50 Konva units (1 grid) = 30 cm (default)
+    KONVA_UNIT_TO_CM = 1    // 50 Konva units (1 grid) = 50 cm (default)
+}
+
+/**
+ * Supported length units for measurement display.
+ */
+export enum LengthUnit {
+    MM = 'mm',
+    CM = 'cm',
+    INCH = 'inch',
+    FOOT = 'foot',
+}
+
+/**
+ * Normalizes any string representation of a unit to a valid LengthUnit.
+ * Defaults to LengthUnit.MM if invalid or unrecognized.
+ */
+export function normalizeLengthUnit(unit: string | LengthUnit): LengthUnit {
+    if (!unit) return LengthUnit.MM;
+    const lower = unit.toString().toLowerCase().trim();
+    switch (lower) {
+        case 'mm':
+        case 'millimeter':
+        case 'millimeters':
+            return LengthUnit.MM;
+        case 'cm':
+        case 'centimeter':
+        case 'centimeters':
+            return LengthUnit.CM;
+        case 'inch':
+        case 'inches':
+        case 'in':
+            return LengthUnit.INCH;
+        case 'foot':
+        case 'feet':
+        case 'ft':
+            return LengthUnit.FOOT;
+        default:
+            return LengthUnit.MM;
+    }
 }
 
 /**

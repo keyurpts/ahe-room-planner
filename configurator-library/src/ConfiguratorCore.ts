@@ -79,7 +79,7 @@ import { PostProcessingManager } from "./Components/PostProcessingManager";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { VRManager } from "./Components/VRManager";
-import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle } from "./Constants";
+import { RequiredStrings, ImageAssets, TransformControlsMode, ControlTypes, CameraTypes, DOMEvents, SelectableState, FloorNames, CameraNames, CursorStyle, LengthUnit, normalizeLengthUnit } from "./Constants";
 import { Events, ConfiguratorEventType } from "./event";
 
 /**
@@ -471,6 +471,12 @@ export class ConfiguratorCore {
   private isPreviewDragging = false;
 
   /**
+  * Current unit for displaying wall lengths ('mm', 'cm', 'inch', 'foot').
+  * Default is 'mm' (millimeters).
+  */
+  private currentUnit: LengthUnit = LengthUnit.MM;
+
+  /**
    * Creates a new ConfiguratorCore instance
    *
    * @param options - Configuration options
@@ -711,6 +717,18 @@ export class ConfiguratorCore {
     this.furnitureGroup.name = RequiredStrings.FURNITURE_GROUP;
     this.scene.add(this.furnitureGroup);
 
+  }
+
+  /**
+  * Sets the length measurement unit used for distance measurement overlays in the 3D scene.
+  * Re-toggles measurement display so that existing measurement labels update to the new unit.
+  * @public
+  * @param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
+  * @returns {void}
+  */
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.currentUnit = normalizeLengthUnit(unit);
+    this.toggleMeasurement();
   }
 
   /**
@@ -2093,8 +2111,10 @@ export class ConfiguratorCore {
     this.measurementGroup?.add(startArrow);
     this.measurementGroup?.add(endArrow);
 
-    const labelSprite = this.createTextSprite(`${distance.toFixed(2)} unit`);
-    labelSprite.userData.text = `${distance.toFixed(2)} unit`;
+    const distance_in_unit = this.convertLength(distance, this.currentUnit);
+
+    const labelSprite = this.createTextSprite(`${distance_in_unit.toFixed(2)} ${this.currentUnit}`);
+    labelSprite.userData.text = `${distance_in_unit.toFixed(2)} ${this.currentUnit}`;
     //for object to move to new position after updating distance
     labelSprite.userData.direction = direction.clone().normalize();
     labelSprite.userData.distance = distance;
@@ -2107,6 +2127,36 @@ export class ConfiguratorCore {
     labelSprite.position.copy(mid);
 
     this.measurementGroup?.add(labelSprite);
+  }
+
+  /**
+  * Converts a length from internal units into the specified length unit.
+  * 1 input unit corresponds to 100 cm (1 meter).
+  * @private
+  * @param {number} value - The numerical distance value in internal units.
+  * @param {LengthUnit} unit - The target length unit.
+  * @returns {number} The converted length in the specified unit.
+  */
+  private convertLength(value: number, unit: LengthUnit): number {
+    // 1 input unit = 100 cm
+    const valueInCm = value * 100;
+
+    switch (unit) {
+      case LengthUnit.MM:
+        return valueInCm * 10;
+
+      case LengthUnit.CM:
+        return valueInCm;
+
+      case LengthUnit.INCH:
+        return valueInCm / 2.54;
+
+      case LengthUnit.FOOT:
+        return valueInCm / 30.48;
+
+      default:
+        return valueInCm;
+    }
   }
 
   /**
