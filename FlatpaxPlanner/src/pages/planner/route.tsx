@@ -138,6 +138,23 @@ export function Component() {
     return JSON.stringify(value) ?? '{}';
   }
 
+    function getExported3DConfig(): Record<string, unknown> {
+    const rawConfig = configuratorCore?.export3DConfig() ?? {};
+    const result: Record<string, unknown> = { ...rawConfig };
+    for (const [key, value] of Object.entries(result)) {
+      if (!value || typeof value !== 'object' || key === 'walls' || key === 'floor') continue;
+      const baseId = key.replace(/_node\d+$/iu, '');
+      const record = value as Record<string, unknown>;
+      record.modelData ??= {
+        id: baseId,
+        name: typeof record.name === 'string' ? record.name : baseId,
+        // itemCode: itemCodeLookup[baseId] ?? '—',
+        format: 'glb',
+      };
+    }
+    return result;
+  }
+
   async function saveProject() {
     if (isSavingProject.current || !draft) return;
     isSavingProject.current = true;
