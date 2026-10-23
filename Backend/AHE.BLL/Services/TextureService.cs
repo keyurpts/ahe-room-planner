@@ -2,7 +2,9 @@
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
+using AHE.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AHE.BLL.Services;
 
@@ -11,109 +13,181 @@ public class TextureService : ITextureService
     private readonly ITextureRepository _textureRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IStorageService _storageService;
+    private readonly ILogger<TextureService> _logger;
 
 
     public TextureService(
         ITextureRepository textureRepository,
         ICategoryRepository categoryRepository,
-        IStorageService storageService)
+        IStorageService storageService,
+        ILogger<TextureService> logger)
     {
         _textureRepository = textureRepository;
         _categoryRepository = categoryRepository;
         _storageService = storageService;
+        _logger = logger;
     }
 
     public async Task<TextureResponse> CreateAsync(
     CreateTextureRequest request)
     {
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
         if (string.IsNullOrWhiteSpace(request.TextureName))
         {
             throw new ArgumentException(
-                "Texture name is required.");
+                "Texture name is required.",
+                nameof(request.TextureName));
         }
-
-        var now = DateTime.UtcNow;
 
         var textureName = request.TextureName.Trim();
 
-        var texture = new Texture
+        try
         {
-            Id = Guid.NewGuid(),
+            var now = DateTime.UtcNow;
 
-            TextureName = textureName,
+            var texture = new Texture
+            {
+                Id = Guid.NewGuid(),
+                TextureName = textureName,
 
-            TexturePath = request.HasTextureImage
-                ? $"textures/{textureName}/"
-                : null,
+                TexturePath = request.HasTextureImage
+                    ? $"textures/{textureName}/"
+                    : null,
 
-            TextureMetadata = request.TextureMetadata,
+                TextureMetadata = request.TextureMetadata,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+                DeletedAt = null
+            };
 
-            IsActive = true,
+            // 1. Save the texture record.
+            var createdTexture =
+                await _textureRepository.AddAsync(texture);
 
-            CreatedAt = now,
+            if (createdTexture is null)
+            {
+                throw new InvalidOperationException(
+                    "The texture could not be created.");
+            }
 
-            UpdatedAt = now,
+            // 2. Generate the upload URL if an image is required.
+            if (request.HasTextureImage)
+            {
+                var uploadResponse =
+                    await _storageService.GenerateTextureUploadUrlAsync(
+                        createdTexture.Id,
+                        createdTexture.TextureName);
 
-            DeletedAt = null
-        };
+                if (uploadResponse is null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to generate the texture upload URL.");
+                }
 
-        // 1. Save the texture record.
-        var createdTexture =
-            await _textureRepository.AddAsync(texture);
+                // 3. Store the actual blob path.
+                createdTexture.TexturePath =
+                    uploadResponse.BlobPath;
 
-        // 2. Generate the signed upload URL only
-        //    if the texture requires an image.
-        if (request.HasTextureImage)
-        {
-            var uploadResponse =
-                await _storageService.GenerateTextureUploadUrlAsync(
-                    createdTexture.Id,
-                    createdTexture.TextureName);
+                createdTexture.UpdatedAt = DateTime.UtcNow;
 
-            // 3. Store the actual blob path.
-            createdTexture.TexturePath =
-                uploadResponse.BlobPath;
+                await _textureRepository.UpdateAsync(createdTexture);
 
-            createdTexture.UpdatedAt = DateTime.UtcNow;
+                // 4. Return upload details.
+                var response = MapToResponse(createdTexture);
 
-            await _textureRepository.UpdateAsync(createdTexture);
+                response.UploadUrl = uploadResponse.UploadUrl;
+                response.BlobPath = uploadResponse.BlobPath;
+                response.ExpiresAt = uploadResponse.ExpiresAt;
 
-            // 4. Return upload details.
-            var response = MapToResponse(createdTexture);
+                return response;
+            }
 
-            response.UploadUrl = uploadResponse.UploadUrl;
-            response.BlobPath = uploadResponse.BlobPath;
-            response.ExpiresAt = uploadResponse.ExpiresAt;
-
-            return response;
+            // Texture does not have an image.
+            return MapToResponse(createdTexture);
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while creating texture {TextureName}.",
+                textureName);
 
-        // Texture does not have an image.
-        return MapToResponse(createdTexture);
+            throw new InvalidOperationException(
+                "An error occurred while creating the texture.",
+                ex);
+        }
     }
 
 
     public async Task<List<TextureResponse>> GetAllAsync()
     {
-        var textures =
-            await _textureRepository.GetAllAsync();
+        try
+        {
+            var textures =
+                await _textureRepository.GetAllAsync();
 
-        return textures
-            .Select(MapToResponse)
-            .ToList();
+            if (textures is null)
+            {
+                return new List<TextureResponse>();
+            }
+
+            return textures
+                .Select(MapToResponse)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving textures.");
+
+            throw new InvalidOperationException(
+                "An error occurred while retrieving textures.",
+                ex);
+        }
     }
 
     public async Task<TextureResponse?> GetByIdAsync(Guid id)
     {
-        var texture =
-            await _textureRepository.GetByIdAsync(id);
-
-        if (texture == null)
+        if (id == Guid.Empty)
         {
-            return null;
+            throw new ArgumentException(
+                "Texture ID cannot be empty.",
+                nameof(id));
         }
 
-        return MapToResponse(texture);
+        try
+        {
+            var texture =
+                await _textureRepository.GetByIdAsync(id);
+
+            if (texture is null)
+            {
+                _logger.LogWarning(
+                    "Texture with ID {TextureId} was not found.",
+                    id);
+
+                return null;
+            }
+
+            return MapToResponse(texture);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving texture with ID {TextureId}.",
+                id);
+
+            throw new InvalidOperationException(
+                $"An error occurred while retrieving texture with ID '{id}'.",
+                ex);
+        }
     }
 
     
@@ -121,74 +195,168 @@ public class TextureService : ITextureService
     Guid id,
     UpdateTextureRequest request)
     {
-        var texture =
-            await _textureRepository.GetByIdAsync(id);
-
-        if (texture == null)
+        if (id == Guid.Empty)
         {
-            return null;
+            throw new ArgumentException(
+                "Texture ID cannot be empty.",
+                nameof(id));
         }
 
-        if (texture.DeletedAt != null)
+        if (request is null)
         {
-            throw new InvalidOperationException(
-                "Cannot update a deleted texture.");
+            throw new ArgumentNullException(nameof(request));
         }
 
         if (string.IsNullOrWhiteSpace(request.TextureName))
         {
             throw new ArgumentException(
-                "Texture name is required.");
+                "Texture name is required.",
+                nameof(request.TextureName));
         }
 
-        texture.TextureName =
-            request.TextureName.Trim();
+        try
+        {
+            var texture =
+                await _textureRepository.GetByIdAsync(id);
 
-        texture.TextureMetadata =
-            request.TextureMetadata;
+            if (texture is null)
+            {
+                _logger.LogWarning(
+                    "Cannot update texture. Texture with ID {TextureId} was not found.",
+                    id);
 
-        texture.IsActive =
-            request.IsActive;
+                return null;
+            }
 
-        texture.UpdatedAt =
-            DateTime.UtcNow;
+            if (texture.DeletedAt is not null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot update a deleted texture.");
+            }
 
-        await _textureRepository.UpdateAsync(texture);
+            texture.TextureName =
+                request.TextureName.Trim();
 
-        return MapToResponse(texture);
+            texture.TextureMetadata =
+                request.TextureMetadata;
+
+            texture.IsActive =
+                request.IsActive;
+
+            texture.UpdatedAt =
+                DateTime.UtcNow;
+
+            await _textureRepository.UpdateAsync(texture);
+
+            return MapToResponse(texture);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while updating texture with ID {TextureId}.",
+                id);
+
+            throw new InvalidOperationException(
+                $"An error occurred while updating texture with ID '{id}'.",
+                ex);
+        }
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var texture =
-            await _textureRepository.GetByIdAsync(id);
-
-        if (texture == null)
+        if (id == Guid.Empty)
         {
-            return false;
+            throw new ArgumentException(
+                "Texture ID cannot be empty.",
+                nameof(id));
         }
 
-        if (texture.DeletedAt != null)
+        try
         {
+            var texture =
+                await _textureRepository.GetByIdAsync(id);
+
+            if (texture is null)
+            {
+                _logger.LogWarning(
+                    "Cannot delete texture. Texture with ID {TextureId} was not found.",
+                    id);
+
+                return false;
+            }
+
+            // Already deleted; treat as a successful operation.
+            if (texture.DeletedAt is not null)
+            {
+                return true;
+            }
+
+            var now = DateTime.UtcNow;
+
+            texture.DeletedAt = now;
+            texture.IsActive = false;
+            texture.UpdatedAt = now;
+
+            await _textureRepository.UpdateAsync(texture);
+
+            _logger.LogInformation(
+                "Texture with ID {TextureId} was soft-deleted successfully.",
+                id);
+
             return true;
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while deleting texture with ID {TextureId}.",
+                id);
 
-        texture.DeletedAt = DateTime.UtcNow;
-        texture.IsActive = false;
-        texture.UpdatedAt = DateTime.UtcNow;
-
-        await _textureRepository.UpdateAsync(texture);
-
-        return true;
+            throw new InvalidOperationException(
+                $"An error occurred while deleting texture with ID '{id}'.",
+                ex);
+        }
     }
 
     public async Task<List<TextureResponse>> GetByRegionIdAsync(Guid regionId)
     {
-        var textures = await _textureRepository.GetByRegionIdAsync(regionId);
+        if (regionId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Region ID cannot be empty.",
+                nameof(regionId));
+        }
 
-        return textures
-            .Select(MapToResponse)
-            .ToList();
+        try
+        {
+            var textures =
+                await _textureRepository.GetByRegionIdAsync(regionId);
+
+            if (textures is null)
+            {
+                _logger.LogWarning(
+                    "No texture collection was returned for region ID {RegionId}.",
+                    regionId);
+
+                return new List<TextureResponse>();
+            }
+
+            return textures
+                .Select(MapToResponse)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving textures for region ID {RegionId}.",
+                regionId);
+
+            throw new InvalidOperationException(
+                $"An error occurred while retrieving textures for region ID '{regionId}'.",
+                ex);
+        }
     }
 
     private static TextureResponse MapToResponse(

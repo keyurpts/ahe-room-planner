@@ -2,6 +2,8 @@ using AHE.BLL.DTOs.MasterCategories;
 using AHE.BLL.Interfaces;
 using AHE.DAL.Entities;
 using AHE.DAL.Interfaces.Repositories;
+using AHE.DAL.Repositories;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,126 +12,307 @@ namespace AHE.BLL.Services;
 public class MasterCategoryService : IMasterCategoryService
 {
     private readonly IMasterCategoryRepository _masterCategoryRepository;
+    private readonly ILogger<MasterCategoryService> _logger;
 
     public MasterCategoryService(
-        IMasterCategoryRepository masterCategoryRepository)
+        IMasterCategoryRepository masterCategoryRepository,
+        ILogger<MasterCategoryService> logger)
     {
         _masterCategoryRepository = masterCategoryRepository;
+        _logger = logger;
     }
 
     public async Task<List<MasterCategoryResponse>> GetAllAsync()
     {
-        var masterCategories =
-            await _masterCategoryRepository.GetAllAsync();
+        try
+        {
+            var masterCategories =
+                await _masterCategoryRepository.GetAllAsync();
 
-        return masterCategories.Select(MapToResponse).ToList();
+            if (masterCategories is null || !masterCategories.Any())
+            {
+                return new List<MasterCategoryResponse>();
+            }
+
+            return masterCategories
+                .Select(MapToResponse)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving master categories.");
+
+            throw new InvalidOperationException(
+                "An error occurred while retrieving master categories.",
+                ex);
+        }
     }
 
     public async Task<MasterCategoryResponse?> GetByIdAsync(Guid id)
     {
-        var masterCategory =
-            await _masterCategoryRepository.GetByIdAsync(id);
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Master category ID cannot be empty.",
+                nameof(id));
+        }
 
-        if (masterCategory == null)
-            return null;
+        try
+        {
+            var masterCategory =
+                await _masterCategoryRepository.GetByIdAsync(id);
 
-        return MapToResponse(masterCategory);
+            if (masterCategory is null)
+            {
+                return null;
+            }
+
+            return MapToResponse(masterCategory);
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while retrieving master category with ID {MasterCategoryId}.",
+                id);
+
+            throw new InvalidOperationException(
+                "An error occurred while retrieving the master category.",
+                ex);
+        }
     }
 
     public async Task<MasterCategoryResponse> CreateAsync(
         CreateMasterCategoryRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.MasterCategoryName))
-            throw new ArgumentException(
-                "Master Category name is required.");
-
-        var existingCategoryName =
-            await _masterCategoryRepository.GetByNameAsync(
-                request.MasterCategoryName.Trim());
-
-        if (existingCategoryName != null)
-            throw new InvalidOperationException(
-                "Category name already exists.");
-
-        var now = DateTime.UtcNow;
-
-        var masterCategory = new MasterCategory
+        if (request is null)
         {
-            Id = Guid.NewGuid(),
+            throw new ArgumentNullException(nameof(request));
+        }
 
-            MasterCategoryName = request.MasterCategoryName.Trim(),
+        if (string.IsNullOrWhiteSpace(request.MasterCategoryName))
+        {
+            throw new ArgumentException(
+                "Master category name is required.",
+                nameof(request.MasterCategoryName));
+        }
 
-            Description = request.Description?.Trim(),
+        var categoryName = request.MasterCategoryName.Trim();
 
-            IsActive = true,
+        try
+        {
+            var existingCategoryName =
+                await _masterCategoryRepository
+                    .GetByNameAsync(categoryName);
 
-            CreatedAt = now,
+            if (existingCategoryName is not null)
+            {
+                throw new InvalidOperationException(
+                    "Category name already exists.");
+            }
 
-            UpdatedAt = now,
+            var now = DateTime.UtcNow;
 
-            DeletedAt = null
-        };
+            var masterCategory = new MasterCategory
+            {
+                Id = Guid.NewGuid(),
 
-        await _masterCategoryRepository.AddAsync(masterCategory);
+                MasterCategoryName = categoryName,
 
-        return MapToResponse(masterCategory);
+                Description = request.Description?.Trim(),
+
+                IsActive = true,
+
+                CreatedAt = now,
+
+                UpdatedAt = now,
+
+                DeletedAt = null
+            };
+
+            await _masterCategoryRepository
+                .AddAsync(masterCategory);
+
+            _logger.LogInformation(
+                "Master category created successfully. CategoryId: {CategoryId}",
+                masterCategory.Id);
+
+            return MapToResponse(masterCategory);
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException)
+        {
+            // Preserve the duplicate category exception.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while creating master category {CategoryName}.",
+                categoryName);
+
+            throw new InvalidOperationException(
+                "An error occurred while creating the master category.",
+                ex);
+        }
     }
 
     public async Task<MasterCategoryResponse?> UpdateAsync(
         Guid id,
         UpdateMasterCategoryRequest request)
     {
-        var masterCategory =
-            await _masterCategoryRepository.GetByIdAsync(id);
-
-        if (masterCategory == null)
-            return null;
-
-        if (string.IsNullOrWhiteSpace(request.MasterCategoryName))
-            throw new ArgumentException(
-                "Category name is required.");
-
-        var existingMasterCategory =
-            await _masterCategoryRepository.GetByNameAsync(
-                request.MasterCategoryName.Trim());
-
-        if (existingMasterCategory != null &&
-            existingMasterCategory.Id != id)
+        if (id == Guid.Empty)
         {
-            throw new InvalidOperationException(
-                "Category name already exists.");
+            throw new ArgumentException(
+                "Master category ID cannot be empty.",
+                nameof(id));
         }
 
-        masterCategory.MasterCategoryName =
-            request.MasterCategoryName.Trim();
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
 
-        masterCategory.Description =
-            request.Description?.Trim();
+        if (string.IsNullOrWhiteSpace(request.MasterCategoryName))
+        {
+            throw new ArgumentException(
+                "Category name is required.",
+                nameof(request.MasterCategoryName));
+        }
 
-        masterCategory.UpdatedAt = DateTime.UtcNow;
+        var categoryName = request.MasterCategoryName.Trim();
 
-        await _masterCategoryRepository.UpdateAsync(masterCategory);
+        try
+        {
+            var masterCategory =
+                await _masterCategoryRepository.GetByIdAsync(id);
 
-        return MapToResponse(masterCategory);
+            if (masterCategory is null)
+            {
+                _logger.LogWarning(
+                    "Master category with ID {MasterCategoryId} was not found.",
+                    id);
+
+                return null;
+            }
+
+            var existingMasterCategory =
+                await _masterCategoryRepository
+                    .GetByNameAsync(categoryName);
+
+            if (existingMasterCategory is not null &&
+                existingMasterCategory.Id != id)
+            {
+                throw new InvalidOperationException(
+                    "Category name already exists.");
+            }
+
+            masterCategory.MasterCategoryName = categoryName;
+            masterCategory.Description = request.Description?.Trim();
+            masterCategory.UpdatedAt = DateTime.UtcNow;
+
+            await _masterCategoryRepository
+                .UpdateAsync(masterCategory);
+
+            _logger.LogInformation(
+                "Master category with ID {MasterCategoryId} updated successfully.",
+                id);
+
+            return MapToResponse(masterCategory);
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException)
+        {
+            // Preserve the duplicate-name business exception.
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while updating master category with ID {MasterCategoryId}.",
+                id);
+
+            throw new InvalidOperationException(
+                "An error occurred while updating the master category.",
+                ex);
+        }
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var masterCategory =
-            await _masterCategoryRepository.GetByIdAsync(id);
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Master category ID cannot be empty.",
+                nameof(id));
+        }
 
-        if (masterCategory == null)
-            return false;
+        try
+        {
+            var masterCategory =
+                await _masterCategoryRepository.GetByIdAsync(id);
 
-        masterCategory.IsActive = false;
+            if (masterCategory is null)
+            {
+                _logger.LogWarning(
+                    "Master category with ID {MasterCategoryId} was not found.",
+                    id);
 
-        masterCategory.DeletedAt = DateTime.UtcNow;
+                return false;
+            }
 
-        masterCategory.UpdatedAt = DateTime.UtcNow;
+            if (!masterCategory.IsActive)
+            {
+                _logger.LogWarning(
+                    "Master category with ID {MasterCategoryId} is already inactive.",
+                    id);
 
-        await _masterCategoryRepository.UpdateAsync(masterCategory);
+                return false;
+            }
 
-        return true;
+            var now = DateTime.UtcNow;
+
+            masterCategory.IsActive = false;
+            masterCategory.DeletedAt = now;
+            masterCategory.UpdatedAt = now;
+
+            await _masterCategoryRepository.UpdateAsync(masterCategory);
+
+            _logger.LogInformation(
+                "Master category with ID {MasterCategoryId} was soft-deleted successfully.",
+                id);
+
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "An error occurred while deleting master category with ID {MasterCategoryId}.",
+                id);
+
+            throw new InvalidOperationException(
+                "An error occurred while deleting the master category.",
+                ex);
+        }
     }
 
     private static MasterCategoryResponse MapToResponse(
