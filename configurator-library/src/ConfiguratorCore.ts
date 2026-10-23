@@ -477,6 +477,12 @@ export class ConfiguratorCore {
   private currentUnit: LengthUnit = LengthUnit.MM;
 
   /**
+  * Indicates whether collision detection is enabled when moving/rotating models.
+  * Default is `true`.
+  */
+  private isCollisionActive: boolean = true;
+
+  /**
    * Creates a new ConfiguratorCore instance
    *
    * @param options - Configuration options
@@ -5555,11 +5561,14 @@ export class ConfiguratorCore {
           this.modelRoot?.updateWorldMatrix(true, true);
           this.scene.updateWorldMatrix(true, true);
 
-          const wasReverted = this.modelController.checkModelCollision(
-            this.modelRoot as Object3D,
-            this.currentSelectedLastValidPosition,
-            this.currentSelectedLastValidRotation
-          );
+      let wasReverted = null;
+      if (this.isCollisionActive) {
+        wasReverted = this.modelController.checkModelCollision(
+          this.modelRoot as Object3D,
+          this.currentSelectedLastValidPosition,
+          this.currentSelectedLastValidRotation
+        );
+      }
 
           if (wasReverted && controls instanceof TransformControls) {
             controls.attach(this.modelRoot as Object3D);
@@ -5774,11 +5783,14 @@ export class ConfiguratorCore {
     if (axis === "y") this.modelRoot.rotation.y = rad;
     if (axis === "z") this.modelRoot.rotation.z = rad;
 
-    const wasReverted = this.modelController.checkModelCollision(
-      this.modelRoot,
-      this.currentSelectedLastValidPosition,
-      this.currentSelectedLastValidRotation
-    );
+    let wasReverted = null;
+    if (this.isCollisionActive) {
+      wasReverted = this.modelController.checkModelCollision(
+        this.modelRoot as Object3D,
+        this.currentSelectedLastValidPosition,
+        this.currentSelectedLastValidRotation
+      );
+    }
 
     return !wasReverted;
   }
@@ -8340,6 +8352,25 @@ export class ConfiguratorCore {
   }
 
 
+
+  /**
+  * Enables or disables collision detection when models are manipulated (moved or rotated).
+  * @public
+  * @param {boolean} isActive - `true` to enable collision checking and automatic revert; `false` to allow freely overlapping placement.
+  * @returns {void}
+  */
+  public setCollisionStatus(isActive: boolean): void {
+    this.isCollisionActive = isActive;
+  }
+
+  /**
+  * Retrieves the current collision detection status.
+  * @public
+  * @returns {boolean} `true` if collision checking is active, otherwise `false`.
+  */
+  public getCollisionStatus(): boolean {
+    return this.isCollisionActive;
+  }
 
   public async processObjectMaterials(
     config: ObjectConfig[]

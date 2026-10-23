@@ -26,6 +26,8 @@ import deleteHover from '@/assets/icons/delete-h.svg';
 import wallhideHover from '@/assets/icons/wall-hide-h.svg';
 import cameraHover from '@/assets/icons/camera-h.svg';
 import measureHover from '@/assets/icons/measure-h.svg';
+import collision from '@/assets/icons/model-to-model-collision.svg';
+import collisionHover from '@/assets/icons/model-to-model-collision-h.svg';
 
 type MeasurementMode = 'nearby' | 'walls' | 'all' | 'selected';
 type CameraMode = 'orthographic' | 'perspective';
@@ -91,6 +93,7 @@ export function ItemsToolbar({
 }: Props) {
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const manager = useAppSelector((state) => state.configurator.floorPlanManager);
+  const [collisionSelected, setCollisionSelected] = useState(true);
   const [measurement, setMeasurement] = useState<MeasurementMode | null>(null);
   const [camera, setCamera] = useState<CameraMode>('perspective');
   const [unit, setUnit] = useState(() => manager?.getLengthUnit() ?? LengthUnit.MM);
@@ -101,6 +104,7 @@ export function ItemsToolbar({
   const canUseSelectedModelTools = Boolean(configuratorCore) && hasSelectedModel;
   useEffect(() => {
     if (!configuratorCore) return;
+    configuratorCore.setCollisionStatus(true);
     const handleModelSelected = (metadata: unknown) => {
       setHasSelectedModel(metadata !== null && metadata !== undefined);
       if (transformTool === 'move') {
@@ -242,18 +246,45 @@ export function ItemsToolbar({
           )}
         </Fragment>
       ))}
-      <ToolbarDropdown
-        value={camera}
-        onChange={changeCamera}
-        groups={cameraGroups}
-        label="Camera view"
-        triggerContent={
-          <>
-            <img src={view} width={52} height={52} alt="" className="item-tool-default" />
-            <img src={cameraHover} width={52} height={52} alt="" className="item-tool-hover" />
-          </>
-        }
+      <button
+        type="button"
+        aria-label="Model-to-model collision"
+        title="Model-to-model collision"
+        aria-pressed={collisionSelected}
+        onClick={() => {
+          const nextCollisionState = !collisionSelected;
+
+          configuratorCore?.setCollisionStatus(nextCollisionState);
+          setCollisionSelected(nextCollisionState);
+        }}
+      >
+      <img
+        src={collision}
+        width={52}
+        height={52}
+        alt=""
+        className="item-tool-default"
       />
+      <img
+        src={collisionHover}
+        width={52}
+        height={52}
+        alt=""
+        className="item-tool-hover"
+      />
+      </button>
+          <ToolbarDropdown
+            value={camera}
+            onChange={changeCamera}
+            groups={cameraGroups}
+            label="Camera view"
+            triggerContent={
+              <>
+                <img src={view} width={52} height={52} alt="" className="item-tool-default" />
+                <img src={cameraHover} width={52} height={52} alt="" className="item-tool-hover" />
+              </>
+            }
+          />
       {/* <button
         type="button"
         aria-label="Delete item"
