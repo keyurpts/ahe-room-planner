@@ -1,5 +1,5 @@
 import { ToolbarDropdown } from '@/components/ui/ToolbarDropdown';
-import { LengthUnit } from 'wrapper';
+import { LengthUnit } from 'three-configurator';
 
 const groups = [
   {

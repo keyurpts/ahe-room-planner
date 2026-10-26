@@ -7,6 +7,7 @@ interface State {
   hasError: boolean;
 }
 
+// ErrorBoundary is a React component that catches JavaScript errors anywhere in its child component tree, logs those errors, and displays a fallback UI instead of the component tree that crashed.
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
@@ -36,6 +37,15 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             Reload
           </button>
+          {/* <button
+            type="button"
+            className="mt-4 rounded-control border border-border px-4 py-2 hover:bg-canvas active:bg-border"
+            onClick={() => {
+
+            }}
+          >
+            Go to Home
+          </button> */}
         </main>
       );
     }

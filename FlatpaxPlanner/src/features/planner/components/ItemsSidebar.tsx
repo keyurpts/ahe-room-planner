@@ -1,9 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { useAppSelector } from '@/app/store-hooks';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import type { CatalogueProduct } from '@/features/planner/catalogue/catalogue';
 import {
   useGetCategoriesQuery,
+  useGetMasterCategoriesQuery,
   useGetTexturesQuery,
+  useGetBenchtopColoursQuery,
   useGetModelsQuery,
   useGetThumbnailQuery,
   useLazyGetModelDownloadUrlQuery,
@@ -12,8 +14,10 @@ import {
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
-import { ConfiguratorEventType, Events, type ConfiguratorCore } from 'wrapper';
+import { ConfiguratorEventType, Events } from 'three-configurator';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
+import { registerItemCodes } from '../state/configurator-slice';
+
 
 interface Props {
   active?: boolean;
@@ -85,12 +89,28 @@ function Product({
   const [getModelDownloadUrl] = useLazyGetModelDownloadUrlQuery();
   const thumbnail = useGetThumbnailQuery(
     { categoryId: model.categoryId, modelId: model.id, textureId: variant.textureId },
-    { skip: !variant.thumbnailPath, refetchOnFocus: false, refetchOnReconnect: false },
+    { skip: !variant.thumbnailPath, refetchOnMountOrArgChange: true },
   );
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const refetchThumbnail = thumbnail.refetch;
+  const { data: thumbnailData, isError: thumbnailError, refetch: refetchThumbnail } = thumbnail;
+  useEffect(() => {
+    if (!thumbnailData || thumbnailError) return;
+    const delay = Date.parse(thumbnailData.expiresAt) - Date.now() - 30_000;
+    if (delay <= 0) return;
+    const timer = setTimeout(
+      () => {
+        void refetchThumbnail();
+      },
+      Math.min(delay, 2_147_483_647),
+    );
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [thumbnailData, thumbnailError, refetchThumbnail]);
 
+  const dispatch = useAppDispatch();
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+  const regionId = useAppSelector((state) => state.ui.regionId);
   const downloadUrl = thumbnail.currentData?.downloadUrl;
   const image = downloadUrl && failedUrl !== downloadUrl ? downloadUrl : placeholder;
   const product: CatalogueProduct = {
@@ -104,44 +124,57 @@ function Product({
     regions: variant.regions,
   };
   async function addProduct() {
-    onSelect(product.id);
+    const region = variant.regions.find((r) => r.regionId === regionId);
+    const itemPrice = region?.price ?? 0;
+    const itemCode = region?.itemNumber ?? variant.skuNumber;
+
+    dispatch(registerItemCodes({ [product.modelId]: itemCode }));
+
+    // onSelect(product.id);
     onAdd(product);
     try {
-      const { downloadUrl } = await getModelDownloadUrl(model.id, true).unwrap();
+      const { downloadUrl } = await getModelDownloadUrl(model.id).unwrap();
       console.log('Model download URL:', downloadUrl);
 
       const modelData = {
         category: product.categoryId,
         name: product.name,
         id: product.modelId,
+        price: String(itemPrice),
+        itemCode,
+        skuNumber: variant.skuNumber,
+        format: 'glb',
       };
 
-      const callbacks: NonNullable<Parameters<ConfiguratorCore['loadModel']>[4]> = {
-        onModelLoading: (xhr) => {
-          const percent = xhr.total > 0 ? Math.round((xhr.loaded / xhr.total) * 100) : 0;
-          console.log('model loading:', `${String(percent)}%`);
+      let callbacks = {
+        onModelLoading: (xhr: any) => {
+          document.body.style.cursor = "wait";
+
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          console.log("model loading:", percent + "%");
         },
 
-        onModelLoaded: (model) => {
-          console.log('Model successfully loaded:', model);
+        onModelLoaded: (model: any) => {
+          document.body.style.cursor = "default";
+          console.log("Model successfully loaded:", model);
         },
 
-        onModelError: (error) => {
-          console.error('Error while loading model:', error);
+        onModelError: (error: any) => {
+          document.body.style.cursor = "default";
+          console.error("Error while loading model:", error);
           window.alert(error);
         },
       };
 
       onModelAdding(product.textureId);
-      if (!configuratorCore) throw new Error('The configurator is not ready.');
-      await configuratorCore.loadModel(
+      await configuratorCore!.loadModel(
         downloadUrl,
-        true,
+        false,
         undefined,
         undefined,
         callbacks,
         true,
-        modelData,
+        modelData
       );
     } catch (error) {
       onModelAddFailed();
@@ -154,9 +187,9 @@ function Product({
         type="button"
         className="catalogue-product-preview"
         aria-label={`Select ${product.name}, ${variant.skuNumber}`}
-        aria-pressed={selected === product.id}
+        // aria-pressed={selected === product.id}
         onClick={() => {
-          onSelect(product.id);
+          // onSelect(product.id);
         }}
       >
         <img
@@ -253,62 +286,88 @@ export function ItemsSidebar({
   hidden = false,
   active = true,
 }: Props) {
+  const regionId = useAppSelector((state) => state.ui.regionId);
+  const masterCategories = useGetMasterCategoriesQuery(undefined, { skip: !active });
   const categories = useGetCategoriesQuery(undefined, { skip: !active });
-  const textures = useGetTexturesQuery(undefined, { skip: !active });
+  
+  const textures = useGetTexturesQuery(regionId, { skip: !active || !regionId });
+  
+  const benchtopColours = useGetBenchtopColoursQuery(regionId, {
+    skip: !active || !regionId,
+  });
   const [openSections, setOpenSections] = useState<readonly string[]>([
     'cupboard',
     'benchtop',
-    'cabinets',
   ]);
+  const [initializedSections, setInitializedSections] = useState(false);
   const [category, setCategory] = useState<string | null | undefined>();
   const [texture, setTexture] = useState<string>();
-  const [benchtopColour, setBenchtopColour] = useState('white');
+  const [benchtopColour, setBenchtopColour] = useState<string>();
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const [getTextureDownloadUrl] = useLazyGetTextureDownloadUrlQuery();
   const pendingTextureId = useRef<string | null>(null);
   const id = useId();
+
+  const masterCategoryList = useMemo(() => {
+    if (!masterCategories.data?.length) return [];
+    return masterCategories.data.map((mc) => {
+      const assignedCategories =
+        mc.categories?.length > 0
+          ? mc.categories
+          : (categories.data?.filter((c) => c.masterCategoryId === mc.id) ?? []);
+      return {
+        ...mc,
+        categories: assignedCategories,
+      };
+    });
+  }, [masterCategories.data, categories.data]);
+
+  useEffect(() => {
+    if (!initializedSections && masterCategoryList.length) {
+      setOpenSections((current) => [
+        ...current,
+        ...masterCategoryList.map((mc) => `master-category-${mc.id}`),
+      ]);
+      setInitializedSections(true);
+    }
+  }, [masterCategoryList, initializedSections]);
+
+  const allCategories = useMemo(() => {
+    const fromMaster = masterCategoryList.flatMap((mc) => mc.categories);
+    return fromMaster.length ? fromMaster : (categories.data ?? []);
+  }, [masterCategoryList, categories.data]);
+
   const activeCategory =
     category === undefined
       ? (
-          categories.data?.find((item) => item.categoryName === 'Floor Cupboard') ??
-          categories.data?.[0]
-        )?.id
+        allCategories.find((item) => item.categoryName === 'Floor Cupboard') ??
+        allCategories[0]
+      )?.id
       : category;
   const activeTexture =
     textures.data?.find((item) => item.id === texture)?.id ?? textures.data?.[0]?.id;
-  useEffect(() => {
-    if (!active || !configuratorCore || !activeTexture) return;
-    void getTextureDownloadUrl({ textureId: activeTexture }, true).unwrap()
-      .then((response) => {
-        if (response?.downloadUrl) {
-          return configuratorCore.preloadTexture(response.downloadUrl, activeTexture);
-        }
-      })
-      .catch((error: unknown) => {
-        console.error('Unable to preload the selected cupboard texture.', error);
-      });
-  }, [active, activeTexture, configuratorCore, getTextureDownloadUrl]);
+  const activeBenchtopColour =
+    benchtopColours.data?.find((item) => item.id === benchtopColour)?.id ??
+    benchtopColours.data?.[0]?.id;
   useEffect(() => {
     if (!configuratorCore) return;
     const handleModelPlaced = (metadata: unknown) => {
       const textureId = pendingTextureId.current;
       if (!metadata || !textureId) return;
       pendingTextureId.current = null;
-      const placedModelId = configuratorCore.getModelId();
-      console.log('selected texture', textureId);
+      console.log("selected texture", textureId);
 
-      void getTextureDownloadUrl({ textureId }, true)
+      void getTextureDownloadUrl({ textureId })
         .unwrap()
-        .then((response) => {
-          const downloadUrl = response?.downloadUrl;
+        .then(({ downloadUrl }) => {
           if (!downloadUrl) {
             console.warn('The selected cupboard texture has no download URL.');
             return;
           }
           console.log('Cupboard texture download URL:', downloadUrl);
-          if (configuratorCore.getModelId() === placedModelId) {
+          setTimeout(() => {
             configuratorCore.applyTextureToModel(downloadUrl, textureId);
-          }
+          }, 100);
         })
         .catch((error: unknown) => {
           console.error('Unable to get the cupboard texture download URL.', error);
@@ -395,92 +454,194 @@ export function ItemsSidebar({
             className="catalogue-colour-panel"
             hidden={!openSections.includes('benchtop')}
           >
-            <ColourOptions
-              label="Benchtop colour"
-              options={[
-                { id: 'white', name: 'White' },
-                { id: 'grey', name: 'Grey' },
-              ]}
-              selected={benchtopColour}
-              onChange={setBenchtopColour}
-            />
-          </div>
-        </section>
-        <section className="catalogue-section">
-          <h2>
-            <button
-              type="button"
-              className="catalogue-section-toggle"
-              aria-expanded={openSections.includes('cabinets')}
-              aria-controls={`${id}-cabinets`}
-              onClick={() => {
-                toggle('cabinets');
-              }}
-            >
-              Cabinets
-              <SidebarChevron expanded={openSections.includes('cabinets')} />
-            </button>
-          </h2>
-          <div
-            id={`${id}-cabinets`}
-            hidden={!openSections.includes('cabinets')}
-            className="cabinet-categories"
-          >
-            {categories.isLoading ? (
-              <p className="catalogue-empty" role="status">
-                Loading categories…
-              </p>
-            ) : categories.isError ? (
+            {benchtopColours.isLoading ? (
+              <p role="status">Loading colours…</p>
+            ) : benchtopColours.isError ? (
               <Retry
-                label="categories"
+                label="benchtop colours"
                 retry={() => {
-                  void categories.refetch();
+                  void benchtopColours.refetch();
                 }}
               />
-            ) : !categories.data?.length ? (
-              <p className="catalogue-empty">No categories available.</p>
+            ) : benchtopColours.data?.length ? (
+              <ColourOptions
+                label="Benchtop colour"
+                options={benchtopColours.data.map((item) => ({
+                  id: item.id,
+                  name: item.benchtopColourName,
+                }))}
+                selected={activeBenchtopColour}
+                onChange={setBenchtopColour}
+              />
             ) : (
-              categories.data.map((group) => (
-                <section key={group.id}>
-                  <h3>
-                    <button
-                      type="button"
-                      className="catalogue-category-toggle"
-                      aria-expanded={activeCategory === group.id}
-                      aria-controls={`${id}-${group.id}`}
-                      onClick={() => {
-                        setCategory(activeCategory === group.id ? null : group.id);
-                      }}
-                    >
-                      {group.categoryName}
-                      <SidebarChevron
-                        expanded={activeCategory === group.id}
-                        closedDirection="right"
-                      />
-                    </button>
-                  </h3>
-                  <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
-                    {active && activeCategory === group.id && activeTexture && (
-                      <CategoryProducts
-                        categoryId={group.id}
-                        textureId={activeTexture}
-                        onAdd={onAdd}
-                        onSelect={onSelect}
-                        selected={selected}
-                        onModelAdding={(textureId) => {
-                          pendingTextureId.current = textureId;
-                        }}
-                        onModelAddFailed={() => {
-                          pendingTextureId.current = null;
-                        }}
-                      />
-                    )}
-                  </div>
-                </section>
-              ))
+              <p>No colours available.</p>
             )}
           </div>
         </section>
+        {masterCategories.isLoading ? (
+          <section className="catalogue-section">
+            <p className="catalogue-empty" role="status">
+              Loading categories…
+            </p>
+          </section>
+        ) : masterCategories.isError && !categories.data?.length ? (
+          <section className="catalogue-section">
+            <Retry
+              label="categories"
+              retry={() => {
+                void masterCategories.refetch();
+                void categories.refetch();
+              }}
+            />
+          </section>
+        ) : masterCategoryList.length > 0 ? (
+          masterCategoryList.map((mc) => {
+            const sectionKey = `master-category-${mc.id}`;
+            const isExpanded = openSections.includes(sectionKey);
+            return (
+              <section key={mc.id} className="catalogue-section">
+                <h2>
+                  <button
+                    type="button"
+                    className="catalogue-section-toggle"
+                    aria-expanded={isExpanded}
+                    aria-controls={`${id}-${sectionKey}`}
+                    onClick={() => {
+                      toggle(sectionKey);
+                    }}
+                  >
+                    {mc.masterCategoryName}
+                    <SidebarChevron expanded={isExpanded} />
+                  </button>
+                </h2>
+                <div
+                  id={`${id}-${sectionKey}`}
+                  hidden={!isExpanded}
+                  className="cabinet-categories"
+                >
+                  {!mc.categories?.length ? (
+                    <p className="catalogue-empty">No categories available.</p>
+                  ) : (
+                    mc.categories.map((group) => (
+                      <section key={group.id}>
+                        <h3>
+                          <button
+                            type="button"
+                            className="catalogue-category-toggle"
+                            aria-expanded={activeCategory === group.id}
+                            aria-controls={`${id}-${group.id}`}
+                            onClick={() => {
+                              setCategory(activeCategory === group.id ? null : group.id);
+                            }}
+                          >
+                            {group.categoryName}
+                            <SidebarChevron
+                              expanded={activeCategory === group.id}
+                              closedDirection="right"
+                            />
+                          </button>
+                        </h3>
+                        <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
+                          {active && activeCategory === group.id && activeTexture && (
+                            <CategoryProducts
+                              categoryId={group.id}
+                              textureId={activeTexture}
+                              onAdd={onAdd}
+                              onSelect={onSelect}
+                              selected={selected}
+                              onModelAdding={(textureId) => {
+                                pendingTextureId.current = textureId;
+                              }}
+                              onModelAddFailed={() => {
+                                pendingTextureId.current = null;
+                              }}
+                            />
+                          )}
+                        </div>
+                      </section>
+                    ))
+                  )}
+                </div>
+              </section>
+            );
+          })
+        ) : (
+          <section className="catalogue-section">
+            <h2>
+              <button
+                type="button"
+                className="catalogue-section-toggle"
+                aria-expanded={openSections.includes('cabinets')}
+                aria-controls={`${id}-cabinets`}
+                onClick={() => {
+                  toggle('cabinets');
+                }}
+              >
+                Cabinets
+                <SidebarChevron expanded={openSections.includes('cabinets')} />
+              </button>
+            </h2>
+            <div
+              id={`${id}-cabinets`}
+              hidden={!openSections.includes('cabinets')}
+              className="cabinet-categories"
+            >
+              {categories.isLoading ? (
+                <p className="catalogue-empty" role="status">
+                  Loading categories…
+                </p>
+              ) : categories.isError ? (
+                <Retry
+                  label="categories"
+                  retry={() => {
+                    void categories.refetch();
+                  }}
+                />
+              ) : !categories.data?.length ? (
+                <p className="catalogue-empty">No categories available.</p>
+              ) : (
+                categories.data.map((group) => (
+                  <section key={group.id}>
+                    <h3>
+                      <button
+                        type="button"
+                        className="catalogue-category-toggle"
+                        aria-expanded={activeCategory === group.id}
+                        aria-controls={`${id}-${group.id}`}
+                        onClick={() => {
+                          setCategory(activeCategory === group.id ? null : group.id);
+                        }}
+                      >
+                        {group.categoryName}
+                        <SidebarChevron
+                          expanded={activeCategory === group.id}
+                          closedDirection="right"
+                        />
+                      </button>
+                    </h3>
+                    <div id={`${id}-${group.id}`} hidden={activeCategory !== group.id}>
+                      {active && activeCategory === group.id && activeTexture && (
+                        <CategoryProducts
+                          categoryId={group.id}
+                          textureId={activeTexture}
+                          onAdd={onAdd}
+                          onSelect={onSelect}
+                          selected={selected}
+                          onModelAdding={(textureId) => {
+                            pendingTextureId.current = textureId;
+                          }}
+                          onModelAddFailed={() => {
+                            pendingTextureId.current = null;
+                          }}
+                        />
+                      )}
+                    </div>
+                  </section>
+                ))
+              )}
+            </div>
+          </section>
+        )}
       </div>
       {canCustomise && (
         <button

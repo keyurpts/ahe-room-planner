@@ -6,11 +6,25 @@ export interface Category {
   categoryName: string;
   description: string | null;
   isActive: boolean;
+  masterCategoryId?: string | null;
+}
+export interface MasterCategory {
+  id: string;
+  masterCategoryName: string;
+  description: string | null;
+  isActive: boolean;
+  categories: Category[];
 }
 export interface Texture {
   id: string;
   textureName: string;
   isActive: boolean;
+}
+export interface BenchtopColour {
+  id: string;
+  benchtopColourName: string;
+  assetPath: string | null;
+  benchtopColourMetadata?: unknown;
 }
 export interface ModelVariant {
   textureId: string;
@@ -63,6 +77,15 @@ const categories = (value: unknown) =>
     categoryName: string(item.categoryName),
     description: nullable(item.description),
     isActive: boolean(item.isActive),
+    masterCategoryId: nullable(item.masterCategoryId),
+  })).filter((item) => item.isActive);
+const masterCategories = (value: unknown) =>
+  array(value, (item): MasterCategory => ({
+    id: string(item.id),
+    masterCategoryName: string(item.masterCategoryName),
+    description: nullable(item.description),
+    isActive: boolean(item.isActive),
+    categories: Array.isArray(item.categories) ? categories(item.categories) : [],
   })).filter((item) => item.isActive);
 const textures = (value: unknown) =>
   array(value, (item): Texture => ({
@@ -70,29 +93,40 @@ const textures = (value: unknown) =>
     textureName: string(item.textureName),
     isActive: boolean(item.isActive),
   })).filter((item) => item.isActive);
+const benchtopColours = (value: unknown) =>
+  array(value, (item): BenchtopColour => ({
+    id: string(item.id ?? item.Id),
+    benchtopColourName: string(
+      item.benchtopColourName ?? item.BenchtopColourName ?? item.name ?? item.Name ?? '',
+    ),
+    assetPath: nullable(item.assetPath ?? item.AssetPath),
+    benchtopColourMetadata: item.benchtopColourMetadata ?? item.BenchtopColourMetadata,
+  }));
+const parseModel = (item: Record<string, unknown>): CatalogueModel => ({
+  id: string(item.id),
+  categoryId: string(item.categoryId),
+  modelName: string(item.modelName),
+  description: nullable(item.description),
+  modelPath: nullable(item.modelPath),
+  isActive: boolean(item.isActive),
+  variants: array(item.variants, (variant): ModelVariant => ({
+    textureId: string(variant.textureId),
+    skuNumber: string(variant.skuNumber),
+    thumbnailPath: nullable(variant.thumbnailPath),
+    regions: array(variant.regions, (region) => {
+      if (typeof region.price !== 'number' || !Number.isFinite(region.price) || region.price < 0)
+        throw new Error('Invalid catalogue price.');
+      return {
+        regionId: string(region.regionId),
+        itemNumber: string(region.itemNumber),
+        price: region.price,
+      };
+    }),
+  })),
+});
 const models = (value: unknown) =>
-  array(value, (item): CatalogueModel => ({
-    id: string(item.id),
-    categoryId: string(item.categoryId),
-    modelName: string(item.modelName),
-    description: nullable(item.description),
-    modelPath: nullable(item.modelPath),
-    isActive: boolean(item.isActive),
-    variants: array(item.variants, (variant): ModelVariant => ({
-      textureId: string(variant.textureId),
-      skuNumber: string(variant.skuNumber),
-      thumbnailPath: nullable(variant.thumbnailPath),
-      regions: array(variant.regions, (region) => {
-        if (typeof region.price !== 'number' || !Number.isFinite(region.price) || region.price < 0)
-          throw new Error('Invalid catalogue price.');
-        return {
-          regionId: string(region.regionId),
-          itemNumber: string(region.itemNumber),
-          price: region.price,
-        };
-      }),
-    })),
-  })).filter((item) => item.isActive);
+  array(value, parseModel).filter((item) => item.isActive);
+const singleModel = (value: unknown) => parseModel(object(value));
 function parseDownloadUrl(value: unknown): DownloadUrl {
   const item = object(value);
   const valueUrl = string(item.downloadUrl);
@@ -113,9 +147,17 @@ function thumbnail(value: unknown): Thumbnail {
   if (!Number.isFinite(Date.parse(expiresAt))) throw new Error('Invalid thumbnail expiry date.');
   return { downloadUrl, expiresAt };
 }
-const thumbnailObjectUrls = new Map<string, string>();
-const thumbnailKey = (arg: { categoryId: string; modelId: string; textureId: string }) =>
-  JSON.stringify([arg.categoryId, arg.modelId, arg.textureId]);
+
+// createApi() – Creates the API service.
+// reducerPath – Defines the API's name in the Redux store.
+// baseQuery – Handles API requests and errors in one place.
+// apiClient.request() – Sends the request to the backend.
+// parse – Validates or transforms the response data.
+// endpoints – Defines which APIs are available.
+// builder.query() – Fetches data from the backend.
+// refetchOnFocus: true – Refreshes data when the app regains focus.
+// refetchOnReconnect: true – Refreshes data when the internet reconnects.
+// keepUnusedDataFor: 0 – Removes cached data when no component is using it.
 
 export const catalogueApi = createApi({
   reducerPath: 'catalogueApi',
@@ -137,8 +179,20 @@ export const catalogueApi = createApi({
     getCategories: builder.query<Category[], undefined>({
       query: () => ({ path: '/Categories', parse: categories }),
     }),
-    getTextures: builder.query<Texture[], undefined>({
-      query: () => ({ path: '/Textures', parse: textures }),
+    getMasterCategories: builder.query<MasterCategory[], undefined>({
+      query: () => ({ path: '/MasterCategories', parse: masterCategories }),
+    }),
+    getTextures: builder.query<Texture[], string>({
+      query: (regionId) => ({
+        path: `/Textures/region/${encodeURIComponent(regionId.trim())}`,
+        parse: textures,
+      }),
+    }),
+    getBenchtopColours: builder.query<BenchtopColour[], string>({
+      query: (regionId) => ({
+        path: `/BenchtopColour/region/${encodeURIComponent(regionId.trim())}`,
+        parse: benchtopColours,
+      }),
     }),
     getModels: builder.query<CatalogueModel[], string>({
       query: (categoryId) => ({
@@ -146,62 +200,51 @@ export const catalogueApi = createApi({
         parse: models,
       }),
     }),
+    getModelById: builder.query<CatalogueModel, string>({
+      query: (modelId) => ({
+        path: `/Models/${encodeURIComponent(modelId)}`,
+        parse: singleModel,
+      }),
+    }),
     getThumbnail: builder.query<
       Thumbnail,
       { categoryId: string; modelId: string; textureId: string }
     >({
-      async queryFn({ categoryId, modelId, textureId }, { signal }) {
-        try {
-          const signed = await apiClient.request(
-            `/storage/thumbnails/${encodeURIComponent(categoryId)}/${encodeURIComponent(modelId)}/${encodeURIComponent(textureId)}/download-url`,
-            { parse: thumbnail, signal },
-          );
-          const response = await fetch(signed.downloadUrl, { signal });
-          if (!response.ok) throw new Error('Unable to download thumbnail.');
-          const blob = await response.blob();
-          const key = thumbnailKey({ categoryId, modelId, textureId });
-          const previous = thumbnailObjectUrls.get(key);
-          const downloadUrl = URL.createObjectURL(blob);
-          thumbnailObjectUrls.set(key, downloadUrl);
-          if (previous) URL.revokeObjectURL(previous);
-          return { data: { ...signed, downloadUrl } };
-        } catch (error) {
-          return { error: { message: error instanceof Error ? error.message : 'Thumbnail request failed.' } };
-        }
-      },
-      // Cache the downloaded image per category/model/texture, including across colour switches.
-      keepUnusedDataFor: 30 * 60,
-      async onCacheEntryAdded(arg, { cacheEntryRemoved }) {
-        await cacheEntryRemoved;
-        const key = thumbnailKey(arg);
-        const url = thumbnailObjectUrls.get(key);
-        if (url) URL.revokeObjectURL(url);
-        thumbnailObjectUrls.delete(key);
-      },
+      query: ({ categoryId, modelId, textureId }) => ({
+        path: `/storage/thumbnails/${encodeURIComponent(categoryId)}/${encodeURIComponent(modelId)}/${encodeURIComponent(textureId)}/download-url`,
+        parse: thumbnail,
+      }),
+      keepUnusedDataFor: 0,
     }),
     getModelDownloadUrl: builder.query<DownloadUrl, string>({
       query: (modelId) => ({
         path: `/storage/${encodeURIComponent(modelId)}/download-url`,
         parse: parseDownloadUrl,
       }),
-      keepUnusedDataFor: 60,
+      keepUnusedDataFor: 0,
     }),
     getTextureDownloadUrl: builder.query<TextureDownloadUrl, { textureId: string }>({
       query: ({ textureId }) => ({
         path: `/storage/${encodeURIComponent(textureId)}/texture/download-url`,
         parse: parseTextureDownloadUrl,
       }),
-      keepUnusedDataFor: 60,
+      keepUnusedDataFor: 0,
     }),
   }),
 });
 export const {
   useGetCategoriesQuery,
+  useGetMasterCategoriesQuery,
   useGetTexturesQuery,
+  useGetBenchtopColoursQuery,
   useGetModelsQuery,
+  useGetModelByIdQuery,
+  useLazyGetModelByIdQuery,
   useGetThumbnailQuery,
   useGetModelDownloadUrlQuery,
   useLazyGetModelDownloadUrlQuery,
   useGetTextureDownloadUrlQuery,
   useLazyGetTextureDownloadUrlQuery,
+  useLazyGetBenchtopColoursQuery,
+  useLazyGetMasterCategoriesQuery,
 } = catalogueApi;

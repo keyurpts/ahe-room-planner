@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { useAppSelector } from '@/app/store-hooks';
+import { useGetBenchtopColoursQuery } from '@/features/planner/catalogue/catalogue-api';
 import resetIcon from '@/assets/icons/material-symbols_restart-alt-rounded.svg';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
 
@@ -13,6 +15,10 @@ interface Props {
 }
 
 export function ItemCustomisationSidebar({ finishes, onChange, onBack }: Props) {
+  const regionId = useAppSelector((state) => state.ui.regionId);
+  const benchtopColours = useGetBenchtopColoursQuery(regionId, {
+    skip: !regionId,
+  });
   const [section, setSection] = useState<'sink' | 'benchtop' | null>('benchtop');
   const backRef = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -56,18 +62,32 @@ export function ItemCustomisationSidebar({ finishes, onChange, onBack }: Props) 
                 <img src={resetIcon} width={30} height={30} alt="" />
                 <span>Reset</span>
               </button>
-              {Array.from({ length: 5 }, (_, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  className="customisation-swatch"
-                  aria-label={`${key} finish option ${String(index + 1)}`}
-                  aria-pressed={finishes[key] === index}
-                  onClick={() => {
-                    onChange({ ...finishes, [key]: index });
-                  }}
-                />
-              ))}
+              {key === 'benchtop' && benchtopColours.data?.length
+                ? benchtopColours.data.map((colour, index) => (
+                    <button
+                      key={colour.id}
+                      type="button"
+                      className="customisation-swatch"
+                      aria-label={`Benchtop finish: ${colour.benchtopColourName}`}
+                      title={colour.benchtopColourName}
+                      aria-pressed={finishes.benchtop === index}
+                      onClick={() => {
+                        onChange({ ...finishes, benchtop: index });
+                      }}
+                    />
+                  ))
+                : Array.from({ length: 5 }, (_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      className="customisation-swatch"
+                      aria-label={`${key} finish option ${String(index + 1)}`}
+                      aria-pressed={finishes[key] === index}
+                      onClick={() => {
+                        onChange({ ...finishes, [key]: index });
+                      }}
+                    />
+                  ))}
             </div>
           </section>
         ))}

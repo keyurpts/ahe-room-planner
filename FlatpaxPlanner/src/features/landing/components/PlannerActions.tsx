@@ -1,40 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { SavedDesignDialog } from '@/features/landing/components/SavedDesignDialog';
-import layoutIcon from '@/assets/icons/Subtract.svg';
-import layoutHoverIcon from '@/assets/icons/Subtract-h.svg';
-import newDesignIcon from '@/assets/icons/bi_pencil-square.svg';
-import newDesignHoverIcon from '@/assets/icons/bi_pencil-square-h.svg';
-import savedDesignIcon from '@/assets/icons/fluent_folder-document-28-regular.svg';
-import savedDesignHoverIcon from '@/assets/icons/fluent_folder-document-28-regular-h.svg';
 import { PresetLayoutDialog } from '@/features/landing/components/PresetLayoutDialog';
 import { NewDesignDialog } from '@/features/landing/components/NewDesignDialog';
-
-const actions = [
-  {
-    id: 'layout',
-    label: 'Use a pre-designed layout',
-    icon: layoutIcon,
-    hoverIcon: layoutHoverIcon,
-    iconSize: 38,
-  },
-  {
-    id: 'new',
-    label: 'Start a new design',
-    icon: newDesignIcon,
-    hoverIcon: newDesignHoverIcon,
-    iconSize: 34,
-  },
-  {
-    id: 'saved',
-    label: 'Open saved project',
-    icon: savedDesignIcon,
-    hoverIcon: savedDesignHoverIcon,
-    iconSize: 39,
-  },
-] as const;
+import { actions } from '../utils/actions';
 
 export function PlannerActions() {
+  
   const [selectedAction, setSelectedAction] = useState<(typeof actions)[number] | null>(null);
 
   return (

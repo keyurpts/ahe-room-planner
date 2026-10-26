@@ -38,6 +38,7 @@ export function PlannerNavigation({
           {plannerSteps.map((label, index) => (
             <li key={label}>
               <button
+                style={{ cursor: "default" }}
                 type="button"
                 aria-current={step === label ? 'step' : undefined}
                 data-complete={index < plannerSteps.indexOf(step)}
