@@ -105,6 +105,15 @@ export function ItemsToolbar({
   const [objectSelectionStep, setObjectSelectionStep] = useState<0 | 1 | 2 | 3>(0);
   const objectSelectionStepRef = useRef<0 | 1 | 2 | 3>(0);
   const objectToObjectMeasurementActiveRef = useRef<boolean>(false);
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+  });
+
+  // helper method to set toast state and show the toast notification
+  const showToast = (message: string) => {
+    setToast({ open: true, message });
+  };
 
   useEffect(() => {
     objectToObjectMeasurementActiveRef.current = objectToObjectMeasurementActive;
@@ -119,6 +128,16 @@ export function ItemsToolbar({
     objectSelectionStepRef.current = objectSelectionStep;
   }, [objectSelectionStep]);
 
+  useEffect(() => {
+    if (!toast.open) return;
+
+    const timer = setTimeout(() => {
+      setToast({ open: false, message: '' });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast.open]);
+
   const canUseSelectedModelTools = Boolean(configuratorCore) && hasSelectedModel;
   useEffect(() => {
     if (!configuratorCore) return;
@@ -128,7 +147,7 @@ export function ItemsToolbar({
       // object to object measurement
       if (objectToObjectMeasurementActiveRef.current && metadata !== null) {
 
-        if (objectSelectionStepRef.current === 1 ) {
+        if (objectSelectionStepRef.current === 1) {
           configuratorCore?.setFirstMeasurementModel();
           setObjectSelectionStep(2);
           objectSelectionStepRef.current = 2;
@@ -186,6 +205,7 @@ export function ItemsToolbar({
     if (mode === 'all') {
       configuratorCore.showAllMeasurements();
       setMessage('All measurements enabled.');
+      showToast('All measurements enabled.');
     } else if (mode === 'nearby' || mode === 'walls') {
       const applied = configuratorCore.toggleMeasurement();
       setMessage(
@@ -193,6 +213,7 @@ export function ItemsToolbar({
           ? 'Measurement mode updated.'
           : 'Select or place an item in the viewer to show measurements.',
       );
+      showToast(mode === 'nearby' ? 'Measurement mode set to model-model.' : 'Measurement mode set to model-walls.');
     } else if (mode === 'selected') {
       setObjectToObjectMeasurementActive(true);
       configuratorCore.deselectModel();
@@ -328,17 +349,18 @@ export function ItemsToolbar({
         onChange={(next) => {
           manager?.setLengthUnit(next);
           setUnit(next);
+          showToast(`Length unit changed to ${next}.`);
         }}
       />
       <p className="sr-only" role="status">
         {message}
       </p>
       <Toast
-        open={hideWallsSelected}
-        message="Successfully added an item"
-        onClose={() => {
-        }}
-        className="fixed bottom-6 left-1/2 z-toast -translate-x-1/2"
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast({ open: false, message: '' })}
+        // className="fixed bottom-6 left-1/2 z-toast -translate-x-1/2"
+        className="fixed bottom-6 right-6 z-toast"
       />
     </div>
   );

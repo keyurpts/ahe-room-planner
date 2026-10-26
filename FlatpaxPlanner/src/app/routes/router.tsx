@@ -6,8 +6,11 @@ import { paths } from '@/constants/paths';
 
 export const router = createBrowserRouter([
   {
+    // AppLayout provides the shared outer shell for the application
     Component: AppLayout,
+    // React Router can render this component when a route encounters an error
     ErrorBoundary: RouteError,
+    // loading fallback UI that React Router displays while the application is preparing to render the route.
     HydrateFallback: LoadingState,
     // pages inside main layout
     children: [

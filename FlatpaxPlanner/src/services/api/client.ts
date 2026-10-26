@@ -1,6 +1,7 @@
 import { env } from '@/config/env';
+import { getApiAccessToken } from '../utils/getApiAccessToken';
 
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
@@ -11,7 +12,7 @@ export class ApiError extends Error {
   }
 }
 
-export class ApiNetworkError extends Error {
+class ApiNetworkError extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);
     this.name = 'ApiNetworkError';
@@ -33,13 +34,14 @@ interface RequestOptions<T> extends Omit<RequestInit, 'body' | 'signal'> {
   parse: (body: unknown) => T;
 }
 
-// Decoders keep external data unknown until each feature validates its contract.
-export function createApiClient({
+// creates a reusable API client that handles HTTP requests to backend
+function createApiClient({
   baseUrl,
   timeoutMs = 15_000,
   getAccessToken,
   fetchImpl = fetch,
 }: ClientOptions) {
+  
   return {
     async request<T>(path: string, options: RequestOptions<T>): Promise<T> {
       if (!baseUrl)
@@ -120,22 +122,9 @@ export function createApiClient({
   };
 }
 
-const ACCESS_TOKEN_KEY = "accessToken";
-
-export function setApiAccessToken(token: string | undefined) {
-
-  if (token) {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
-  } else {
-    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  }
-}
-
-export function getApiAccessToken(): string | undefined {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? undefined;
-}
-
 export const apiClient = createApiClient({
   baseUrl: env.apiBaseUrl,
   getAccessToken: () => getApiAccessToken(),
 });
+
+export const ACCESS_TOKEN_KEY = "accessToken";

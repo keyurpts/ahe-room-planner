@@ -1,4 +1,5 @@
-import { apiClient, setApiAccessToken } from '@/services/api/client';
+import { apiClient } from '@/services/api/client';
+import { setApiAccessToken } from '@/services/utils/setApiAccessToken';
 
 interface DevelopmentLoginCredentials {
   email: string;
@@ -21,7 +22,9 @@ function parseLoginResponse(value: unknown): LoginResponse {
 let pendingLogin: Promise<void> | null = null;
 
 export function loginForDevelopment(credentials: DevelopmentLoginCredentials): Promise<void> {
+  
   if (pendingLogin) return pendingLogin;
+  
   pendingLogin = apiClient
     .request('/Auth/login', {
       method: 'POST',
@@ -31,6 +34,7 @@ export function loginForDevelopment(credentials: DevelopmentLoginCredentials): P
     .then(({ accessToken }) => {
       setApiAccessToken(accessToken);
     });
+
   return pendingLogin.catch((error: unknown) => {
     pendingLogin = null;
     throw error;

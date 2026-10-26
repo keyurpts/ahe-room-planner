@@ -1,23 +1,7 @@
 import { useId } from 'react';
 import type { RoomShape } from '@/features/planner/types';
 import '@/styles/room-shape.css';
-
-const roomShapes = [
-  { id: 'rectangle', label: 'Wide rectangular room', path: 'M10 30H90V72H10Z' },
-  { id: 'l-top-left', label: 'L-shaped room, upper left corner', path: 'M10 10H50V50H90V90H10Z' },
-  { id: 'l-top-right', label: 'L-shaped room, upper right corner', path: 'M10 50H50V10H90V90H10Z' },
-  { id: 'square', label: 'Square room', path: 'M10 10H90V90H10Z' },
-  {
-    id: 'l-bottom-right',
-    label: 'L-shaped room, lower right corner',
-    path: 'M10 10H90V50H50V90H10Z',
-  },
-  {
-    id: 'l-bottom-left',
-    label: 'L-shaped room, lower left corner',
-    path: 'M10 10H90V90H50V50H10Z',
-  },
-] as const;
+import { roomShapes2D } from '../utils/roomShapes2D';
 
 interface Props {
   selected: RoomShape | null;
@@ -33,7 +17,7 @@ export function RoomShapeStep({ selected, onSelect, onCustom, message }: Props) 
       <fieldset className="room-shape-panel">
         <legend className="sr-only">Select the shape of your room</legend>
         <div className="room-shape-grid">
-          {roomShapes.map((shape) => (
+          {roomShapes2D.map((shape) => (
             <label className="room-shape-card" key={shape.id}>
               <input
                 type="radio"

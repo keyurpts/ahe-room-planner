@@ -38,6 +38,7 @@ interface Props {
 }
 
 export function NewDesignDialog({ open, onClose }: Props) {
+  
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [roomType, setRoomType] = useState<RoomType | null>(null);
