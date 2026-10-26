@@ -90,7 +90,7 @@ export class ConfiguratorCore {
   /**
    * Three.js Scene object
    */
-  private readonly scene: Scene;
+  protected readonly scene: Scene;
 
   /**
    * Three.js Camera object
@@ -146,7 +146,7 @@ export class ConfiguratorCore {
   /**
    * Controls manager to add orbit, trackball controls
    */
-  private controlsManager: ControlsManager;
+  protected controlsManager: ControlsManager;
 
   /**
    * Project file reader to read the input json file and store as object
@@ -171,7 +171,7 @@ export class ConfiguratorCore {
   /**
    * Model controller for operations on the main model
    */
-  private modelController: ModelController;
+  protected modelController: ModelController;
 
   /**
    * Collision system for spatial intersection tests
@@ -216,7 +216,7 @@ export class ConfiguratorCore {
   /**
    * Root object of the loaded 3D model.
    */
-  private modelRoot: Object3D | null = null;
+  protected modelRoot: Object3D | null = null;
 
   /**
    * Currently active camera control.
@@ -301,7 +301,7 @@ export class ConfiguratorCore {
   /**
    * Flag to check if measurement mode is currently active.
    */
-  private isMeasurementActive: boolean = false;
+  protected isMeasurementActive: boolean = false;
 
   /**
    * Flag to check if all measurements mode is currently active.
@@ -329,7 +329,7 @@ export class ConfiguratorCore {
   /**
    * Group to hold all measurement elements (lines, arrows, labels).
    */
-  private measurementGroup: Group | null = null;
+  protected measurementGroup: Group | null = null;
 
   /**
    * Stores the default animation loop callback used in normal (non-VR) mode.
@@ -2029,7 +2029,7 @@ export class ConfiguratorCore {
    * @param {string} text - Text to display on the sprite.
    * @returns {Sprite} - A Sprite displaying the given text.
    */
-  private createTextSprite(text: string): Sprite {
+  protected createTextSprite(text: string): Sprite {
     const canvas = document.createElement("canvas");
     const size = 256;
     canvas.width = canvas.height = size;
@@ -2067,7 +2067,7 @@ export class ConfiguratorCore {
    * @param {number} distance - Calculated distance between start and end.
    * @returns {void}
    */
-  private drawMeasurementLine(
+  protected drawMeasurementLine(
     startPoint: Vector3,
     endPoint: Vector3,
     direction: Vector3,
