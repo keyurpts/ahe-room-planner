@@ -128,8 +128,7 @@ public class TextureService : ITextureService
     {
         try
         {
-            var textures =
-                await _textureRepository.GetAllAsync();
+            var textures = await _textureRepository.GetAllAsync();
 
             if (textures is null)
             {
@@ -146,9 +145,7 @@ public class TextureService : ITextureService
                 ex,
                 "An error occurred while retrieving textures.");
 
-            throw new InvalidOperationException(
-                "An error occurred while retrieving textures.",
-                ex);
+            throw;
         }
     }
 
@@ -184,13 +181,11 @@ public class TextureService : ITextureService
                 "An error occurred while retrieving texture with ID {TextureId}.",
                 id);
 
-            throw new InvalidOperationException(
-                $"An error occurred while retrieving texture with ID '{id}'.",
-                ex);
+            throw;
         }
     }
 
-    
+
     public async Task<TextureResponse?> UpdateAsync(
     Guid id,
     UpdateTextureRequest request)
@@ -219,20 +214,20 @@ public class TextureService : ITextureService
             var texture =
                 await _textureRepository.GetByIdAsync(id);
 
-            if (texture is null)
-            {
-                _logger.LogWarning(
-                    "Cannot update texture. Texture with ID {TextureId} was not found.",
-                    id);
+        if (texture is null)
+        {
+            _logger.LogWarning(
+                "Cannot update texture. Texture with ID {TextureId} was not found.",
+                id);
 
-                return null;
-            }
+            return null;
+        }
 
-            if (texture.DeletedAt is not null)
-            {
-                throw new InvalidOperationException(
-                    "Cannot update a deleted texture.");
-            }
+        if (texture.DeletedAt is not null)
+        {
+            throw new InvalidOperationException(
+                "Cannot update a deleted texture.");
+        }
 
             texture.TextureName =
                 request.TextureName.Trim();
@@ -257,9 +252,7 @@ public class TextureService : ITextureService
                 "An error occurred while updating texture with ID {TextureId}.",
                 id);
 
-            throw new InvalidOperationException(
-                $"An error occurred while updating texture with ID '{id}'.",
-                ex);
+            throw;
         }
     }
 

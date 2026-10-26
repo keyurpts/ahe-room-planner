@@ -14,8 +14,6 @@ namespace AHE.BLL.Interfaces
 
         Task<IEnumerable<ProjectDto>> GetAllAsync();
 
-        Task<IEnumerable<ProjectDto>> GetMyProjectsAsync(Guid userId);
-
         Task<ProjectResponse?> UpdateProject2DJsonAsync(
           Guid projectId,
           Guid userId,

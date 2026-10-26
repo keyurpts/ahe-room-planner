@@ -11,8 +11,6 @@ namespace AHE.DAL.Interfaces.Repositories
 
         Task<IEnumerable<Project>> GetAllAsync();
 
-        Task<IEnumerable<Project>> GetByUserIdAsync(Guid userId);
-
         Task UpdateAsync(Project project);
 
         Task<Project?> GetByIdAsync(Guid id);

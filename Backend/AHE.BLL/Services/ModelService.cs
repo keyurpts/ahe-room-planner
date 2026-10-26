@@ -615,14 +615,12 @@ public class ModelService : IModelService
 
             if (category is null)
             {
-                throw new InvalidOperationException(
-                    "Category not found.");
+                throw new KeyNotFoundException("Category not found.");
             }
 
             if (!category.IsActive)
             {
-                throw new InvalidOperationException(
-                    "Category is inactive.");
+                throw new KeyNotFoundException("Category is inactive.");
             }
 
             // Get models for category and user's region
@@ -640,6 +638,15 @@ public class ModelService : IModelService
             return models
                 .Select(MapToResponse)
                 .ToList();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogError(
+                ex,
+                "Cannot find category {CategoryId}.",
+                categoryId);
+
+            throw;
         }
         catch (ArgumentException)
         {

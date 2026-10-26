@@ -155,41 +155,6 @@ namespace AHE.DAL.Repositories
             }
         }
 
-        public async Task<IEnumerable<Project>> GetByUserIdAsync(Guid userId)
-        {
-            if (userId == Guid.Empty)
-            {
-                _logger.LogWarning(
-                    "Fetching user by id failed because the userId is empty.");
-
-                throw new ArgumentNullException(nameof(userId));
-            }
-
-            try
-            {
-                var projects = await _context.Projects
-                    .Where(p => p.UserId == userId && p.DeletedAt == null)
-                    .OrderByDescending(p => p.CreatedAt)
-                    .ToListAsync();
-
-                _logger.LogInformation(
-                    "Successfully retrieved {ProjectCount} active projects for UserId: {UserId}.",
-                    projects.Count,
-                    userId);
-
-                return projects;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "An error occurred while retrieving active projects for UserId: {UserId}.",
-                    userId);
-
-                throw;
-            }
-        }
-
         public async Task UpdateAsync(Project project)
         {
             if (project == null)

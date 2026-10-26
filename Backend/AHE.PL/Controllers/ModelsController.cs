@@ -100,11 +100,13 @@ public class ModelsController : ControllerBase
     //    return Ok(models);
     //}
 
+    // this API currently requires authorization so that the models for only those category belonging to the users region are returned
     [HttpGet("category/{categoryId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByCategory(
     Guid categoryId)
     {
@@ -131,6 +133,13 @@ public class ModelsController : ControllerBase
                     categoryId);
 
             return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
         }
         catch (Exception ex)
         {

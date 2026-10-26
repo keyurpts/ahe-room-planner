@@ -253,6 +253,7 @@ namespace AHE.BLL.Services
                     UserId = project.UserId,
                     RegionId = project.RegionId,
                     ProjectName = project.ProjectName,
+                    DesignCode = project.DesignCode,
                     Project2DJson = project.Project2DJson,
                     Project3DJson = project.Project3DJson,
                     ProjectMetadata = project.ProjectMetadata,
@@ -273,56 +274,7 @@ namespace AHE.BLL.Services
             }
         }
 
-        public async Task<IEnumerable<ProjectDto>> GetMyProjectsAsync(Guid userId)
-        {
-            if (userId == Guid.Empty)
-            {
-                throw new ArgumentException(
-                    "User ID cannot be empty.",
-                    nameof(userId));
-            }
-
-            try
-            {
-                var projects =
-                    await _projectRepository.GetByUserIdAsync(userId);
-
-                if (projects is null || !projects.Any())
-                {
-                    return new List<ProjectDto>();
-                }
-
-                return projects.Select(project => new ProjectDto
-                {
-                    Id = project.Id,
-                    UserId = project.UserId,
-                    RegionId = project.RegionId,
-                    ProjectName = project.ProjectName,
-                    Project2DJson = project.Project2DJson,
-                    Project3DJson = project.Project3DJson,
-                    ProjectMetadata = project.ProjectMetadata,
-                    Status = project.Status,
-                    CreatedAt = project.CreatedAt,
-                    UpdatedAt = project.UpdatedAt
-                }).ToList();
-            }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "An error occurred while retrieving projects for user {UserId}.",
-                    userId);
-
-                throw new InvalidOperationException(
-                    "An error occurred while retrieving the user's projects.",
-                    ex);
-            }
-        }
-
+        
         public async Task<ProjectResponse?> UpdateProject2DJsonAsync(
            Guid projectId,
            Guid userId,
