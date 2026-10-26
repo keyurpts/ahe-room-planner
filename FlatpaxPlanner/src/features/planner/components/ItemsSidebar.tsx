@@ -130,7 +130,7 @@ function Product({
 
     dispatch(registerItemCodes({ [product.modelId]: itemCode }));
 
-    onSelect(product.id);
+    // onSelect(product.id);
     onAdd(product);
     try {
       const { downloadUrl } = await getModelDownloadUrl(model.id).unwrap();
@@ -148,15 +148,19 @@ function Product({
 
       let callbacks = {
         onModelLoading: (xhr: any) => {
+          document.body.style.cursor = "wait";
+
           const percent = Math.round((xhr.loaded / xhr.total) * 100);
           console.log("model loading:", percent + "%");
         },
 
         onModelLoaded: (model: any) => {
+          document.body.style.cursor = "default";
           console.log("Model successfully loaded:", model);
         },
 
         onModelError: (error: any) => {
+          document.body.style.cursor = "default";
           console.error("Error while loading model:", error);
           window.alert(error);
         },
@@ -183,9 +187,9 @@ function Product({
         type="button"
         className="catalogue-product-preview"
         aria-label={`Select ${product.name}, ${variant.skuNumber}`}
-        aria-pressed={selected === product.id}
+        // aria-pressed={selected === product.id}
         onClick={() => {
-          onSelect(product.id);
+          // onSelect(product.id);
         }}
       >
         <img
@@ -285,7 +289,9 @@ export function ItemsSidebar({
   const regionId = useAppSelector((state) => state.ui.regionId);
   const masterCategories = useGetMasterCategoriesQuery(undefined, { skip: !active });
   const categories = useGetCategoriesQuery(undefined, { skip: !active });
+  
   const textures = useGetTexturesQuery(regionId, { skip: !active || !regionId });
+  
   const benchtopColours = useGetBenchtopColoursQuery(regionId, {
     skip: !active || !regionId,
   });

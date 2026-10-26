@@ -9,7 +9,9 @@ export function AppLayout() {
       >
         Skip to content
       </a>
+      {/* Main defines primary content area of the application */}
       <main id="main-content" tabIndex={-1} className="min-h-svh w-full">
+        {/* Outlet is a placeholder component from React Router that renders the matched child route component. In this case, it will render the content of the currently active route defined in the router configuration. */}
         <Outlet />
       </main>
     </>

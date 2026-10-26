@@ -49,12 +49,26 @@ import {
 import { LeaveDesignDialog2 } from '@/features/planner/components/LeaveDesignDialog2';
 
 export function Component() {
+
+  // states for 2d and 3d canvas div
   const viewer2DRef = useRef<HTMLDivElement>(null);
   const viewer3DRef = useRef<HTMLDivElement>(null);
+
+  // floorplan manager instance
+  const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+
   const scale = useViewportScale();
+
+  // project draft state
   const draft = useAppSelector((state) => state.project.draft);
   const projectID = useAppSelector((state) => state.project.projectID);
+
   const dispatch = useAppDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+
   // Drafts are unsaved until a backend confirms a successful save.
   const blocker = useBlocker(
     ({ nextLocation }) =>
@@ -69,50 +83,58 @@ export function Component() {
     }
   });
 
-  const location = useLocation();
-  const navigate = useNavigate();
+
+  // set the planner step based on the route location
   const step: PlannerStep =
     location.pathname === paths.design
       ? new URLSearchParams(location.search).get('step') === 'items'
         ? 'Add items'
         : 'Walls & floors'
       : 'Room setup';
-  const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
-  useEffect(() => {
-    const next: PlannerStep =
-      location.pathname === paths.design
-        ? new URLSearchParams(location.search).get('step') === 'items'
-          ? 'Add items'
-          : 'Walls & floors'
-        : 'Room setup';
-    dispatch(setActiveStep(next));
-  }, [location.pathname, location.search, dispatch]);
-  const [snapping, setSnapping] = useState(true);
-  const [tool, setTool] = useState<PlannerTool | null>(null);
-  const [panel, setPanel] = useState<'save' | 'items' | null>(null);
-  const [finishesOpen, setFinishesOpen] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
+
+  // useEffect(() => {
+  //   const next: PlannerStep =
+  //     location.pathname === paths.design
+  //       ? new URLSearchParams(location.search).get('step') === 'items'
+  //         ? 'Add items'
+  //         : 'Walls & floors'
+  //       : 'Room setup';
+  //   dispatch(setActiveStep(next));
+  // }, [location.pathname, location.search, dispatch]);
+
+
+  
+  const [snapping, setSnapping] = useState(true);                                    // 2D snapping state
+  const [tool, setTool] = useState<PlannerTool | null>(null);                        // 2D tools state
+  const [transformTool, setTransformTool] = useState<'move' | 'rotate'>('move');      // transform tool state
+  const [replaceSelected, setReplaceSelected] = useState(false);                     // replace button state
+  
+  
+  const [customising, setCustomising] = useState(false);                             // customize button in Items Sidebar
+  const [itemFinishes, setItemFinishes] = useState<ItemFinishes>({ sink: null, benchtop: null });     // for customize tab
+  const [hideWallsSelected, setHideWallsSelected] = useState(false);                 // hide walls button state
+  const [finishesOpen, setFinishesOpen] = useState(false);                           // finishes panel state
+  // const [selectedProduct, setSelectedProduct] = useState<string | null>('floor-1');
+
+  
+  const [panel, setPanel] = useState<'save' | 'items' | null>(null);                 // save or items button state
+  const [announcement, setAnnouncement] = useState('');                              // announcement for toast
   const isSavingProject = useRef(false);
 
-  const [selectedProduct, setSelectedProduct] = useState<string | null>('floor-1');
-  const [transformTool, setTransformTool] = useState<'move' | 'rotate'>('move');
-  const [replaceSelected, setReplaceSelected] = useState(false);
-  const [hideWallsSelected, setHideWallsSelected] = useState(false);
-  const [customising, setCustomising] = useState(false);
-  const [itemFinishes, setItemFinishes] = useState<ItemFinishes>({ sink: null, benchtop: null });
+  // taking loaded project state from open saved design flow
   const savedProject = location.state?.savedProject;
+  
   let p2dJSON, p3dJSON;
   if (savedProject) {
     p2dJSON = savedProject.project2DJson;
     p3dJSON = savedProject.project3DJson;
   }
 
-  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+  // likely for items summary
   const itemCodeLookup = useAppSelector((state) => state.configurator.itemCodeLookup);
   const [rawModels, setRawModels] = useState<readonly RawModelSummaryItem[]>(
     () => configuratorCore?.getModelsSummary().models ?? [],
   );
-
   useEffect(() => {
     if (!configuratorCore) return;
 
@@ -126,28 +148,25 @@ export function Component() {
       Events.off(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, handleSummaryUpdate);
     };
   }, [configuratorCore]);
-
   const summaryRows = useMemo(
     () => formatModelsSummary(rawModels, itemCodeLookup),
     [rawModels, itemCodeLookup],
   );
+  //
 
   function addItem(product: CatalogueProduct) {
     setAnnouncement(`${product.name} selected. Click on the floor to place it.`);
   }
-
   function removeItem() {
     if (summaryRows.length <= 1) {
       setCustomising(false);
     }
     setAnnouncement('Item removed from the room.');
   }
-
   function serializeProjectJson(value: unknown): string {
     if (typeof value === 'string') return value;
     return JSON.stringify(value);
   }
-
   function getExported3DConfig(): Record<string, unknown> {
     const rawConfig = configuratorCore?.export3DConfig() ?? {};
     const result: Record<string, unknown> = { ...rawConfig };
@@ -299,8 +318,8 @@ export function Component() {
           <ItemsSidebar
             active={step === 'Add items'}
             onAdd={addItem}
-            onSelect={setSelectedProduct}
-            selected={selectedProduct}
+            onSelect={()=> {}}
+            selected={null}
             canCustomise={summaryRows.length > 0}
             hidden={customising && summaryRows.length > 0}
             onCustomise={() => {

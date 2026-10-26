@@ -8,7 +8,7 @@ import view from '@/assets/icons/camera.svg';
 import measure from '@/assets/icons/measure.svg';
 // import { Fragment, useState } from 'react';
 // import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   ConfiguratorEventType,
   Events,
@@ -28,6 +28,7 @@ import deleteHover from '@/assets/icons/delete-h.svg';
 import wallhideHover from '@/assets/icons/wall-hide-h.svg';
 import cameraHover from '@/assets/icons/camera-h.svg';
 import measureHover from '@/assets/icons/measure-h.svg';
+import { Toast } from './Toast';
 
 type MeasurementMode = 'nearby' | 'walls' | 'all' | 'selected';
 type CameraMode = 'orthographic' | 'perspective';
@@ -100,10 +101,71 @@ export function ItemsToolbar({
   const [hasSelectedModel, setHasSelectedModel] = useState(
     () => configuratorCore?.isModelSelected() ?? false,
   );
+  const [objectToObjectMeasurementActive, setObjectToObjectMeasurementActive] = useState<boolean>(false);
+  const [objectSelectionStep, setObjectSelectionStep] = useState<0 | 1 | 2 | 3>(0);
+  const objectSelectionStepRef = useRef<0 | 1 | 2 | 3>(0);
+  const objectToObjectMeasurementActiveRef = useRef<boolean>(false);
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+  });
+
+  // helper method to set toast state and show the toast notification
+  const showToast = (message: string) => {
+    setToast({ open: true, message });
+  };
+
+  useEffect(() => {
+    objectToObjectMeasurementActiveRef.current = objectToObjectMeasurementActive;
+    if (!objectToObjectMeasurementActive) {
+      objectSelectionStepRef.current = 0;
+      setObjectSelectionStep(0);
+      configuratorCore?.deselectModel();
+    }
+  }, [objectToObjectMeasurementActive]);
+
+  useEffect(() => {
+    objectSelectionStepRef.current = objectSelectionStep;
+  }, [objectSelectionStep]);
+
+  useEffect(() => {
+    if (!toast.open) return;
+
+    const timer = setTimeout(() => {
+      setToast({ open: false, message: '' });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast.open]);
+
   const canUseSelectedModelTools = Boolean(configuratorCore) && hasSelectedModel;
   useEffect(() => {
     if (!configuratorCore) return;
     const handleModelSelected = (metadata: unknown) => {
+
+
+      // object to object measurement
+      if (objectToObjectMeasurementActiveRef.current && metadata !== null) {
+
+        if (objectSelectionStepRef.current === 1) {
+          configuratorCore?.setFirstMeasurementModel();
+          setObjectSelectionStep(2);
+          objectSelectionStepRef.current = 2;
+        }
+        else if (objectSelectionStepRef.current === 2) {
+          if (configuratorCore?.isSameMeasurementModel()) {
+            return;
+          }
+
+          const distance = configuratorCore?.measureBetweenModels();
+          if (distance !== null && distance !== undefined) {
+
+            setObjectSelectionStep(3);
+            objectSelectionStepRef.current = 3;
+          }
+        }
+      }
+
       setHasSelectedModel(metadata !== null && metadata !== undefined);
       if (transformTool === 'move') {
         configuratorCore.setTransformMode(TransformControlsMode.TRANSLATE);
@@ -135,11 +197,15 @@ export function ItemsToolbar({
     configureMeasurements(configuratorCore, mode);
     if (mode === null) {
       setMessage('Measurements disabled.');
+      setObjectToObjectMeasurementActive(false)
+      setObjectSelectionStep(0);
+      objectSelectionStepRef.current = 0;
       return;
     }
     if (mode === 'all') {
       configuratorCore.showAllMeasurements();
       setMessage('All measurements enabled.');
+      showToast('All measurements enabled.');
     } else if (mode === 'nearby' || mode === 'walls') {
       const applied = configuratorCore.toggleMeasurement();
       setMessage(
@@ -147,6 +213,13 @@ export function ItemsToolbar({
           ? 'Measurement mode updated.'
           : 'Select or place an item in the viewer to show measurements.',
       );
+      showToast(mode === 'nearby' ? 'Measurement mode set to model-model.' : 'Measurement mode set to model-walls.');
+    } else if (mode === 'selected') {
+      setObjectToObjectMeasurementActive(true);
+      configuratorCore.deselectModel();
+      setObjectSelectionStep(1);
+      objectSelectionStepRef.current = 1;
+      configuratorCore?.clearAllMeasurements();
     }
   }
   function changeCamera(mode: CameraMode) {
@@ -276,11 +349,19 @@ export function ItemsToolbar({
         onChange={(next) => {
           manager?.setLengthUnit(next);
           setUnit(next);
+          showToast(`Length unit changed to ${next}.`);
         }}
       />
       <p className="sr-only" role="status">
         {message}
       </p>
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast({ open: false, message: '' })}
+        // className="fixed bottom-6 left-1/2 z-toast -translate-x-1/2"
+        className="fixed bottom-6 right-6 z-toast"
+      />
     </div>
   );
 }

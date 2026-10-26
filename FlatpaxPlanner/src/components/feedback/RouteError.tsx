@@ -3,10 +3,18 @@ import { isRouteErrorResponse, useRouteError } from 'react-router';
 import { paths } from '@/constants/paths';
 
 export function RouteError() {
+
+  // retrieves the error thrown during route loading or rendering
   const error: unknown = useRouteError();
+
+
   useEffect(() => {
     console.error('Unable to open page.', error);
   }, [error]);
+
+
+  // For a React Router 404 response, it displays a not-found message.
+  // For other errors, it displays a general page-loading error.
   const message =
     isRouteErrorResponse(error) && error.status === 404
       ? 'The requested page does not exist.'
@@ -20,6 +28,7 @@ export function RouteError() {
       <p role="alert" className="mt-3 text-muted">
         {message}
       </p>
+      {/* detailed error message appears only in development mode */}
       {import.meta.env.DEV && error instanceof Error && (
         <pre className="mt-3 whitespace-pre-wrap">{error.message}</pre>
       )}

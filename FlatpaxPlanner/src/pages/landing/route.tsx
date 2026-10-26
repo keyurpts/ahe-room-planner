@@ -1,3 +1,4 @@
+// LANDING PAGE
 import { useEffect } from 'react';
 import logo from '@/assets/images/flatpax-utility-logo.png';
 import { env } from '@/config/env';
@@ -6,6 +7,8 @@ import { PlannerActions } from '@/features/landing/components/PlannerActions';
 import { PlannerIntroduction } from '@/features/landing/components/PlannerIntroduction';
 
 export function Component() {
+  
+  // login using user once when the landing page renders 
   useEffect(() => {
     if (!env.developmentLogin) return;
     void loginForDevelopment(env.developmentLogin).catch((error: unknown) => {

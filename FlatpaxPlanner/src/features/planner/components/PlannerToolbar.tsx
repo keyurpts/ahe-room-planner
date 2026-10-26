@@ -1,3 +1,5 @@
+// 2D PLANNER TOOLBAR
+
 import drawIcon from '@/assets/icons/draw.svg';
 import deleteIcon from '@/assets/icons/delete.svg';
 import { useState, useEffect } from 'react';
@@ -30,6 +32,14 @@ const tools = [
   { id: 'delete', label: 'Delete selected element', icon: deleteIcon, hoverIcon: deleteHover },
 ] as const;
 
+// type PlannerTool =
+//   | 'draw'
+//   | 'snap'
+//   | 'door'
+//   | 'window'
+//   | 'fit'
+//   | 'erase'
+//   | 'delete';
 export type PlannerTool = (typeof tools)[number]['id'];
 type ActiveMode = 'draw' | 'edit' | 'door' | 'window' | null;
 interface Props {
