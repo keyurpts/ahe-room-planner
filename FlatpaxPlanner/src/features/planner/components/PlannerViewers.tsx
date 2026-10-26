@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from '@/app/store-hooks';
 import { useEffect, type RefObject } from 'react';
-import { FloorplanManager, Predefined2DShapes } from "three-configurator";
+import { FloorplanManager, Predefined2DShapes } from "wrapper";
 import { registerItemCodes, setConfiguratorCore, setFloorPlanManager } from '../state/configurator-slice';
 import { colorPresets, floorPresets, wallPresets } from '../finishes/presets';
 import { catalogueApi, type CatalogueModel } from '../catalogue/catalogue-api';

@@ -7,7 +7,7 @@ import hide from '@/assets/icons/wall-hide.svg';
 import view from '@/assets/icons/camera.svg';
 import measure from '@/assets/icons/measure.svg';
 // import { Fragment, useState } from 'react';
-// import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
+// import { LengthUnit, type ConfiguratorCore } from 'wrapper';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   ConfiguratorEventType,
@@ -15,7 +15,7 @@ import {
   LengthUnit,
   TransformControlsMode,
   type ConfiguratorCore,
-} from 'three-configurator';
+} from 'wrapper';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';

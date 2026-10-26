@@ -6,7 +6,7 @@ import {
   formatModelsSummary,
   type RawModelSummaryItem,
 } from '@/features/planner/item-summary';
-import { ConfiguratorEventType, Events } from 'three-configurator';
+import { ConfiguratorEventType, Events } from 'wrapper';
 import {
   Navigate,
   Outlet,

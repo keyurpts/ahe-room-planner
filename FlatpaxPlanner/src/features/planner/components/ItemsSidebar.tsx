@@ -14,7 +14,7 @@ import {
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
-import { ConfiguratorEventType, Events } from 'three-configurator';
+import { ConfiguratorEventType, Events } from 'wrapper';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
 import { registerItemCodes } from '../state/configurator-slice';
 
