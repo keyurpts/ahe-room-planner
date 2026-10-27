@@ -8,7 +8,7 @@ export type { ConfigState, ConfiguratorOptions } from './types/types';
 export { FloorplanManager } from './Components/FloorplanManager';
 
 // Export room editor interaction modes and measurement units
-export { RoomEditorMode, LengthUnit, normalizeLengthUnit } from './Constants';
+export { RoomEditorMode, LengthUnit, normalizeLengthUnit, TransformControlsMode } from './Constants';
 
 // Export predefined 2D floorplan shape templates
 export { Predefined2DShapes } from './shapeTemplates';
