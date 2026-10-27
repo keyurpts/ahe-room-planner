@@ -40,7 +40,8 @@ import {
   PlaneGeometry,
   TextureLoader,
   RepeatWrapping,
-  SRGBColorSpace
+  SRGBColorSpace,
+  BoxGeometry
 } from "three";
 import {
   Tween,
@@ -66,6 +67,7 @@ import {
   TrackballControls,
   TransformControls,
   GLTFExporter,
+  OBB,
 } from "three/examples/jsm/Addons.js";
 import {
   ProjectFileReader,
@@ -491,6 +493,13 @@ export class ConfiguratorCore {
      * Default is 'mm' (millimeters).
      */
   private currentUnit: LengthUnit = LengthUnit.MM;
+
+  /**
+   * Controls whether model snapping is enabled.
+   */
+  private isSnappingEnabled: boolean = true;
+
+  private previousPosition = new Vector3();
 
   /**
    * Creates a new ConfiguratorCore instance
@@ -1668,6 +1677,8 @@ export class ConfiguratorCore {
           });
 
           this.furnitureGroup.attach(selectableObject);
+          // Children changed, so invalidate the cached bounding box
+          delete this.furnitureGroup.userData.preciseLocalBox;
 
           this.modelRoot = this.furnitureGroup;
           this.modelController.addBoundingBoxHelper(
@@ -1700,6 +1711,8 @@ export class ConfiguratorCore {
       children.forEach(child => {
         this.scene.attach(child);
       });
+      // Children were removed from furnitureGroup
+      delete this.furnitureGroup.userData.preciseLocalBox;
       this.furnitureGroup.position.set(0, 0, 0);
       this.furnitureGroup.quaternion.identity();
       this.furnitureGroup.updateMatrixWorld(true);
@@ -4598,6 +4611,8 @@ export class ConfiguratorCore {
         furnitureChildren.forEach((child) => {
           this.scene.attach(child);
         });
+        // Children were removed from furnitureGroup
+        delete this.furnitureGroup.userData.preciseLocalBox;
         this.furnitureGroup.position.set(0, 0, 0);
         this.furnitureGroup.quaternion.identity();
         this.furnitureGroup.updateMatrixWorld(true);
@@ -4941,6 +4956,8 @@ export class ConfiguratorCore {
     );
     this.scene.remove(...nonLightsandFurnitureGroup);
     this.furnitureGroup.clear();
+    // Children were removed from furnitureGroup
+    delete this.furnitureGroup.userData.preciseLocalBox;
     this.furnitureGroup.position.set(0, 0, 0);
     this.furnitureGroup.quaternion.identity();
     this.furnitureGroup.updateMatrixWorld(true);
@@ -5588,9 +5605,23 @@ export class ConfiguratorCore {
           );
 
           controls.addEventListener("mouseDown", () => {
+              this.previousPosition.copy(
+                this.modelRoot!.position
+              );
             this.previousQuaternion.copy(
               this.modelRoot!.quaternion
             );
+          });
+
+          // Snap only after the mouse is released
+          controls.addEventListener("mouseUp", () => {
+            this.modelRoot?.updateWorldMatrix(true, true);
+            this.scene.updateWorldMatrix(true, true);
+
+            // Check the model's current position against all wall faces and snap if within 100mm.
+              if (this.isSnappingEnabled) {
+                this.snapModelToWall(this.modelRoot as Object3D);
+              }
           });
 
           controls.addEventListener(
@@ -5629,9 +5660,722 @@ export class ConfiguratorCore {
       }
       this.controls = this.controlsManager.getActiveControl();
       this.restoreCameraState();
-
     }
   }
+
+/**
+ * Snaps the model to the nearest suitable wall using OBB-based detection.
+ *
+ * @param model - The 3D model to snap to the wall.
+ */
+private snapModelToWall(model: Object3D): void {
+  const roomGroup = this.scene.getObjectByName("room_model") as Group | undefined;
+  console.log("room group ", roomGroup)
+  const positionBeforeWallSnap = model.position.clone();
+  const rotationBeforeWallSnap = model.quaternion.clone();
+  this.clearSnapHelpers();
+  model.updateWorldMatrix(true, true);
+
+  let originalLocalBox = model.userData.preciseLocalBox as Box3 | undefined;
+  if (!originalLocalBox) {
+    originalLocalBox = this.modelController.computePreciseLocalBox(model);
+    if (originalLocalBox.isEmpty()) return;
+    model.userData.preciseLocalBox = originalLocalBox.clone();
+  }
+
+  let actualModelOBB = new OBB().fromBox3(originalLocalBox).applyMatrix4(model.matrixWorld);
+  const expandedLocalBox = originalLocalBox.clone();
+  expandedLocalBox.expandByScalar(0.5);
+
+  let expandedModelOBB = new OBB().fromBox3(expandedLocalBox).applyMatrix4(model.matrixWorld);
+  this.showOBBHelper(expandedModelOBB);
+
+  const candidateObjects: { object: Object3D; obb: OBB; type: "wall" | "model" }[] = [];
+  const snapObstacles: { object: Object3D; obb: OBB; type: "wall" | "model" }[] = [];
+
+  this.scene.traverse((object) => {
+    const isWall = object.userData.type === "wall";
+    const isGLBModel = object.userData.isGLBModel === true;
+
+    if (!isWall && !isGLBModel) return;
+    if (object === model || model.getObjectById(object.id)) return;
+
+    object.updateWorldMatrix(true, false);
+
+    const objectBox: Box3 | undefined = isWall
+      ? this.modelController.computePreciseLocalBox(object)
+      : object.userData.preciseLocalBox;
+
+    if (!objectBox || objectBox.isEmpty()) return;
+
+    const objectOBB = new OBB().fromBox3(objectBox).applyMatrix4(object.matrixWorld);
+
+    snapObstacles.push({
+      object,
+      obb: objectOBB,
+      type: isWall ? "wall" : "model"
+    });
+
+    if (!expandedModelOBB.intersectsOBB(objectOBB)) return;
+
+    candidateObjects.push({
+      object,
+      obb: objectOBB,
+      type: isWall ? "wall" : "model"
+    });
+
+    if (isWall) this.showOBBHelper(objectOBB, 0xff69b4, "wallObbHelper");
+  });
+
+  console.log("Nearby walls and GLB models:", candidateObjects);
+
+  let nearestWall: Object3D | null = null;
+  let nearestWallOBB: OBB | null = null;
+  let nearestWallDistance = Infinity;
+  let nearestModel: Object3D | null = null;
+  let nearestModelDistance = Infinity;
+  let nearestModelRadius = 0;
+  let nearestModelOBB: OBB | null = null;
+
+  const modelRotation = actualModelOBB.rotation.elements;
+  const modelAxisX = new Vector3(modelRotation[0], modelRotation[1], modelRotation[2]).normalize();
+  const modelAxisY = new Vector3(modelRotation[3], modelRotation[4], modelRotation[5]).normalize();
+  const modelAxisZ = new Vector3(modelRotation[6], modelRotation[7], modelRotation[8]).normalize();
+
+  for (const candidate of candidateObjects) {
+    const candidateOBB = candidate.obb;
+    const candidateRotation = candidateOBB.rotation.elements;
+
+    const candidateNormal = new Vector3(
+      candidateRotation[6],
+      candidateRotation[7],
+      candidateRotation[8]
+    ).normalize();
+
+    const centerDifference = actualModelOBB.center.clone().sub(candidateOBB.center);
+    const centerDistance = Math.abs(centerDifference.dot(candidateNormal));
+
+    const modelRadius =
+      actualModelOBB.halfSize.x * Math.abs(modelAxisX.dot(candidateNormal)) +
+      actualModelOBB.halfSize.y * Math.abs(modelAxisY.dot(candidateNormal)) +
+      actualModelOBB.halfSize.z * Math.abs(modelAxisZ.dot(candidateNormal));
+
+    const candidateRadius = candidateOBB.halfSize.z;
+    const distance = Math.max(0, centerDistance - modelRadius - candidateRadius);
+
+    if (candidate.type === "wall") {
+      const wallDirection = new Vector3(
+        candidateRotation[0],
+        candidateRotation[1],
+        candidateRotation[2]
+      ).normalize();
+
+      const modelAlongWall = Math.abs(centerDifference.dot(wallDirection));
+
+      const modelWallRadius =
+        actualModelOBB.halfSize.x * Math.abs(modelAxisX.dot(wallDirection)) +
+        actualModelOBB.halfSize.y * Math.abs(modelAxisY.dot(wallDirection)) +
+        actualModelOBB.halfSize.z * Math.abs(modelAxisZ.dot(wallDirection));
+
+      const besideWall = modelAlongWall <= candidateOBB.halfSize.x + modelWallRadius;
+
+      if (besideWall && distance <= 0.5 && distance < nearestWallDistance) {
+        nearestWallDistance = distance;
+        nearestWall = candidate.object;
+        nearestWallOBB = candidateOBB;
+        nearestModelRadius = modelRadius;
+      }
+    } else {
+      const modelDistance = this.getMinimumModelDistance(actualModelOBB, candidateOBB);
+
+      if (modelDistance < nearestModelDistance) {
+        nearestModelDistance = modelDistance;
+        nearestModel = candidate.object;
+        nearestModelOBB = candidateOBB;
+      }
+    }
+  }
+
+  if (nearestModel && nearestModelOBB && nearestModelDistance <= 0.5) {
+    const positionBeforeSnap = model.position.clone();
+    const rotationBeforeSnap = model.quaternion.clone();
+
+    console.log("Nearest model:", nearestModel);
+    console.log(
+      "Minimum model-to-model distance:",
+      nearestModelDistance,
+      `(${(nearestModelDistance * 1000).toFixed(0)} mm)`
+    );
+
+    const movingDirection = new Vector3(1, 0, 0).applyQuaternion(
+      model.getWorldQuaternion(new Quaternion())
+    );
+    movingDirection.y = 0;
+    movingDirection.normalize();
+
+    const nearestDirection = new Vector3(1, 0, 0).applyQuaternion(
+      nearestModel.getWorldQuaternion(new Quaternion())
+    );
+    nearestDirection.y = 0;
+    nearestDirection.normalize();
+
+    const cross = new Vector3().crossVectors(movingDirection, nearestDirection);
+    const dot = MathUtils.clamp(movingDirection.dot(nearestDirection), -1, 1);
+    const rotationAngle = Math.atan2(cross.y, dot);
+
+    if (Math.abs(rotationAngle) > 0.000001) {
+      model.rotateOnWorldAxis(new Vector3(0, 1, 0), rotationAngle);
+    }
+
+    model.updateWorldMatrix(true, true);
+    actualModelOBB = new OBB().fromBox3(originalLocalBox).applyMatrix4(model.matrixWorld);
+
+    const sideAxis = nearestDirection.clone().normalize();
+    const backAxis = new Vector3()
+      .crossVectors(new Vector3(0, 1, 0), sideAxis)
+      .normalize();
+
+    // Calculate the OBB radius along the given direction.
+    const getRadiusAlongDirection = (obb: OBB, direction: Vector3): number => {
+      const e = obb.rotation.elements;
+      const axisX = new Vector3(e[0], e[1], e[2]).normalize();
+      const axisY = new Vector3(e[3], e[4], e[5]).normalize();
+      const axisZ = new Vector3(e[6], e[7], e[8]).normalize();
+
+      return (
+        obb.halfSize.x * Math.abs(axisX.dot(direction)) +
+        obb.halfSize.y * Math.abs(axisY.dot(direction)) +
+        obb.halfSize.z * Math.abs(axisZ.dot(direction))
+      );
+    };
+
+    const centerDifference = actualModelOBB.center.clone().sub(nearestModelOBB.center);
+    const sideDistance = centerDifference.dot(sideAxis);
+    const preferredSide = sideDistance >= 0 ? 1 : -1;
+
+    const nearestSideRadius = getRadiusAlongDirection(nearestModelOBB, sideAxis);
+    const movingSideRadius = getRadiusAlongDirection(actualModelOBB, sideAxis);
+
+    const nearestBackRadius = getRadiusAlongDirection(nearestModelOBB, backAxis);
+    const movingBackRadius = getRadiusAlongDirection(actualModelOBB, backAxis);
+    const nearestBackPosition = nearestModelOBB.center.dot(backAxis) + nearestBackRadius;
+    const movingBackPosition = actualModelOBB.center.dot(backAxis) + movingBackRadius;
+    const backMovementAmount = nearestBackPosition - movingBackPosition;
+    const backMovement = backAxis.clone().multiplyScalar(backMovementAmount);
+
+    const getMovementForSide = (side: number): Vector3 => {
+      const targetSideDistance = side * (nearestSideRadius + movingSideRadius);
+      const sideMovementAmount = targetSideDistance - sideDistance;
+      const sideMovement = sideAxis.clone().multiplyScalar(sideMovementAmount);
+      return sideMovement.add(backMovement.clone());
+    };
+
+    const isSnapPositionFree = (movement: Vector3): boolean => {
+      const proposedOBB = actualModelOBB.clone();
+      proposedOBB.center.add(movement);
+
+      const tolerance = 0.0001;
+      proposedOBB.halfSize.x = Math.max(0, proposedOBB.halfSize.x - tolerance);
+      proposedOBB.halfSize.y = Math.max(0, proposedOBB.halfSize.y - tolerance);
+      proposedOBB.halfSize.z = Math.max(0, proposedOBB.halfSize.z - tolerance);
+
+      for (const obstacle of snapObstacles) {
+        if (obstacle.object === nearestModel) continue;
+
+        if (proposedOBB.intersectsOBB(obstacle.obb)) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+
+    const preferredMovement = getMovementForSide(preferredSide);
+    const oppositeMovement = getMovementForSide(-preferredSide);
+
+    let movement: Vector3 | null = null;
+
+    if (isSnapPositionFree(preferredMovement)) {
+      movement = preferredMovement;
+    } else if (isSnapPositionFree(oppositeMovement)) {
+      movement = oppositeMovement;
+    } else {
+      model.position.copy(positionBeforeSnap);
+      model.quaternion.copy(rotationBeforeSnap);
+      model.updateWorldMatrix(true, true);
+      this.scene.updateWorldMatrix(true, true);
+      this.modelController.updateHelper();
+      console.log("Both sides of nearest model are occupied. Snap cancelled.");
+      return;
+    }
+
+    if (model.parent) {
+      model.parent.updateWorldMatrix(true, false);
+
+      const modelWorldPosition = model.getWorldPosition(new Vector3());
+      const targetWorldPosition = modelWorldPosition.clone().add(movement);
+      const currentLocalPosition = model.parent.worldToLocal(modelWorldPosition.clone());
+      const targetLocalPosition = model.parent.worldToLocal(targetWorldPosition.clone());
+      const localMovement = targetLocalPosition.sub(currentLocalPosition);
+
+      model.position.add(localMovement);
+    } else {
+      model.position.add(movement);
+    }
+
+    model.updateWorldMatrix(true, true);
+    this.scene.updateWorldMatrix(true, true);
+
+    this.currentSelectedLastValidPosition.copy(model.position);
+    this.currentSelectedLastValidRotation.copy(model.quaternion);
+
+    this.modelController.updateHelper();
+    console.log("Model-to-model snap completed successfully.");
+    return;
+  }
+
+  if (!nearestWall || !nearestWallOBB) {
+    console.log("No suitable wall or model found.");
+    return;
+  }
+
+  const wallRotation = nearestWallOBB.rotation.elements;
+  const wallNormal = new Vector3(
+    wallRotation[6],
+    wallRotation[7],
+    wallRotation[8]
+  ).normalize();
+
+  const centerDifference = actualModelOBB.center.clone().sub(nearestWallOBB.center);
+  const signedCenterDistance = centerDifference.dot(wallNormal);
+  const side = signedCenterDistance >= 0 ? 1 : -1;
+  const targetBackDirection = wallNormal.clone().multiplyScalar(side);
+
+  targetBackDirection.y = 0;
+  if (targetBackDirection.lengthSq() > 0.000001) {
+    targetBackDirection.normalize();
+  }
+
+  const modelWorldQuaternion = new Quaternion();
+  model.getWorldQuaternion(modelWorldQuaternion);
+
+  const modelBackDirection = new Vector3(0, 1, 0).applyQuaternion(modelWorldQuaternion);
+  modelBackDirection.y = 0;
+
+  if (modelBackDirection.lengthSq() > 0.000001) {
+    modelBackDirection.normalize();
+
+    const cross = new Vector3().crossVectors(
+      modelBackDirection,
+      targetBackDirection
+    );
+
+    const dot = MathUtils.clamp(
+      modelBackDirection.dot(targetBackDirection),
+      -1,
+      1
+    );
+
+    const rotationAngle = Math.atan2(cross.y, dot);
+
+    if (Math.abs(rotationAngle) > 0.000001) {
+      model.rotateOnWorldAxis(new Vector3(0, 1, 0), rotationAngle);
+    }
+  }
+
+  model.updateWorldMatrix(true, true);
+
+  actualModelOBB = new OBB()
+    .fromBox3(originalLocalBox)
+    .applyMatrix4(model.matrixWorld);
+
+  expandedModelOBB = new OBB()
+    .fromBox3(expandedLocalBox)
+    .applyMatrix4(model.matrixWorld);
+
+  const updatedModelRotation = actualModelOBB.rotation.elements;
+  const updatedModelAxisX = new Vector3(
+    updatedModelRotation[0],
+    updatedModelRotation[1],
+    updatedModelRotation[2]
+  ).normalize();
+
+  const updatedModelAxisY = new Vector3(
+    updatedModelRotation[3],
+    updatedModelRotation[4],
+    updatedModelRotation[5]
+  ).normalize();
+
+  const updatedModelAxisZ = new Vector3(
+    updatedModelRotation[6],
+    updatedModelRotation[7],
+    updatedModelRotation[8]
+  ).normalize();
+
+  nearestModelRadius =
+    actualModelOBB.halfSize.x * Math.abs(updatedModelAxisX.dot(wallNormal)) +
+    actualModelOBB.halfSize.y * Math.abs(updatedModelAxisY.dot(wallNormal)) +
+    actualModelOBB.halfSize.z * Math.abs(updatedModelAxisZ.dot(wallNormal));
+
+  const updatedCenterDifference = actualModelOBB.center
+    .clone()
+    .sub(nearestWallOBB.center);
+
+  const updatedSignedCenterDistance = updatedCenterDifference.dot(wallNormal);
+  const updatedSide = updatedSignedCenterDistance >= 0 ? 1 : -1;
+
+  const targetCenterDistance =
+    updatedSide *
+    (nearestWallOBB.halfSize.z + nearestModelRadius);
+
+  const movementAmount =
+    targetCenterDistance -
+    updatedSignedCenterDistance;
+
+  const movement = wallNormal
+    .clone()
+    .multiplyScalar(movementAmount);
+
+  const proposedModelOBB = actualModelOBB.clone();
+  proposedModelOBB.center.add(movement);
+
+  if ( roomGroup && !this.canSnapModelBelowWindow( roomGroup, nearestWall, proposedModelOBB )) {
+    model.position.copy(positionBeforeWallSnap);
+    model.quaternion.copy(rotationBeforeWallSnap);
+    model.updateWorldMatrix(true, true);
+    this.scene.updateWorldMatrix(true, true);
+    this.modelController.updateHelper();
+    console.log("Wall snap cancelled. Model does not have 10 mm clearance below the window.");
+    return;
+  }
+
+  if (model.parent) {
+    model.parent.updateWorldMatrix(true, false);
+
+    const modelWorldPosition = model.getWorldPosition(new Vector3());
+    const targetWorldPosition = modelWorldPosition.clone().add(movement);
+
+    const currentLocalPosition = model.parent.worldToLocal(
+      modelWorldPosition.clone()
+    );
+
+    const targetLocalPosition = model.parent.worldToLocal(
+      targetWorldPosition.clone()
+    );
+
+    const localMovement = targetLocalPosition.sub(currentLocalPosition);
+
+    model.position.add(localMovement);
+  } else {
+    model.position.add(movement);
+  }
+
+  model.updateWorldMatrix(true, true);
+
+  if (this.isShowAllMeasurementsActive) {
+    this.showAllMeasurements();
+  } else if (this.isMeasurementActive) {
+    this.toggleMeasurement();
+  }
+
+  this.currentSelectedLastValidPosition.copy(model.position);
+}
+private canSnapModelBelowWindow(
+  roomGroup: Group,
+  wall: Object3D,
+  proposedModelOBB: OBB
+): boolean {
+  const targetWall = roomGroup.children.find(
+    (child) => child === wall || child.uuid === wall.uuid
+  );
+
+  if (!targetWall) return true;
+
+  const windows = targetWall.children.filter(
+    (child) => child.userData.type === "window"
+  );
+
+  if (windows.length === 0) return true;
+
+  const wallDirection = new Vector3(1, 0, 0).applyQuaternion(
+    targetWall.getWorldQuaternion(new Quaternion())
+  );
+
+  wallDirection.y = 0;
+  wallDirection.normalize();
+
+  const getRadiusAlongDirection = (
+    obb: OBB,
+    direction: Vector3
+  ): number => {
+    const e = obb.rotation.elements;
+    const axisX = new Vector3(e[0], e[1], e[2]).normalize();
+    const axisY = new Vector3(e[3], e[4], e[5]).normalize();
+    const axisZ = new Vector3(e[6], e[7], e[8]).normalize();
+
+    return (
+      obb.halfSize.x * Math.abs(axisX.dot(direction)) +
+      obb.halfSize.y * Math.abs(axisY.dot(direction)) +
+      obb.halfSize.z * Math.abs(axisZ.dot(direction))
+    );
+  };
+
+  const modelRadius = getRadiusAlongDirection(
+    proposedModelOBB,
+    wallDirection
+  );
+
+  const modelTop =
+    proposedModelOBB.center.y +
+    getRadiusAlongDirection(
+      proposedModelOBB,
+      new Vector3(0, 1, 0)
+    );
+
+  const requiredGap = 0.01;
+
+  for (const window of windows) {
+    window.updateWorldMatrix(true, true);
+
+    const windowLocalBox =
+      this.modelController.computePreciseLocalBox(window);
+
+    if (!windowLocalBox || windowLocalBox.isEmpty()) continue;
+
+    const windowOBB = new OBB()
+      .fromBox3(windowLocalBox)
+      .applyMatrix4(window.matrixWorld);
+
+    const windowRadius = getRadiusAlongDirection(
+      windowOBB,
+      wallDirection
+    );
+
+    const distanceAlongWall = Math.abs(
+      proposedModelOBB.center
+        .clone()
+        .sub(windowOBB.center)
+        .dot(wallDirection)
+    );
+
+    const overlapsWindow =
+      distanceAlongWall <= modelRadius + windowRadius;
+
+    if (!overlapsWindow) continue;
+
+    const windowBottom =
+      windowOBB.center.y -
+      getRadiusAlongDirection(
+        windowOBB,
+        new Vector3(0, 1, 0)
+      );
+
+    const gap = windowBottom - modelTop;
+
+    if (gap < requiredGap) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+private getMinimumModelDistance(
+  obbA: OBB,
+  obbB: OBB
+): number {
+
+  // Already touching/intersecting.
+  if (obbA.intersectsOBB(obbB)) {
+    return 0;
+  }
+
+  const getCorners = (obb: OBB): Vector3[] => {
+    const e = obb.rotation.elements;
+
+    const axisX = new Vector3(
+      e[0],
+      0,
+      e[2]
+    ).normalize();
+
+    const axisZ = new Vector3(
+      e[6],
+      0,
+      e[8]
+    ).normalize();
+
+    const center = new Vector3(
+      obb.center.x,
+      0,
+      obb.center.z
+    );
+
+    const x = obb.halfSize.x;
+    const z = obb.halfSize.z;
+
+    return [
+      center.clone()
+        .add(axisX.clone().multiplyScalar(-x))
+        .add(axisZ.clone().multiplyScalar(-z)),
+
+      center.clone()
+        .add(axisX.clone().multiplyScalar(x))
+        .add(axisZ.clone().multiplyScalar(-z)),
+
+      center.clone()
+        .add(axisX.clone().multiplyScalar(x))
+        .add(axisZ.clone().multiplyScalar(z)),
+
+      center.clone()
+        .add(axisX.clone().multiplyScalar(-x))
+        .add(axisZ.clone().multiplyScalar(z)),
+    ];
+  };
+
+  const getClosestPoint = (
+    point: Vector3,
+    obb: OBB
+  ): Vector3 => {
+
+    const e = obb.rotation.elements;
+
+    const axisX = new Vector3(
+      e[0],
+      0,
+      e[2]
+    ).normalize();
+
+    const axisZ = new Vector3(
+      e[6],
+      0,
+      e[8]
+    ).normalize();
+
+    const center = new Vector3(
+      obb.center.x,
+      0,
+      obb.center.z
+    );
+
+    const difference =
+      point.clone().sub(center);
+
+    const x = MathUtils.clamp(
+      difference.dot(axisX),
+      -obb.halfSize.x,
+      obb.halfSize.x
+    );
+
+    const z = MathUtils.clamp(
+      difference.dot(axisZ),
+      -obb.halfSize.z,
+      obb.halfSize.z
+    );
+
+    return center
+      .clone()
+      .add(
+        axisX.clone().multiplyScalar(x)
+      )
+      .add(
+        axisZ.clone().multiplyScalar(z)
+      );
+  };
+
+  let minimumDistance = Infinity;
+
+  const cornersA = getCorners(obbA);
+  const cornersB = getCorners(obbB);
+
+  // Moving model corners -> candidate model.
+  for (const corner of cornersA) {
+
+    const closestPoint =
+      getClosestPoint(corner, obbB);
+
+    minimumDistance = Math.min(
+      minimumDistance,
+      corner.distanceTo(closestPoint)
+    );
+  }
+
+  // Candidate model corners -> moving model.
+  for (const corner of cornersB) {
+
+    const closestPoint =
+      getClosestPoint(corner, obbA);
+
+    minimumDistance = Math.min(
+      minimumDistance,
+      corner.distanceTo(closestPoint)
+    );
+  }
+
+  return minimumDistance;
+}
+
+/**
+ * Removes all model and wall OBB helper objects from the scene
+ * and disposes their associated geometry and materials.
+ */
+  private clearSnapHelpers(): void {
+  const helpersToRemove: Object3D[] = [];
+
+  this.scene.traverse((object) => {
+    if (
+      object.name === "obbHelper" ||
+      object.name === "wallObbHelper"
+    ) {
+      helpersToRemove.push(object);
+    }
+  });
+
+  helpersToRemove.forEach((object) => {
+    const mesh = object as Mesh;
+
+    object.parent?.remove(object);
+
+    mesh.geometry.dispose();
+
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach((material) => material.dispose());
+    } else {
+      mesh.material.dispose();
+    }
+  });
+}
+  
+/**
+ * Displays a wireframe OBB helper in the scene for visualization.
+ *
+ * @param obb - The oriented bounding box to visualize.
+ * @param color - The color of the OBB helper.
+ * @param name - The name assigned to the helper object.
+ */
+  private showOBBHelper(obb: OBB, color = 0xffffff, name = "obbHelper"): void {
+    const geometry = new BoxGeometry(
+      obb.halfSize.x * 2,
+      obb.halfSize.y * 2,
+      obb.halfSize.z * 2,
+    );
+
+    const material = new MeshBasicMaterial({
+      wireframe: true,
+      color,
+    });
+
+    const helper = new Mesh(geometry, material);
+    helper.name = name;
+
+    helper.position.copy(obb.center);
+
+    const rotationMatrix = new Matrix4().setFromMatrix3(obb.rotation);
+    helper.quaternion.setFromRotationMatrix(rotationMatrix);
+
+    this.scene.add(helper);
+  }
+
 
   /**
    * Sets the active transformation mode for the transform gizmo.
@@ -7247,6 +7991,8 @@ export class ConfiguratorCore {
     itemsToGroup.forEach((child) => {
       this.scene.attach(child);
     });
+    // furnitureGroup children changed
+    delete this.furnitureGroup.userData.preciseLocalBox;
     this.furnitureGroup.position.set(0, 0, 0);
     this.furnitureGroup.quaternion.identity();
     this.furnitureGroup.updateMatrixWorld(true);
@@ -8330,6 +9076,8 @@ export class ConfiguratorCore {
       // ------------------------------------------------------------
 
       this.furnitureGroup.clear();
+      // furnitureGroup children changed
+      delete this.furnitureGroup.userData.preciseLocalBox;
 
       this.furnitureGroup.position.set(
         0,
@@ -8652,6 +9400,13 @@ export class ConfiguratorCore {
     wallId: string
   ): Object3D | undefined {
     return this.scene.getObjectByProperty("wall_id", wallId);
+  }
+
+  public setSnappingEnabled(enabled: boolean): void {
+    this.isSnappingEnabled = enabled;
+    if (!enabled) {
+      this.clearSnapHelpers();
+    }
   }
 }
 

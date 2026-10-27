@@ -180,6 +180,7 @@ export class Design3D {
         });
 
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.userData.type = 'wall';
         //Add material as user data into the mesh used to restore it
         mesh.userData.defaultMaterial = material;
         // Position wall at midpoint

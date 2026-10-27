@@ -1101,6 +1101,10 @@ export class ModelController {
     // If the box is empty (e.g., no meshes), do not create a helper
     if (localBox.isEmpty()) return;
 
+    if (!model.userData.preciseLocalBox) {
+      model.userData.preciseLocalBox = localBox.clone();
+    }
+
     // Extract size and center from the calculated local box
     const size = new THREE.Vector3();
     localBox.getSize(size);
