@@ -2854,7 +2854,7 @@ export class Design2D {
   public setKonvaUnitScale(cmValue: number): void {
 
 
-    this.unit_conversion_factor = cmValue / 30;    // 30 cm is the default grid size
+    this.unit_conversion_factor = cmValue / 50;    // 50 cm is the default grid size
 
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (floorplanLayer) {
