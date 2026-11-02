@@ -5040,23 +5040,4 @@ export class Design2D {
   public getLengthUnit(): LengthUnit {
     return this.currentUnit;
   }
-
-  /**
-   * Sets the unit for displaying wall lengths and dimensions on the 2D canvas.
-   *@public
-   *@param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
-   *@returns {void}
-   */
-  public setUnit(unit: LengthUnit | string): void {
-    this.setLengthUnit(unit);
-  }
-
-  /**
-   *  Gets the currently active display length unit on the 2D canvas.
-   * @public
-   * @returns {LengthUnit} The current length unit.
-   */
-  public getUnit(): LengthUnit {
-    return this.getLengthUnit();
-  }
 }
