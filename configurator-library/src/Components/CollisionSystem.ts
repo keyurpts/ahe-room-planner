@@ -279,7 +279,7 @@ export class CollisionSystem {
      * @param mobileModel - The model to check.
      * @returns `true` if the model is inside floor bounds, `false` otherwise.
      */
-    private isModelInsideFloorBounds(mobileModel: THREE.Object3D): boolean {
+    public isModelInsideFloorBounds(mobileModel: THREE.Object3D): boolean {
         const floorMeshes = this.collectFloorMeshes(mobileModel);
         if (floorMeshes.length === 0) return true;
 

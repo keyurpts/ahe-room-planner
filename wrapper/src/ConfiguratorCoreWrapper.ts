@@ -3,6 +3,8 @@ import {
   Events,
   RequiredStrings,
   ConfiguratorEventType,
+  FloorNames,
+  ModelController,
 } from "three-configurator";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import {
@@ -10,7 +12,18 @@ import {
   MEASUREMENT_BOX_COLORS,
   MIN_MEASUREMENT_Y,
 } from "./constants";
-import { type Object3D, Box3Helper, Color, Vector3, Group } from "three";
+import {
+  type Object3D,
+  Box3Helper,
+  Color,
+  Vector3,
+  Group,
+  Euler,
+  Box3,
+  Vector2,
+  Mesh,
+} from "three";
+import { AutomaticPlacement, type PlacementWall } from "./AutomaticPlacement";
 
 /**
  * Wrapper around ConfiguratorCore.
@@ -318,5 +331,292 @@ export class ConfiguratorCoreWrapper extends ConfiguratorCore {
     }
 
     this.drawObjectToObjectMeasurement(modelA, modelB);
+  }
+
+  /**
+   * Identifies floor meshes and calculates the overall boundary of the room.
+   *
+   * @param room - The root room object.
+   * @returns Object containing floor meshes and room bounding box.
+   */
+  private getRoomFloorData(room: Object3D): {
+    floors: Mesh[];
+    roomBoundingBox: Box3;
+  } {
+    const roomBoundingBox = new Box3();
+    const floors: Mesh[] = [];
+
+    // Traverse room to identify all floor meshes
+    room.traverse((node) => {
+      if (node instanceof Mesh) {
+        const isFloor = (node as any).isFloor || node.name.toLowerCase().includes(FloorNames.FLOOR);
+        if (isFloor) {
+          floors.push(node);
+          roomBoundingBox.union(AutomaticPlacement.physicalBox(node));
+        }
+      }
+    });
+
+    return { floors, roomBoundingBox };
+  }
+
+  /**
+   * Collects 2D obstacle footprints and wall segments from room meshes.
+   *
+   * @param room - The root room object.
+   * @param floors - List of floor meshes to ignore as obstacles.
+   * @param height - Height of the model to be placed.
+   * @returns List of obstacle polygon footprints and wall segments info.
+   */
+  private getRoomObstaclesAndWalls(
+    room: Object3D,
+    floors: Mesh[],
+    height: number,
+  ): {
+    obstacles: Vector2[][];
+    walls: PlacementWall[];
+  } {
+    // Initialize obstacle list, walls list, and visited wall tracker
+    const obstacles: Vector2[][] = [];
+    const walls: PlacementWall[] = [];
+    const seenWalls = new Set<string>();
+
+    room.traverse((node) => {
+      // Ignore non-mesh nodes and floor meshes
+      if (!(node instanceof Mesh) || floors.includes(node)) return;
+
+      // Filter out high fixtures that start above model height
+      const box = new Box3().setFromObject(node, true);
+      if (box.min.y >= height) return;
+
+      // Compute 2D polygon footprint and record as an obstacle
+      const footprint = AutomaticPlacement.meshFootprint(node);
+      obstacles.push(footprint);
+
+      // Extract wall data if this mesh represents a room wall
+      const wall = node as Mesh & {
+        startPoint?: { x: number; z: number };
+        endPoint?: { x: number; z: number };
+        wall_id?: string;
+      };
+
+      // Skip if missing start/end points
+      if (!wall.startPoint || !wall.endPoint) return;
+
+      // Avoid processing the same wall ID multiple times
+      const wallId = wall.wall_id ?? node.uuid;
+      if (seenWalls.has(wallId)) return;
+      seenWalls.add(wallId);
+
+      // Convert local wall endpoints into world-space coordinates
+      const start = new Vector3(wall.startPoint.x, 0, wall.startPoint.z);
+      const end = new Vector3(wall.endPoint.x, 0, wall.endPoint.z);
+      if (node.parent) {
+        node.parent.localToWorld(start);
+        node.parent.localToWorld(end);
+      }
+
+      // Verify wall has valid length
+      if (start.distanceToSquared(end) > 1e-12) {
+        const a = new Vector2(start.x, start.z);
+        const b = new Vector2(end.x, end.z);
+        // Calculate wall direction and perpendicular normal vector
+        const direction = b.clone().sub(a).normalize();
+        const normal = new Vector2(-direction.y, direction.x);
+
+        // Calculate wall half-thickness from its 2D footprint points
+        const halfThickness = Math.max(
+          ...footprint.map((p) => Math.abs(p.clone().sub(a).dot(normal))),
+        );
+        //calculate wall thickness and add wall info in the array
+        walls.push({ start: a, end: b, halfThickness });
+      }
+    });
+    return { obstacles, walls };
+  }
+
+  /**
+   * Collects 2D obstacle footprints of other models placed in the scene.
+   *
+   * @param room - The root room model.
+   * @param model - The model currently being placed.
+   * @returns List of other models' 2D footprint polygons.
+   */
+  private getSceneModelObstacles(
+    room: Object3D,
+    model: Object3D,
+  ): Vector2[][] {
+    const obstacles: Vector2[][] = [];
+
+    this.scene.traverse((node) => {
+      // Skip the root room, the model currently being placed, and non-models
+      if (node === room || node === model || !node.userData?.isGLBModel) return;
+
+      // Add physical 2D footprint of the placed model
+      obstacles.push(AutomaticPlacement.physicalFootprint(node));
+    });
+
+    return obstacles;
+  }
+
+  /**
+   * Calculates the position and rotation for auto-placing a model against room walls.
+   *
+   * @param model - The 3D model to be placed.
+   * @param room - The room root object.
+   * @returns Calculated position and rotation, or null if no valid space is found.
+   */
+  private findModelPlacement(
+    model: Object3D,
+    room: Object3D,
+  ): { position: Vector3; rotation: Euler } | null {
+    this.scene.updateMatrixWorld(true);
+
+    // Get room floor meshes and overall boundary
+    const { floors, roomBoundingBox } = this.getRoomFloorData(room);
+    if (roomBoundingBox.isEmpty()) return null;
+
+    // Measure the vertical height of the model
+    const modelBox = AutomaticPlacement.physicalBox(model);
+    const modelHeight = modelBox.max.y - modelBox.min.y;
+
+    // Collect obstacles and walls from the room geometry
+    const { obstacles, walls } = this.getRoomObstaclesAndWalls(
+      room,
+      floors,
+      modelHeight,
+    );
+
+    // Collect obstacles from other models placed in the scene
+    const sceneObstacles = this.getSceneModelObstacles(room, model);
+    obstacles.push(...sceneObstacles);
+
+    // Reference the currently selected model if available
+    const selected = this.modelRoot && this.modelRoot !== room ? this.modelRoot : null;
+
+    // Calculate optimal placement
+    return AutomaticPlacement.findAutomaticPlacement(
+      model,
+      roomBoundingBox,
+      obstacles,
+      walls,
+      selected,
+      () => this.collisionSystem.isModelInsideFloorBounds(model),
+    );
+  }
+
+  /**
+   * Loads a 3D model into the scene with metadata, lighting, auto-placement, and preview support.
+   *
+   * @param url - Path or URL to the 3D model asset.
+   * @param isPreview - Whether the model is being loaded in placement preview mode.
+   * @param position - Optional target world position.
+   * @param rotation - Optional target rotation.
+   * @param callbacks - Optional load progress callbacks.
+   * @param isSelectable - Whether the model can be clicked/selected.
+   * @param metadata - Model metadata (name, id, price, category, etc.).
+   * @returns The loaded Object3D or null if cancelled/failed.
+   */
+  public override async loadModel(
+    url: string,
+    isPreview: boolean,
+    position?: Vector3,
+    rotation?: Euler,
+    callbacks?: Parameters<ConfiguratorCore["loadModel"]>[4],
+    isSelectable?: boolean,
+    metadata?: {
+      category?: string;
+      name?: string;
+      id?: string;
+      price?: string;
+      format?: string;
+    },
+  ): Promise<Object3D | null> {
+    if (this.isPreviewActive || this.isReplacingModel) return null;
+
+    const baseModel = ModelController.GetRoomModel(this.scene);
+    const previousMainModel = this.mainModel;
+
+    try {
+      this.mainModel = await this.assetLoader.loadGLB(
+        url,
+        callbacks,
+        isSelectable,
+      );
+      this.lightsManager.mainModel = this.mainModel;
+
+      if (!baseModel) {
+        this.mainModel.name = RequiredStrings.ROOM_MODEL;
+        if (metadata) metadata.name = RequiredStrings.ROOM_MODEL;
+        this.addGroundPlaneForExistingLayout(this.mainModel);
+      } else if (metadata?.id && metadata?.name) {
+        const unique = this.generateUniqueModelName(metadata.name, metadata.id);
+        this.mainModel.name = unique.name;
+        metadata.name = unique.name;
+        metadata.id = unique.id;
+      }
+
+      // Auto-place cabinet against walls if no position is provided
+      if (baseModel && !isPreview && !position && !this.modelPendingReplacement) {
+        if (rotation) this.mainModel.rotation.copy(rotation);
+
+        const placement = this.findModelPlacement(this.mainModel, baseModel);
+        if (!placement) {
+          // Revert model references and notify user
+          this.mainModel = previousMainModel;
+          this.lightsManager.mainModel = previousMainModel;
+
+          Events.emit(ConfiguratorEventType.COLLISION, {
+            title: "No space available",
+            message:
+              "There is no space left in the room to place this model. Move or remove a model and try again.",
+            color: "warning",
+          });
+          return null;
+        }
+
+        position = placement.position;
+        rotation = placement.rotation;
+      }
+
+      this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
+      this.modelRoot = this.mainModel;
+      this.modelRoot.userData = {
+        ...this.modelRoot.userData,
+        isGLBModel: true,
+        metadata: metadata ?? {},
+      };
+
+      if (isPreview && baseModel) {
+        [...this.furnitureGroup.children].forEach((child) => this.scene.attach(child));
+        this.furnitureGroup.position.set(0, 0, 0);
+        this.furnitureGroup.quaternion.identity();
+        this.furnitureGroup.updateMatrixWorld(true);
+
+        this.placeModelOnGround(this.modelRoot);
+        await this.handlePreviewMode(baseModel);
+        return null;
+      }
+
+      const result = this.addModel(this.mainModel, position, rotation);
+      this.switchControlMode("transform" as any);
+      const currentMode = this.controlsManager.getCurrentTransformMode();
+      this.setTransformMode(currentMode);
+      (this as any).setTransformControlsAxes(currentMode);
+
+      if (this.isShowAllMeasurementsActive) {
+        this.showAllMeasurements();
+      } else if (this.isMeasurementActive) {
+        this.toggleMeasurement();
+      }
+      Events.emit(ConfiguratorEventType.MODEL_SELECTED, metadata ?? null);
+      Events.emit(ConfiguratorEventType.HIERARCHY_CHANGED);
+      Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
+      return result;
+    } catch (error) {
+      this.mainModel = previousMainModel;
+      this.lightsManager.mainModel = previousMainModel;
+      throw error;
+    }
   }
 }

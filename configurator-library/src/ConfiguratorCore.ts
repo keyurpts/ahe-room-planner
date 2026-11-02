@@ -100,7 +100,7 @@ export class ConfiguratorCore {
   /**
    * Group that holds multi-selected furniture models
    */
-  private furnitureGroup: Group = new Group();
+  protected furnitureGroup: Group = new Group();
 
   /**
    * Renderer manager object
@@ -131,12 +131,12 @@ export class ConfiguratorCore {
   /**
    * Asset loader to load glb/gltf
    */
-  private assetLoader: AssetLoader;
+  protected assetLoader: AssetLoader;
 
   /**
    * LightsManager to add lighting to the scene
    */
-  private lightsManager: LightsManager;
+  protected lightsManager: LightsManager;
 
   /**
    * Camera manager to add perspective, orthographic camera
@@ -176,12 +176,12 @@ export class ConfiguratorCore {
   /**
    * Collision system for spatial intersection tests
    */
-  private collisionSystem: CollisionSystem;
+  protected collisionSystem: CollisionSystem;
 
   /**
    * Model which is getting configured
    */
-  private mainModel!: Object3D;
+  protected mainModel!: Object3D;
 
   /**
    * Observes resize changes on the canvas/container.
@@ -306,7 +306,7 @@ export class ConfiguratorCore {
   /**
    * Flag to check if all measurements mode is currently active.
    */
-  private isShowAllMeasurementsActive: boolean = false;
+  protected isShowAllMeasurementsActive: boolean = false;
 
   /**
    * Public state object for distance measurement to be accessed and updated by the frontend.
@@ -339,7 +339,7 @@ export class ConfiguratorCore {
   /**
    * Flag to check if user is placing the model (true when placing, else false).
    */
-  private isPreviewActive = false;
+  protected isPreviewActive = false;
 
   /**
    * Tracks whether the preview model is currently positioned on a floor mesh.
@@ -364,7 +364,7 @@ export class ConfiguratorCore {
   /**
    * Stores previous model selection before preview started.
    */
-  private prevModelRoot: Object3D | null = null;
+  protected prevModelRoot: Object3D | null = null;
 
   /**
    * Collider used to check preview placement collisions.
@@ -443,7 +443,7 @@ export class ConfiguratorCore {
   /**
    * Stores the removed model for backup in case of collision.
    */
-  private modelPendingReplacement: {
+  protected modelPendingReplacement: {
     object: Object3D;
     position: Vector3;
     rotation: Euler;
@@ -453,7 +453,7 @@ export class ConfiguratorCore {
   /**
    * Flag to indicate if model is being replaced.
    */
-  private isReplacingModel = false;
+  protected isReplacingModel = false;
 
   /**
    * Flag to indicate if a cloned model is being placed.
@@ -892,7 +892,7 @@ export class ConfiguratorCore {
    * @param {Vector3} [scale] - Optional scale for the model
    * @returns {Object3D} - The added model object
    */
-  private addModel(
+  protected addModel(
     model: Object3D,
     position?: Vector3,
     rotation?: Euler,
@@ -1810,7 +1810,7 @@ export class ConfiguratorCore {
    * @private
    * @returns {void}
    */
-  private checkTransform() {
+  protected checkTransform() {
     const activeControl = this.controlsManager.getActiveControl();
     if (!(activeControl instanceof TransformControls)) return;
     this.controlsManager.attachTransformTarget(this.modelRoot!);
@@ -2230,7 +2230,7 @@ export class ConfiguratorCore {
    * @param {Object3D | null} baseModel - The reference base model used for raycasting and placement alignment.
    * @returns {Promise<Promise<void>>} - Promise<void>
    */
-  private async handlePreviewMode(baseModel: Object3D | null): Promise<void> {
+  protected async handlePreviewMode(baseModel: Object3D | null): Promise<void> {
     // Check if another preview is already active or a wireframe exists
     if (this.isPreviewActive || this.previewModel) {
       this.cleanupPreview();
@@ -2801,7 +2801,7 @@ export class ConfiguratorCore {
    * @param {string} modelId - The ID of the model.
    * @returns {string} - The generated unique name.
    */
-  private generateUniqueModelName(baseName: string, baseId: string, extraContainer?: Object3D): { name: string, id: string; } {
+  protected generateUniqueModelName(baseName: string, baseId: string, extraContainer?: Object3D): { name: string, id: string; } {
     const objectsWithSameId: Object3D[] = [];
 
     // Collect all objects having the same ID
@@ -3240,7 +3240,7 @@ export class ConfiguratorCore {
    * @param {Object3D} model - The base room model to create a ground plane for.
    * @returns {void}
    */
-  private addGroundPlaneForExistingLayout(model: Object3D): void {
+  protected addGroundPlaneForExistingLayout(model: Object3D): void {
     // Calculate the bounding box of the base model
     const boundingBox = new Box3().setFromObject(model);
     const size = new Vector3();
@@ -4469,7 +4469,7 @@ export class ConfiguratorCore {
    *
    * @param model - The Three.js object to be positioned on the ground plane
    */
-  private placeModelOnGround(model: Object3D) {
+  protected placeModelOnGround(model: Object3D) {
     model.updateMatrixWorld(true);
 
     const box = new Box3().setFromObject(model, true);
@@ -4486,7 +4486,7 @@ export class ConfiguratorCore {
    * @returns `true` if `modelRoot` exists and its name matches
    *          {@link RequiredStrings.ROOM_MODEL}; otherwise, returns `false`.
    */
-  private isModelRootEqualToRoomModel(): boolean {
+  protected isModelRootEqualToRoomModel(): boolean {
 
     if (this.modelRoot) {
       return this.modelRoot.name === RequiredStrings.ROOM_MODEL
@@ -8455,7 +8455,7 @@ export class ConfiguratorCore {
     }
   }
 
-  private getWallById(
+  protected getWallById(
     wallId: string
   ): Object3D | undefined {
     return this.scene.getObjectByProperty("wall_id", wallId);
