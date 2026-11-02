@@ -1,0 +1,18 @@
+<svg width="168" height="168" viewBox="0 0 168 168" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 4H164V164H4V4Z" fill="white"/>
+<mask id="stroke0_2013_2064" maskUnits="userSpaceOnUse" x="0" y="0" width="168" height="168" fill="black">
+<rect fill="white" width="168" height="168"/>
+<path d="M4 4H164V164H4V4Z"/>
+</mask>
+<path d="M4 4H164V164H4V4Z" stroke-width="8" stroke="black" mask="url(#stroke0_2013_2064)"/>
+<path d="M164.25 3.75L164.25 36.25L131.75 36.25L131.75 3.75L164.25 3.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M164.25 35.75L164.25 68.25L131.75 68.25L131.75 35.75L164.25 35.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M164.25 67.75L164.25 100.25L131.75 100.25L131.75 67.75L164.25 67.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M164.25 99.75L164.25 132.25L131.75 132.25L131.75 99.75L164.25 99.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M164.25 131.75L164.25 164.25L131.75 164.25L131.75 131.75L164.25 131.75Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M3.75 164.25L3.75 131.75L36.25 131.75L36.25 164.25L3.75 164.25Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M3.75 132.25L3.75 99.7501L36.25 99.7501L36.25 132.25L3.75 132.25Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M3.75 100.25L3.75 67.7501L36.25 67.7501L36.25 100.25L3.75 100.25Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M3.75 68.2501L3.75 35.7501L36.25 35.7501L36.25 68.2501L3.75 68.2501Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+<path d="M3.75 36.2501L3.75 3.75007L36.25 3.75007L36.25 36.2501L3.75 36.2501Z" fill="#008C99" stroke-width="0.5" stroke="black"/>
+</svg>

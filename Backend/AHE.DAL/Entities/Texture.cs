@@ -23,9 +23,14 @@ namespace AHE.DAL.Entities
 
         public DateTime? DeletedAt { get; set; }
 
+        // Navigation Property
+        public ICollection<Region> Regions { get; set; }
+            = new List<Region>();
 
         // Navigation Property
         public ICollection<ModelVariant> ModelTextures { get; set; }
           = new List<ModelVariant>();
+
+
     }
 }

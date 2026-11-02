@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using AHE.DAL.Enums;
 
 namespace AHE.DAL.Entities
 {
@@ -22,6 +23,10 @@ namespace AHE.DAL.Entities
         public JsonDocument? ProjectMetadata { get; set; }
 
         public string Status { get; set; } = null!;
+
+        public string DesignCode { get; set; } = null!;
+
+        public RoomType RoomType { get; set; } = RoomType.Other;
 
         public DateTime CreatedAt { get; set; }
 

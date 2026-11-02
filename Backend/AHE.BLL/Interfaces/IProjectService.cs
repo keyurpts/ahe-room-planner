@@ -14,8 +14,6 @@ namespace AHE.BLL.Interfaces
 
         Task<IEnumerable<ProjectDto>> GetAllAsync();
 
-        Task<IEnumerable<ProjectDto>> GetMyProjectsAsync(Guid userId);
-
         Task<ProjectResponse?> UpdateProject2DJsonAsync(
           Guid projectId,
           Guid userId,
@@ -25,5 +23,7 @@ namespace AHE.BLL.Interfaces
           Guid projectId,
           Guid userId,
           UpdateProject3DJsonRequest request);
+
+        Task<ProjectDto?> GetByDesignCodeAsync(string designCode);
     }
 }

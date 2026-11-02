@@ -14,5 +14,7 @@ namespace AHE.BLL.DTOs.Projects
         public JsonDocument? Project3DJson { get; set; }
 
         public JsonDocument? ProjectMetadata { get; set; }
+
+        public string? RoomType { get; set; }
     }
 }

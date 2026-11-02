@@ -118,6 +118,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();    // Add Console logging
+builder.Logging.AddDebug();      // Add Debug logging
+
 var app = builder.Build();
 
 app.UseCors("Frontend");

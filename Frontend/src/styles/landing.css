@@ -1,0 +1,116 @@
+@layer components {
+  .landing-page {
+    --landing-header-height: 13.7706875rem;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .landing-header {
+    flex-shrink: 0;
+    min-height: var(--landing-header-height);
+    padding-block: 4rem 2.8331875rem;
+  }
+
+  .landing-logo {
+    max-width: var(--container-logo);
+    margin-inline-end: 2.625rem;
+  }
+
+  .landing-backdrop {
+    min-height: 0;
+    flex: 1;
+    background-color: var(--color-canvas);
+    background-image: url('../assets/images/kitchen-planner-background.webp');
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .planner-introduction {
+    padding-block: 2.625rem 1.542rem;
+  }
+
+  .planner-description {
+    margin-block-start: 2.625rem;
+  }
+
+  .planner-actions {
+    grid-template-columns: minmax(0, 1.283fr) minmax(0, 1fr) minmax(0, 1.02fr);
+  }
+
+  .planner-action {
+    white-space: nowrap;
+  }
+
+  @media (width < 80rem) {
+    .landing-page {
+      --landing-header-height: 11rem;
+    }
+    .landing-header {
+      padding-block: 2.5rem;
+    }
+    .landing-logo {
+      max-width: 17rem;
+      margin-inline-end: 0;
+    }
+    .planner-introduction {
+      padding-block: 2.5rem;
+    }
+    .planner-description {
+      margin-block-start: 1.75rem;
+    }
+    .planner-action {
+      white-space: normal;
+    }
+  }
+
+  @media (width < 64rem) {
+    .planner-actions {
+      max-width: 40rem;
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (width < 40rem) {
+    .landing-page {
+      --landing-header-height: 9rem;
+    }
+    .landing-header {
+      padding-block: 2rem;
+    }
+    .landing-logo {
+      max-width: 15rem;
+    }
+    .planner-introduction {
+      padding-block: 2rem;
+    }
+    .planner-description {
+      margin-block-start: 1.5rem;
+    }
+    .planner-action {
+      justify-content: flex-start;
+      padding-inline: 1rem;
+      text-align: left;
+    }
+  }
+  @media (height < 50rem) {
+    .landing-page {
+      --landing-header-height: clamp(6rem, 18svh, 9rem);
+    }
+    .landing-header {
+      align-items: center;
+      padding-block: 1rem;
+    }
+    .landing-logo {
+      max-width: clamp(11rem, 23svh, 17rem);
+      margin-inline-end: 0;
+    }
+    .planner-introduction {
+      padding-block: clamp(1rem, 3svh, 1.75rem);
+    }
+    .planner-description {
+      margin-block-start: clamp(0.75rem, 2svh, 1.25rem);
+    }
+  }
+}

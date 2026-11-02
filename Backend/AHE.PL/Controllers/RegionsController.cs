@@ -6,7 +6,7 @@ namespace AHE.PL.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class RegionsController : ControllerBase
 {
     private readonly IRegionService _regionService;

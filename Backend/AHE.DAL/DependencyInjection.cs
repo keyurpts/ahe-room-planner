@@ -1,4 +1,4 @@
-﻿using AHE.DAL.Interfaces.Repositories;
+using AHE.DAL.Interfaces.Repositories;
 using AHE.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,7 +26,8 @@ public static class DependencyInjection
         services.AddScoped<ITextureRepository, TextureRepository>();
         services.AddScoped<IMaterialRepository, MaterialRepository>();
         services.AddScoped<IBlobStorageRepository, AzureBlobStorageRepository>();
-
+        services.AddScoped<IBenchtopColourRepository, BenchtopColourRepository>();
+        services.AddScoped<IMasterCategoryRepository, MasterCategoryRepository>();
 
         return services;
     }

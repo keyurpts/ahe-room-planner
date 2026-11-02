@@ -1,0 +1,483 @@
+@layer components {
+  .planner-page {
+    --planner-scale: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    height: 100svh;
+    background: var(--color-surface);
+  }
+  .planner-navigation {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    min-height: 4.625rem;
+    gap: 1rem;
+    background: var(--color-surface);
+    box-shadow: 0 2px 4px rgb(0 0 0 / 25%);
+    z-index: var(--layer-dropdown);
+  }
+  .planner-project-heading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .planner-back {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 3.125rem;
+    min-height: 4.625rem;
+    background: var(--color-brand);
+    color: white;
+  }
+  .planner-back:hover {
+    background: var(--color-brand-hover);
+  }
+  .planner-project-heading h1 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #000;
+  }
+  .planner-step-navigation {
+    width: 34.625rem;
+    max-width: 100%;
+  }
+  .planner-step-navigation ol {
+    display: grid;
+    grid-template-columns: 196fr 197fr 161fr;
+    align-items: center;
+    width: 100%;
+    height: 2.5rem;
+    border-radius: 1.25rem 0.25rem 0.25rem 1.25rem;
+    background: #e0f2f4;
+  }
+  .planner-step-navigation li {
+    min-width: 0;
+  }
+  .planner-step-navigation li:not(:last-child) button {
+    width: calc(100% + 1.25rem);
+  }
+  .planner-step-navigation li + li button {
+    border-left: 1px solid white;
+  }
+  .planner-step-navigation button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    width: 100%;
+    height: 2.5rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.375rem;
+    border-radius: 1.25rem 0.25rem 0.25rem 1.25rem;
+    background: #e0f2f4;
+    color: var(--color-brand);
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .planner-step-navigation button[aria-current='step'] {
+    background: var(--color-brand);
+    color: white;
+  }
+  .planner-step-navigation button:hover {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-hover);
+  }
+  .planner-step-navigation button[aria-current='step']:hover {
+    background: var(--color-brand-hover);
+    color: white;
+  }
+  .planner-step-number {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    border-radius: 50%;
+    background: white;
+    color: var(--color-brand);
+    font-size: 1.25rem;
+  }
+  .planner-project-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 4.625rem;
+    padding: 1rem 1.6875rem 1rem 1.3125rem;
+    background: #f5f5f5;
+  }
+  .planner-save,
+  .planner-item-list {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.625rem;
+    border-radius: var(--radius-control);
+    border: 1px solid #f5f5f5;
+    background: #fff;
+    color: var(--color-brand);
+    transition:
+      background-color 150ms,
+      color 150ms,
+      border-color 150ms;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .planner-save:hover,
+  .planner-item-list:hover,
+  .planner-save:active,
+  .planner-item-list:active {
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+    color: #fff;
+  }
+  .planner-workspace {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+  .planner-viewer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 180ms ease-out,
+      visibility 0s 180ms;
+  }
+  .planner-viewer[data-active='true'] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+  /* .planner-viewer-2d {
+    background: #edf6ff;
+  }
+  .planner-viewer-3d {
+    background: #edf8f1;
+  } */
+  .planner-viewer-label {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    background: white;
+    color: #334155;
+    font-weight: 600;
+    pointer-events: none;
+  }
+  .planner-bottom-controls {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 4;
+    pointer-events: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 5.75rem 3.4375rem;
+  }
+  .planner-bottom-controls > * {
+    pointer-events: auto;
+  }
+  .planner-toolbar {
+    grid-column: 2;
+    display: flex;
+    padding: 0.6875rem 0.5rem;
+    border-radius: 3rem;
+    background: #000;
+  }
+  .planner-toolbar button {
+    --tool-highlight-size: 3.5rem;
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    min-height: 4rem;
+    border-radius: 0.625rem;
+  }
+  .planner-toolbar button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(var(--tool-highlight-size), calc(100% - 0.5rem));
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+    transition: background-color 150ms;
+  }
+  .planner-toolbar button + button::before,
+  .planner-toolbar .toolbar-dropdown-control + button::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 1px;
+    height: 2.25rem;
+    transform: translateY(-50%);
+    background: #444;
+  }
+  .planner-toolbar img {
+    position: relative;
+    z-index: 1;
+    width: 3.25rem;
+    height: 3.25rem;
+    object-fit: contain;
+  }
+  .planner-tool-icon {
+    position: relative;
+    z-index: 1;
+    color: white;
+  }
+  .room-setup-toolbar .room-tool-hover {
+    display: none;
+  }
+  .room-setup-toolbar .toolbar-dropdown-symbol {
+    font-weight: 400;
+  }
+  .room-setup-toolbar .toolbar-dropdown-control > button:not(:disabled):hover:not(:active)::after {
+    background: #fff;
+  }
+  .room-setup-toolbar .toolbar-dropdown-control > button:hover .toolbar-dropdown-symbol {
+    color: var(--color-brand);
+  }
+  .room-setup-toolbar .toolbar-dropdown-control > button[aria-expanded='true']::after,
+  .room-setup-toolbar
+    .toolbar-dropdown-control
+    > button[aria-expanded='true']:not(:disabled):hover::after,
+  .room-setup-toolbar .toolbar-dropdown-control > button:active::after {
+    background: var(--color-brand);
+  }
+  .room-setup-toolbar
+    .toolbar-dropdown-control
+    > button[aria-expanded='true']
+    .toolbar-dropdown-symbol,
+  .room-setup-toolbar .toolbar-dropdown-control > button:active .toolbar-dropdown-symbol {
+    color: #fff;
+  }
+  .room-setup-toolbar button:not([aria-pressed='true']):hover:not(:active) .room-tool-default {
+    display: none;
+  }
+  .room-setup-toolbar button:not([aria-pressed='true']):hover:not(:active) .room-tool-hover {
+    display: block;
+  }
+  .room-setup-toolbar button:not([aria-pressed='true']):hover:not(:active)::after {
+    background: transparent;
+  }
+  .room-setup-toolbar button[aria-pressed='true']:not(:disabled):hover::after,
+  .room-setup-toolbar button:not(:disabled):active::after {
+    background: var(--color-brand);
+  }
+  .room-setup-toolbar button:active .room-tool-hover {
+    display: none;
+  }
+  .room-setup-toolbar button:active .room-tool-default {
+    display: block;
+  }
+  .planner-toolbar button:not(:disabled):hover::after {
+    background: #222;
+  }
+  .planner-toolbar button[aria-pressed='true']::after,
+  .planner-toolbar button:not(:disabled):active::after {
+    background: var(--color-brand);
+  }
+  .planner-toolbar button[aria-pressed='true']:not(:disabled):hover::after {
+    background: var(--color-brand-hover);
+  }
+  .planner-toolbar button:not(:disabled):active::after,
+  .planner-toolbar button[aria-pressed='true']:not(:disabled):active::after {
+    background: var(--color-brand-active);
+  }
+  .planner-toolbar button:focus-visible {
+    outline: none;
+  }
+  .planner-toolbar button:focus-visible::after {
+    outline: 2px solid white;
+    outline-color: white;
+    outline-offset: -3px;
+  }
+  .planner-next {
+    background: var(--color-surface);
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    min-height: 2.25rem;
+    border: 1px solid var(--color-brand);
+    border-radius: 0.3125rem;
+    color: var(--color-brand);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .planner-next:hover {
+    background: var(--color-brand-subtle);
+  }
+  .planner-next:active {
+    background: var(--color-brand-soft);
+  }
+  .planner-next:disabled {
+    opacity: 0.5;
+  }
+  .planner-next.room-setup-next,
+  .planner-finishes-controls .planner-next,
+  .planner-items-controls .planner-next {
+    border-radius: var(--radius-control);
+    border: var(--control-border-width) solid var(--color-brand);
+    background: #fff;
+    color: var(--color-brand);
+    box-shadow: var(--shadow-navigation);
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+  .planner-next.room-setup-next:hover,
+  .planner-next.room-setup-next:active,
+  .planner-finishes-controls .planner-next:hover,
+  .planner-finishes-controls .planner-next:active,
+  .planner-items-controls .planner-next:hover,
+  .planner-items-controls .planner-next:active {
+    background: var(--color-brand);
+    color: #fff;
+  }
+  @media (width >= 64rem) {
+    .planner-navigation,
+    .planner-bottom-controls,
+    .items-sidebar,
+    .finishes-panel,
+    .open-finishes-button {
+      zoom: var(--planner-scale);
+    }
+    .planner-page .items-sidebar {
+      max-height: calc(100svh / var(--planner-scale));
+    }
+  }
+  @media (width < 80rem) {
+    .planner-navigation {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0;
+    }
+    .planner-step-navigation {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      justify-self: center;
+      padding: 0.5rem 1rem;
+    }
+    .planner-bottom-controls {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      padding: 1rem 1.5rem 2rem;
+    }
+    .planner-toolbar {
+      grid-column: 1;
+    }
+    .planner-next {
+      justify-self: center;
+    }
+  }
+  @media (width < 40rem) {
+    .planner-toolbar.room-setup-toolbar .toolbar-dropdown-control > button {
+      width: 100%;
+    }
+    .room-setup-toolbar {
+      flex-wrap: wrap;
+    }
+    .planner-toolbar.room-setup-toolbar button,
+    .room-setup-toolbar .toolbar-dropdown-control {
+      flex: 0 0 25%;
+      width: auto;
+      min-height: 3.25rem;
+    }
+    .planner-step-navigation li:not(:last-child) button {
+      width: 100%;
+    }
+    .planner-navigation {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .planner-project-heading h1 {
+      font-size: 1.25rem;
+    }
+    .planner-step-navigation {
+      padding: 0.5rem;
+      width: 100%;
+    }
+    .planner-step-navigation ol {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .planner-step-navigation button {
+      width: 100%;
+      padding: 0.375rem;
+      gap: 0.25rem;
+      font-size: 0.625rem;
+      white-space: normal;
+      color: var(--color-brand-hover);
+    }
+    .planner-step-number {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      font-size: 0.875rem;
+    }
+    .planner-project-actions {
+      justify-content: flex-end;
+      min-height: 0;
+      padding: 0.5rem 1rem;
+    }
+    .planner-workspace {
+      min-height: 0;
+    }
+    .planner-toolbar {
+      width: 100%;
+      max-width: 31rem;
+      padding: 0.5rem 0.25rem;
+    }
+    .planner-toolbar button {
+      --tool-highlight-size: 2.5rem;
+      flex: 1;
+      min-width: 0;
+      width: auto;
+      min-height: 3.25rem;
+    }
+    .planner-toolbar img {
+      max-width: 100%;
+    }
+    .planner-bottom-controls {
+      padding-inline: 0.75rem;
+    }
+    .planner-next {
+      color: var(--color-brand-hover);
+    }
+  }
+  @media (40rem <= width < 64rem) {
+    .room-setup-toolbar button,
+    .room-setup-toolbar .toolbar-dropdown-control {
+      --tool-highlight-size: 2.75rem;
+      width: 4rem;
+      min-height: 3.25rem;
+    }
+    .room-setup-toolbar img {
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+}

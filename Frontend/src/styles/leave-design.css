@@ -1,0 +1,54 @@
+@layer components {
+  .leave-design-dialog {
+    width: calc(100% - 2rem);
+    max-width: 476px;
+    min-height: 227px;
+    max-height: calc(100svh - 2rem);
+    border: 0;
+    border-radius: 10px;
+    overflow-y: auto;
+  }
+  .leave-design-dialog::backdrop {
+    background: rgb(0 0 0 / 80%);
+  }
+  .leave-design-dialog-header {
+    padding: 25px 29px 0;
+  }
+  .leave-design-dialog-header h2 {
+    font-size: 30px;
+    line-height: 42px;
+  }
+  .leave-design-message {
+    padding: 8px 29px 0;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 24px;
+    text-transform: uppercase;
+  }
+  .leave-design-message p + p {
+    margin-top: 12px;
+  }
+  .leave-design-dialog-footer {
+    display: flex;
+    gap: 15px;
+    padding: 24px 29px 32px;
+  }
+  .leave-design-dialog-footer button {
+    width: 117px;
+    height: 36px;
+    padding: 0 12px;
+    text-transform: uppercase;
+    font-size: 16px;
+    border-color: var(--color-brand);
+  }
+  @media (max-width: 500px) {
+    .leave-design-dialog-header,
+    .leave-design-message,
+    .leave-design-dialog-footer {
+      padding-inline: 20px;
+    }
+    .leave-design-message {
+      font-size: 14px;
+    }
+  }
+}

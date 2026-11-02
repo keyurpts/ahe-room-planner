@@ -36,6 +36,13 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasMaxLength(50)
             .IsRequired();
 
+        builder.Property(x => x.DesignCode)
+            .IsRequired();
+
+        builder.Property(p => p.RoomType)
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 

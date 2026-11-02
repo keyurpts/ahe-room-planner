@@ -1,0 +1,154 @@
+@layer components {
+  .save-design-dialog {
+    width: calc(100% - 2rem);
+    max-width: 500px;
+    max-height: calc(100svh - 2rem);
+    border: 0;
+    border-radius: 10px;
+    overflow-y: auto;
+  }
+  .save-design-dialog::backdrop {
+    background: rgb(0 0 0 / 80%);
+  }
+  .save-design-dialog-header {
+    position: relative;
+    padding: 20px 50px 0;
+    height: 100px;
+    text-align: center;
+  }
+  .save-design-dialog-header h2 {
+    font-size: 30px;
+    line-height: 38px;
+  }
+  .save-design-dialog-header .dialog-subtitle {
+    color: var(--color-brand);
+    font-size: 18px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .save-design-dialog-header .preset-close {
+    position: absolute;
+    top: 24px;
+    right: 26px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+  }
+  .save-design-code-section {
+    height: 155px;
+    padding: 5px 32px 25px;
+    text-align: center;
+  }
+  .save-design-code {
+    display: grid;
+    place-items: center;
+    height: 72px;
+    margin-bottom: 14px;
+    background: #80c5cd;
+    color: white;
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: 800;
+    user-select: all;
+  }
+  .save-design-code-section button {
+    width: 177px;
+    height: 38px;
+    padding-block: 0;
+    text-transform: uppercase;
+    font-size: 16px;
+    border-color: var(--color-brand);
+  }
+  .save-design-email-section {
+    height: 120px;
+    padding: 20px 25px 24px;
+    background: #f2f9fa;
+    color: var(--color-brand);
+    text-align: center;
+  }
+  .save-design-email-section h3 {
+    margin-bottom: 14px;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .save-design-email-section input {
+    width: 100%;
+    height: 34px;
+    border: 0;
+    border-bottom: 1px solid var(--color-brand);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-brand);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .save-design-email-section input::placeholder {
+    color: var(--color-brand);
+    opacity: 1;
+  }
+  .save-design-email-section input:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+  }
+  .save-design-send-section {
+    min-height: 141px;
+    padding: 12px 25px 4px;
+    text-align: center;
+  }
+  .save-design-terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 0 8px;
+    text-align: left;
+    color: #595959;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 16px;
+  }
+  .save-design-terms input {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin-top: 4px;
+    accent-color: #757575;
+    cursor: pointer;
+  }
+  .save-design-send-section > button {
+    height: 36px;
+    margin-top: 12px;
+    padding-block: 0;
+    text-transform: uppercase;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .save-design-status {
+    height: 22px;
+    margin-top: 3px;
+    font-size: 9px;
+    line-height: 12px;
+    color: var(--color-brand);
+  }
+  @media (max-width: 540px) {
+    .save-design-dialog-header {
+      padding-inline: 40px;
+    }
+    .save-design-dialog-header h2 {
+      font-size: 24px;
+    }
+    .save-design-dialog-header .dialog-subtitle {
+      font-size: 15px;
+    }
+    .save-design-dialog-header .preset-close {
+      right: 12px;
+    }
+    .save-design-code-section {
+      padding-inline: 24px;
+    }
+    .save-design-send-section > button {
+      font-size: 14px;
+    }
+  }
+}

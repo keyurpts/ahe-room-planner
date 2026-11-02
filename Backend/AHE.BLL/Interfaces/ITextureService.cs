@@ -1,4 +1,5 @@
 ﻿using AHE.BLL.DTOs.Textures;
+using AHE.DAL.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,5 +20,7 @@ namespace AHE.BLL.Interfaces
             UpdateTextureRequest request);
 
         Task<bool> DeleteAsync(Guid id);
+
+        Task<List<TextureResponse>> GetByRegionIdAsync(Guid regionId);
     }
 }

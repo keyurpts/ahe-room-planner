@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,6 +11,8 @@ namespace AHE.BLL.DTOs.Categories
         public string CategoryName { get; set; } = null!;
 
         public string? Description { get; set; }
+        
+        public Guid? MasterCategoryId { get; set; }
 
         public bool IsActive { get; set; }
 

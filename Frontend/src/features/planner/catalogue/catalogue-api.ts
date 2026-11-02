@@ -1,0 +1,250 @@
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { apiClient } from '@/services/api/client';
+
+export interface Category {
+  id: string;
+  categoryName: string;
+  description: string | null;
+  isActive: boolean;
+  masterCategoryId?: string | null;
+}
+export interface MasterCategory {
+  id: string;
+  masterCategoryName: string;
+  description: string | null;
+  isActive: boolean;
+  categories: Category[];
+}
+export interface Texture {
+  id: string;
+  textureName: string;
+  isActive: boolean;
+}
+export interface BenchtopColour {
+  id: string;
+  benchtopColourName: string;
+  assetPath: string | null;
+  benchtopColourMetadata?: unknown;
+}
+export interface ModelVariant {
+  textureId: string;
+  skuNumber: string;
+  thumbnailPath: string | null;
+  regions: { regionId: string; itemNumber: string; price: number }[];
+}
+export interface CatalogueModel {
+  id: string;
+  categoryId: string;
+  modelName: string;
+  description: string | null;
+  modelPath: string | null;
+  isActive: boolean;
+  variants: ModelVariant[];
+}
+interface Thumbnail {
+  downloadUrl: string;
+  expiresAt: string;
+}
+interface DownloadUrl {
+  downloadUrl: string;
+}
+interface TextureDownloadUrl {
+  downloadUrl: string | null;
+}
+function object(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('Invalid catalogue response.');
+  return value as Record<string, unknown>;
+}
+function string(value: unknown): string {
+  if (typeof value !== 'string') throw new Error('Invalid catalogue text field.');
+  return value;
+}
+function nullable(value: unknown): string | null {
+  return value == null ? null : string(value);
+}
+function boolean(value: unknown): boolean {
+  if (typeof value !== 'boolean') throw new Error('Invalid catalogue active field.');
+  return value;
+}
+function array<T>(value: unknown, parse: (item: Record<string, unknown>) => T): T[] {
+  if (!Array.isArray(value)) throw new Error('Invalid catalogue list.');
+  return value.map((item: unknown) => parse(object(item)));
+}
+const categories = (value: unknown) =>
+  array(value, (item): Category => ({
+    id: string(item.id),
+    categoryName: string(item.categoryName),
+    description: nullable(item.description),
+    isActive: boolean(item.isActive),
+    masterCategoryId: nullable(item.masterCategoryId),
+  })).filter((item) => item.isActive);
+const masterCategories = (value: unknown) =>
+  array(value, (item): MasterCategory => ({
+    id: string(item.id),
+    masterCategoryName: string(item.masterCategoryName),
+    description: nullable(item.description),
+    isActive: boolean(item.isActive),
+    categories: Array.isArray(item.categories) ? categories(item.categories) : [],
+  })).filter((item) => item.isActive);
+const textures = (value: unknown) =>
+  array(value, (item): Texture => ({
+    id: string(item.id),
+    textureName: string(item.textureName),
+    isActive: boolean(item.isActive),
+  })).filter((item) => item.isActive);
+const benchtopColours = (value: unknown) =>
+  array(value, (item): BenchtopColour => ({
+    id: string(item.id ?? item.Id),
+    benchtopColourName: string(
+      item.benchtopColourName ?? item.BenchtopColourName ?? item.name ?? item.Name ?? '',
+    ),
+    assetPath: nullable(item.assetPath ?? item.AssetPath),
+    benchtopColourMetadata: item.benchtopColourMetadata ?? item.BenchtopColourMetadata,
+  }));
+const parseModel = (item: Record<string, unknown>): CatalogueModel => ({
+  id: string(item.id),
+  categoryId: string(item.categoryId),
+  modelName: string(item.modelName),
+  description: nullable(item.description),
+  modelPath: nullable(item.modelPath),
+  isActive: boolean(item.isActive),
+  variants: array(item.variants, (variant): ModelVariant => ({
+    textureId: string(variant.textureId),
+    skuNumber: string(variant.skuNumber),
+    thumbnailPath: nullable(variant.thumbnailPath),
+    regions: array(variant.regions, (region) => {
+      if (typeof region.price !== 'number' || !Number.isFinite(region.price) || region.price < 0)
+        throw new Error('Invalid catalogue price.');
+      return {
+        regionId: string(region.regionId),
+        itemNumber: string(region.itemNumber),
+        price: region.price,
+      };
+    }),
+  })),
+});
+const models = (value: unknown) =>
+  array(value, parseModel).filter((item) => item.isActive);
+const singleModel = (value: unknown) => parseModel(object(value));
+function parseDownloadUrl(value: unknown): DownloadUrl {
+  const item = object(value);
+  const valueUrl = string(item.downloadUrl);
+  const url = new URL(valueUrl);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+    throw new Error('Invalid thumbnail download URL.');
+  return { downloadUrl: valueUrl };
+}
+function parseTextureDownloadUrl(value: unknown): TextureDownloadUrl {
+  const item = object(value);
+  if (item.downloadUrl === null) return { downloadUrl: null };
+  return parseDownloadUrl(value);
+}
+function thumbnail(value: unknown): Thumbnail {
+  const item = object(value);
+  const { downloadUrl } = parseDownloadUrl(value);
+  const expiresAt = string(item.expiresAt);
+  if (!Number.isFinite(Date.parse(expiresAt))) throw new Error('Invalid thumbnail expiry date.');
+  return { downloadUrl, expiresAt };
+}
+
+// createApi() – Creates the API service.
+// reducerPath – Defines the API's name in the Redux store.
+// baseQuery – Handles API requests and errors in one place.
+// apiClient.request() – Sends the request to the backend.
+// parse – Validates or transforms the response data.
+// endpoints – Defines which APIs are available.
+// builder.query() – Fetches data from the backend.
+// refetchOnFocus: true – Refreshes data when the app regains focus.
+// refetchOnReconnect: true – Refreshes data when the internet reconnects.
+// keepUnusedDataFor: 0 – Removes cached data when no component is using it.
+
+export const catalogueApi = createApi({
+  reducerPath: 'catalogueApi',
+  baseQuery: async (
+    { path, parse }: { path: string; parse: (value: unknown) => unknown },
+    { signal },
+  ) => {
+    try {
+      return { data: await apiClient.request(path, { parse, signal }) };
+    } catch (error) {
+      return {
+        error: { message: error instanceof Error ? error.message : 'Catalogue request failed.' },
+      };
+    }
+  },
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+  endpoints: (builder) => ({
+    getCategories: builder.query<Category[], undefined>({
+      query: () => ({ path: '/Categories', parse: categories }),
+    }),
+    getMasterCategories: builder.query<MasterCategory[], undefined>({
+      query: () => ({ path: '/MasterCategories', parse: masterCategories }),
+    }),
+    getTextures: builder.query<Texture[], string>({
+      query: (regionId) => ({
+        path: `/Textures/region/${encodeURIComponent(regionId.trim())}`,
+        parse: textures,
+      }),
+    }),
+    getBenchtopColours: builder.query<BenchtopColour[], string>({
+      query: (regionId) => ({
+        path: `/BenchtopColour/region/${encodeURIComponent(regionId.trim())}`,
+        parse: benchtopColours,
+      }),
+    }),
+    getModels: builder.query<CatalogueModel[], string>({
+      query: (categoryId) => ({
+        path: `/Models/category/${encodeURIComponent(categoryId)}`,
+        parse: models,
+      }),
+    }),
+    getModelById: builder.query<CatalogueModel, string>({
+      query: (modelId) => ({
+        path: `/Models/${encodeURIComponent(modelId)}`,
+        parse: singleModel,
+      }),
+    }),
+    getThumbnail: builder.query<
+      Thumbnail,
+      { categoryId: string; modelId: string; textureId: string }
+    >({
+      query: ({ categoryId, modelId, textureId }) => ({
+        path: `/storage/thumbnails/${encodeURIComponent(categoryId)}/${encodeURIComponent(modelId)}/${encodeURIComponent(textureId)}/download-url`,
+        parse: thumbnail,
+      }),
+      keepUnusedDataFor: 0,
+    }),
+    getModelDownloadUrl: builder.query<DownloadUrl, string>({
+      query: (modelId) => ({
+        path: `/storage/${encodeURIComponent(modelId)}/download-url`,
+        parse: parseDownloadUrl,
+      }),
+      keepUnusedDataFor: 0,
+    }),
+    getTextureDownloadUrl: builder.query<TextureDownloadUrl, { textureId: string }>({
+      query: ({ textureId }) => ({
+        path: `/storage/${encodeURIComponent(textureId)}/texture/download-url`,
+        parse: parseTextureDownloadUrl,
+      }),
+      keepUnusedDataFor: 0,
+    }),
+  }),
+});
+export const {
+  useGetCategoriesQuery,
+  useGetMasterCategoriesQuery,
+  useGetTexturesQuery,
+  useGetBenchtopColoursQuery,
+  useGetModelsQuery,
+  useGetModelByIdQuery,
+  useLazyGetModelByIdQuery,
+  useGetThumbnailQuery,
+  useGetModelDownloadUrlQuery,
+  useLazyGetModelDownloadUrlQuery,
+  useGetTextureDownloadUrlQuery,
+  useLazyGetTextureDownloadUrlQuery,
+  useLazyGetBenchtopColoursQuery,
+  useLazyGetMasterCategoriesQuery,
+} = catalogueApi;

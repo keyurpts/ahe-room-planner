@@ -3,6 +3,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,9 +13,12 @@ namespace AHE.DAL.Repositories
     public class AzureBlobStorageRepository : IBlobStorageRepository
     {
         private readonly BlobContainerClient _containerClient;
+        private readonly ILogger<AzureBlobStorageRepository> _logger;
 
-        public AzureBlobStorageRepository(IConfiguration configuration)
+        public AzureBlobStorageRepository(IConfiguration configuration, ILogger<AzureBlobStorageRepository> logger)
         {
+            _logger = logger;
+
             var connectionString =
                 configuration["AzureStorage:ConnectionString"]
                 ?? throw new InvalidOperationException(
@@ -48,55 +52,190 @@ namespace AHE.DAL.Repositories
             string contentType,
             CancellationToken cancellationToken = default)
         {
-            await _containerClient.CreateIfNotExistsAsync(
-                cancellationToken: cancellationToken);
+            if (string.IsNullOrWhiteSpace(blobName))
+            {
+                throw new ArgumentException(
+                    "Blob name is required.",
+                    nameof(blobName));
+            }
 
-            var blobClient =
-                _containerClient.GetBlobClient(blobName);
+            if (stream is null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
 
-            await blobClient.UploadAsync(
-                stream,
-                new BlobUploadOptions
-                {
-                    HttpHeaders = new BlobHttpHeaders
+            if (!stream.CanRead)
+            {
+                throw new ArgumentException(
+                    "The stream must be readable.",
+                    nameof(stream));
+            }
+
+            if (string.IsNullOrWhiteSpace(contentType))
+            {
+                throw new ArgumentException(
+                    "Content type is required.",
+                    nameof(contentType));
+            }
+
+            try
+            {
+                await _containerClient.CreateIfNotExistsAsync(
+                    cancellationToken: cancellationToken);
+
+                var blobClient =
+                    _containerClient.GetBlobClient(blobName);
+
+                await blobClient.UploadAsync(
+                    stream,
+                    new BlobUploadOptions
                     {
-                        ContentType = contentType
-                    }
-                },
-                cancellationToken);
+                        HttpHeaders = new BlobHttpHeaders
+                        {
+                            ContentType = contentType
+                        }
+                    },
+                    cancellationToken);
 
-            return blobClient.Uri.ToString();
+                var blobUri = blobClient.Uri.ToString();
+
+                _logger.LogInformation(
+                    "Blob uploaded successfully. BlobName: {BlobName}.",
+                    blobName);
+
+                return blobUri;
+            }
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "Blob upload was canceled. BlobName: {BlobName}.",
+                    blobName);
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while uploading blob {BlobName}.",
+                    blobName);
+
+                throw;
+            }
         }
 
         public async Task<Stream?> DownloadAsync(
             string blobName,
             CancellationToken cancellationToken = default)
         {
-            var blobClient =
-                _containerClient.GetBlobClient(blobName);
+            if (string.IsNullOrWhiteSpace(blobName))
+            {
+                throw new ArgumentException(
+                    "Blob name is required.",
+                    nameof(blobName));
+            }
 
-            if (!await blobClient.ExistsAsync(cancellationToken))
-                return null;
+            try
+            {
+                var blobClient =
+                    _containerClient.GetBlobClient(blobName);
 
-            var response =
-                await blobClient.DownloadStreamingAsync(
-                    cancellationToken: cancellationToken);
+                var exists = await blobClient.ExistsAsync(
+                    cancellationToken);
 
-            return response.Value.Content;
+                if (!exists.Value)
+                {
+                    _logger.LogWarning(
+                        "Blob {BlobName} was not found.",
+                        blobName);
+
+                    return null;
+                }
+
+                var response =
+                    await blobClient.DownloadStreamingAsync(
+                        cancellationToken: cancellationToken);
+
+                _logger.LogDebug(
+                    "Blob {BlobName} downloaded successfully.",
+                    blobName);
+
+                return response.Value.Content;
+            }
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "Blob download was canceled. BlobName: {BlobName}.",
+                    blobName);
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while downloading blob {BlobName}.",
+                    blobName);
+
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(
             string blobName,
             CancellationToken cancellationToken = default)
         {
-            var blobClient =
-                _containerClient.GetBlobClient(blobName);
+            if (string.IsNullOrWhiteSpace(blobName))
+            {
+                throw new ArgumentException(
+                    "Blob name is required.",
+                    nameof(blobName));
+            }
 
-            var response =
-                await blobClient.DeleteIfExistsAsync(
-                    cancellationToken: cancellationToken);
+            try
+            {
+                var blobClient =
+                    _containerClient.GetBlobClient(blobName);
 
-            return response.Value;
+                var response =
+                    await blobClient.DeleteIfExistsAsync(
+                        cancellationToken: cancellationToken);
+
+                if (response.Value)
+                {
+                    _logger.LogInformation(
+                        "Blob {BlobName} deleted successfully.",
+                        blobName);
+                }
+                else
+                {
+                    _logger.LogDebug(
+                        "Blob {BlobName} did not exist; no deletion was performed.",
+                        blobName);
+                }
+
+                return response.Value;
+            }
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "Blob deletion was canceled. BlobName: {BlobName}.",
+                    blobName);
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while deleting blob {BlobName}.",
+                    blobName);
+
+                throw;
+            }
         }
 
         public Uri GenerateUploadSasUrl(
@@ -104,44 +243,121 @@ namespace AHE.DAL.Repositories
         string contentType,
         int expiryMinutes)
         {
-            var blobClient =
-                _containerClient.GetBlobClient(blobPath);
-
-            var sasBuilder = new BlobSasBuilder
+            if (string.IsNullOrWhiteSpace(blobPath))
             {
-                BlobContainerName = _containerClient.Name,
-                BlobName = blobPath,
-                Resource = "b",
-                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes),
-                ContentType = contentType
-            };
+                throw new ArgumentException(
+                    "Blob path is required.",
+                    nameof(blobPath));
+            }
 
-            sasBuilder.SetPermissions(
-                BlobSasPermissions.Create |
-                BlobSasPermissions.Write);
+            if (string.IsNullOrWhiteSpace(contentType))
+            {
+                throw new ArgumentException(
+                    "Content type is required.",
+                    nameof(contentType));
+            }
 
-            return blobClient.GenerateSasUri(sasBuilder);
+            if (expiryMinutes <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(expiryMinutes),
+                    "Expiry duration must be greater than zero.");
+            }
+
+            try
+            {
+                var blobClient =
+                    _containerClient.GetBlobClient(blobPath);
+
+                var sasBuilder = new BlobSasBuilder
+                {
+                    BlobContainerName = _containerClient.Name,
+                    BlobName = blobPath,
+                    Resource = "b",
+                    ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(
+                        expiryMinutes),
+                    ContentType = contentType
+                };
+
+                sasBuilder.SetPermissions(
+                    BlobSasPermissions.Create |
+                    BlobSasPermissions.Write);
+
+                var sasUri =
+                    blobClient.GenerateSasUri(sasBuilder);
+
+                _logger.LogInformation(
+                    "Upload SAS URL generated for blob {BlobPath}. Expires in {ExpiryMinutes} minutes.",
+                    blobPath,
+                    expiryMinutes);
+
+                return sasUri;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while generating an upload SAS URL for blob {BlobPath}.",
+                    blobPath);
+
+                throw;
+            }
         }
 
         public Uri GenerateDownloadSasUrl(
             string blobPath,
             int expiryMinutes)
         {
-            var blobClient =
-                _containerClient.GetBlobClient(blobPath);
-
-            var sasBuilder = new BlobSasBuilder
+            if (string.IsNullOrWhiteSpace(blobPath))
             {
-                BlobContainerName = _containerClient.Name,
-                BlobName = blobPath,
-                Resource = "b",
-                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
-            };
+                throw new ArgumentException(
+                    "Blob path is required.",
+                    nameof(blobPath));
+            }
 
-            sasBuilder.SetPermissions(
-                BlobSasPermissions.Read);
+            if (expiryMinutes <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(expiryMinutes),
+                    "Expiry duration must be greater than zero.");
+            }
 
-            return blobClient.GenerateSasUri(sasBuilder);
+            try
+            {
+                var blobClient =
+                    _containerClient.GetBlobClient(blobPath);
+
+                var sasBuilder = new BlobSasBuilder
+                {
+                    BlobContainerName = _containerClient.Name,
+                    BlobName = blobPath,
+                    Resource = "b",
+                    ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(
+                        expiryMinutes)
+                };
+
+                sasBuilder.SetPermissions(
+                    BlobSasPermissions.Read);
+
+                var sasUri =
+                    blobClient.GenerateSasUri(sasBuilder);
+
+                _logger.LogInformation(
+                    "Read-only SAS URL generated for blob {BlobPath}. Expires in {ExpiryMinutes} minutes.",
+                    blobPath,
+                    expiryMinutes);
+
+                return sasUri;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while generating a read-only SAS URL for blob {BlobPath}.",
+                    blobPath);
+
+                throw;
+            }
         }
     }
 }

@@ -1,9 +1,10 @@
 using AHE.BLL.DTOs.Storage;
 using AHE.BLL.Interfaces;
-using AHE.DAL.Interfaces.Repositories;
 using AHE.DAL.Entities;
+using AHE.DAL.Interfaces.Repositories;
 using AHE.DAL.Repositories;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,16 +17,19 @@ namespace AHE.BLL.Services
         private readonly IModelRepository _modelRepository;
         private readonly ITextureRepository _textureRepository;
         private readonly int _sasExpiryMinutes;
+        private readonly ILogger<StorageService> _logger;
 
         public StorageService(
             IBlobStorageRepository blobStorageRepository,
             IConfiguration configuration,
             IModelRepository modelRepository,
-            ITextureRepository textureRepository)
+            ITextureRepository textureRepository,
+            ILogger<StorageService> logger)
         {
             _blobStorageRepository = blobStorageRepository;
             _modelRepository = modelRepository;
             _textureRepository = textureRepository;
+            _logger = logger;
 
             _sasExpiryMinutes =
             configuration.GetValue<int>(
@@ -40,8 +44,41 @@ namespace AHE.BLL.Services
         public async Task<bool> TestConnectionAsync(
             CancellationToken cancellationToken = default)
         {
-            return await _blobStorageRepository
-                .TestConnectionAsync(cancellationToken);
+            try
+            {
+                var isConnected =
+                    await _blobStorageRepository
+                        .TestConnectionAsync(cancellationToken);
+
+                if (!isConnected)
+                {
+                    _logger.LogWarning(
+                        "Blob storage connection test failed.");
+
+                    return false;
+                }
+
+                _logger.LogInformation(
+                    "Blob storage connection test succeeded.");
+
+                return true;
+            }
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    "Blob storage connection test was canceled.");
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while testing the blob storage connection.");
+
+                throw;
+            }
         }
 
         public async Task<string> UploadAsync(

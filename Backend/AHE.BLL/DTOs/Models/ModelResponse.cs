@@ -9,8 +9,6 @@ namespace AHE.BLL.DTOs.Models
     {
         public Guid Id { get; set; }
 
-        public string ModelId { get; set; } = null!;
-
         public Guid CategoryId { get; set; }
 
         public string ModelName { get; set; } = null!;

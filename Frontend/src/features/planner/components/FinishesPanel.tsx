@@ -1,0 +1,315 @@
+import { useEffect, useId, useRef, useState } from 'react';
+import { CloseIcon } from '@/components/ui/CloseIcon';
+import resetIcon from '@/assets/icons/material-symbols_restart-alt-rounded.svg';
+import '@/styles/finishes.css';
+import {
+  floorPresets,
+  wallPresets,
+  colorPresets,
+  type TexturePreset,
+  type ColorPreset,
+} from '@/features/planner/finishes/presets';
+import { useAppSelector } from '@/app/store-hooks';
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+type FinishMode = 'Textures' | 'Colours';
+
+function FinishSymbol({
+  type,
+}: {
+  type: 'textures' | 'colours' | 'all' | 'selection' | 'finishes';
+}) {
+  const colourMaskId = useId();
+  return (
+    <svg
+      width={type === 'finishes' ? 40 : 24}
+      height={type === 'finishes' ? 40 : 24}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      {type === 'textures' && (
+        <path
+          d="m3 8 5-5M3 15 15 3M3 22 22 3M10 22l12-12m-5 12 5-5"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+      )}
+      {type === 'colours' && (
+        <>
+          <defs>
+            <mask id={colourMaskId}>
+              <circle cx="12" cy="12" r="10" fill="white" />
+              <path d="M12 2v20M2 12h20M5 5l14 14M5 19 19 5" stroke="black" strokeWidth="1.5" />
+            </mask>
+          </defs>
+          <circle cx="12" cy="12" r="10" fill="currentColor" mask={`url(#${colourMaskId})`} />
+        </>
+      )}
+      {type === 'all' && (
+        <path d="M2 2h9v9H2zm11 0h9v9h-9zM2 13h9v9H2zm11 0h9v9h-9z" fill="currentColor" />
+      )}
+      {type === 'selection' && (
+        <path
+          d="m10 7 9 9-5 1 3 5-3 1-3-5-3 4V7ZM10 1v3M3 4l3 2M1 11h4M18 3l-3 3M20 10h-4"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      )}
+      {type === 'finishes' && (
+        <path
+          d="M12 1v4m0 14v4M1 12h4m14 0h4M4 4l3 3m10 10 3 3M4 20l3-3M17 7l3-3"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+function SwatchGrid({
+  label,
+  options,
+  mode,
+  selected,
+  onSelect,
+  wallScope,
+  section,
+}: {
+  label: string;
+  options: readonly (TexturePreset | ColorPreset)[];
+  mode: FinishMode;
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+  wallScope: 'all' | 'selection';
+  section: 'floor' | 'wall';
+}) {
+  const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
+
+  return (
+    <div className="finish-swatch-grid" role="group" aria-label={`${label} ${mode.toLowerCase()}`}>
+      <button
+        type="button"
+        className="finish-reset"
+        aria-label={`Reset ${label.toLowerCase()} finish`}
+        onClick={() => {
+          onSelect(null);
+          if (section === 'floor') {
+            configuratorCore?.resetFloor();
+          } else {
+            if (wallScope === 'all') {
+              configuratorCore?.resetWalls();
+            } else {
+              configuratorCore?.enableWallColoringMode(false);
+              configuratorCore?.enableWallTextureMode(false);
+              configuratorCore?.enableWallMaterialResetMode(true);
+            }
+          }
+        }}
+      >
+        <img src={resetIcon} width={24} height={24} alt="" />
+        <span>Reset</span>
+      </button>
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          className="finish-swatch"
+          aria-label={`${label}: ${option.name}`}
+          title={option.name}
+          style={'color' in option ? { backgroundColor: option.color } : undefined}
+          aria-pressed={selected === option.id}
+          onClick={() => {
+            onSelect(option.id);
+            if (section === 'wall') {
+              if ('url' in option) {
+                if (wallScope === 'all') {
+                  configuratorCore?.enableWallColoringMode(false);
+                  configuratorCore?.enableWallTextureMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
+                  configuratorCore?.applyTextureToAllWalls(option);
+                } else {
+                  configuratorCore?.setWallTexture(option);
+                  configuratorCore?.enableWallTextureMode(true);
+                  configuratorCore?.enableWallColoringMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
+                }
+              } else {
+                if (wallScope === 'all') {
+                  configuratorCore?.enableWallColoringMode(false);
+                  configuratorCore?.enableWallTextureMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
+                  configuratorCore?.applyColorToAllWalls(option.color);
+                } else {
+                  configuratorCore?.setWallColor(option);
+                  configuratorCore?.enableWallColoringMode(true);
+                  configuratorCore?.enableWallTextureMode(false);
+                  configuratorCore?.enableWallMaterialResetMode(false);
+                }
+              }
+            } else {
+              if ('color' in option) {
+                configuratorCore?.applyColorToAllFloors(option.color, option.id);
+              } else {
+                configuratorCore?.applyTextureToAllFloors(option);
+              }
+            }
+          }}
+        >
+          {'thumbnail' in option && (
+            <img className="finish-swatch-thumbnail" src={option.thumbnail} alt="" loading="lazy" />
+          )}
+          {selected === option.id && (
+            <span className="finish-swatch-check" aria-hidden="true">
+              ✓
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function FinishesPanel({ open, onClose }: Props) {
+  const [mode, setMode] = useState<FinishMode>('Textures');
+  const [wallScope, setWallScope] = useState<'all' | 'selection'>('all');
+  const [floor, setFloor] = useState<string | null>(null);
+  const [walls, setWalls] = useState<string | null>(null);
+
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  useEffect(() => {
+    if (open) closeRef.current?.focus();
+  }, [open]);
+  if (!open) return null;
+  return (
+    <section
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={`${id}-title`}
+      aria-describedby={`${id}-description`}
+      className="finishes-panel"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <header className="finishes-panel-header">
+        <FinishSymbol type="finishes" />
+        <div>
+          <h2 id={`${id}-title`}>Finishes</h2>
+          <p id={`${id}-description`}>Floor &amp; wall styling</p>
+        </div>
+        <button
+          ref={closeRef}
+          type="button"
+          className="finishes-close"
+          aria-label="Close finishes"
+          onClick={onClose}
+        >
+          <CloseIcon />
+        </button>
+      </header>
+      <div role="tablist" aria-label="Finish type" className="finishes-tabs">
+        {(['Textures', 'Colours'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            id={`${id}-${tab}`}
+            aria-selected={mode === tab}
+            aria-controls={`${id}-options`}
+            tabIndex={mode === tab ? 0 : -1}
+            onClick={() => {
+              setMode(tab);
+              setFloor(null);
+              setWalls(null);
+            }}
+            onKeyDown={(event) => {
+              if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                event.preventDefault();
+                const next =
+                  event.key === 'Home'
+                    ? 'Textures'
+                    : event.key === 'End'
+                      ? 'Colours'
+                      : mode === 'Textures'
+                        ? 'Colours'
+                        : 'Textures';
+                setMode(next);
+                setFloor(null);
+                setWalls(null);
+
+                document.getElementById(`${id}-${next}`)?.focus();
+              }
+            }}
+          >
+            <FinishSymbol type={tab === 'Textures' ? 'textures' : 'colours'} />
+            {tab}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${id}-options`} aria-labelledby={`${id}-${mode}`}>
+        <section className="finishes-surfaces" aria-label="Floor finishes">
+          <h3>Floor</h3>
+          <SwatchGrid
+            label="Floor"
+            options={mode === 'Textures' ? floorPresets : colorPresets}
+            mode={mode}
+            selected={floor}
+            onSelect={setFloor}
+            wallScope={wallScope}
+            section={'floor'}
+          />
+        </section>
+        <section aria-label="Wall finishes" className="finishes-walls">
+          <h3>Walls</h3>
+          <div className="finish-apply-controls" role="group" aria-label="Wall application scope">
+            <button
+              type="button"
+              aria-pressed={wallScope === 'all'}
+              onClick={() => {
+                setWallScope('all');
+              }}
+            >
+              <FinishSymbol type="all" />
+              Apply to all
+            </button>
+            <button
+              type="button"
+              aria-pressed={wallScope === 'selection'}
+              onClick={() => {
+                setWallScope('selection');
+              }}
+            >
+              <FinishSymbol type="selection" />
+              <span>
+                Apply
+                <br />
+                to selection
+              </span>
+            </button>
+          </div>
+          <div className="finishes-wall-options">
+            <SwatchGrid
+              label="Walls"
+              options={mode === 'Textures' ? wallPresets : colorPresets}
+              mode={mode}
+              selected={walls}
+              onSelect={setWalls}
+              wallScope={wallScope}
+              section={'wall'}
+            />
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}

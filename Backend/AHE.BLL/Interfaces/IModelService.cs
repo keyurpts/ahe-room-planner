@@ -1,7 +1,4 @@
 ﻿using AHE.BLL.DTOs.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AHE.BLL.Interfaces
 {
