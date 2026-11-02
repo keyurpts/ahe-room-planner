@@ -726,18 +726,6 @@ export class ConfiguratorCore {
   }
 
   /**
-  * Sets the length measurement unit used for distance measurement overlays in the 3D scene.
-  * Re-toggles measurement display so that existing measurement labels update to the new unit.
-  * @public
-  * @param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
-  * @returns {void}
-  */
-  public setLengthUnit(unit: LengthUnit | string): void {
-    this.currentUnit = normalizeLengthUnit(unit);
-    this.toggleMeasurement();
-  }
-
-  /**
    * Sets up default lighting for the scene
    *
    * @private
@@ -3580,9 +3568,6 @@ export class ConfiguratorCore {
   private onWallTexturingClick = (event: PointerEvent) => {
     if (!this.isWallTexturingMode || !this.selectedWallTexture) return;
     const wallFace = this.getClickedWallFace(event);
-
-    console.log("clicked wall face : ", wallFace);
-
     if (wallFace) {
       const loader = new TextureLoader();
       loader.load(this.selectedWallTexture.url, (tex) => {
@@ -6556,6 +6541,18 @@ export class ConfiguratorCore {
   }
 
   /**
+  * Sets the length measurement unit used for distance measurement overlays in the 3D scene.
+  * Re-toggles measurement display so that existing measurement labels update to the new unit.
+  * @public
+  * @param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
+  * @returns {void}
+  */
+  public setLengthUnit(unit: LengthUnit | string): void {
+    this.currentUnit = normalizeLengthUnit(unit);
+    this.toggleMeasurement();
+  }
+
+  /**
    * Exports the current 3D scene to a GLB file and initiates a download.
    * Waits for all assets (textures, etc.) to load before exporting.
    * @public
@@ -6681,8 +6678,6 @@ export class ConfiguratorCore {
    * @public
    */
   public setWallTexture(texturePreset: { url: string; repeatX?: number; repeatY?: number }): void {
-    console.log("texturePreset : ", texturePreset);
-
     this.selectedWallTexture = texturePreset;
   }
 
@@ -7186,186 +7181,11 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Exports the 3D scene (room layout and placed furniture) as a binary GLB (ArrayBuffer).
-   * Filters out helpers, cameras, lights, skyboxes, and gizmos.
-   */
-  public async exportSceneAsGLB(options: { binary?: boolean } = { binary: true }) {
-
-    console.log("options : ", options);
-
-    console.log("scene : ", this.scene);
-
-
-
-    console.log("Exporting scene as GLB");
-
-    // const exportGroup = new Group();
-    // exportGroup.name = "ExportScene";
-
-    // // Collect exportable objects from scene
-    // const exportableObjects: Object3D[] = [];
-
-    // this.scene.children.forEach((child) => {
-    //   // Exclude cameras, lights, skyboxes, helpers, shadow planes, grid
-    //   if (
-    //     (child as any).isCamera ||
-    //     (child as any).isLight ||
-    //     child.name === "GroundedSkyBox" ||
-    //     child.name === "GlobalGroundShadowPlane" ||
-    //     child.name === "GridHelper" ||
-    //     child instanceof GridHelper ||
-    //     child instanceof Box3Helper ||
-    //     child instanceof ArrowHelper
-    //   ) {
-    //     return;
-    //   }
-
-    //   // Include room model, furniture group, or selectable furniture models
-    //   if (
-    //     child.name === RequiredStrings.ROOM_MODEL ||
-    //     child.name === RequiredStrings.FURNITURE_GROUP ||
-    //     child.userData?.selectable === SelectableState.TRUE ||
-    //     (child as any).isMesh ||
-    //     (child as any).isGroup
-    //   ) {
-    //     exportableObjects.push(child);
-    //   }
-    // });
-
-    // const exporter = new GLTFExporter();
-
-    // return new Promise((resolve, reject) => {
-    //   // We clone or pass the exportable objects
-    //   // If we pass an array of objects or exportGroup:
-    //   const target = exportableObjects.length === 1 ? exportableObjects[0] : exportableObjects;
-
-    //   exporter.parse(
-    //     target,
-    //     (gltf) => {
-    //       resolve(gltf);
-    //     },
-    //     (error) => {
-    //       console.error("Error exporting GLTF/GLB:", error);
-    //       reject(error);
-    //     },
-    //     {
-    //       binary: options.binary !== false, // default to binary .glb
-    //       onlyVisible: true,
-    //       embedImages: true,
-    //       maxTextureSize: 2048,
-    //     }
-    //   );
-    // });
-  }
-
-  /**
-   * Exports the 3D configuration of selectable objects in the scene.
-   *
-   * Traverses the first-level children of the scene:
-   * - If an object has userData.selectable = "true" and !(userData.isGroup && userData.isGroup = true),
-   *   stores its transformation matrix against its userData.metadata.id.
-   * - If an object has userData.selectable = "true" and (userData.isGroup && userData.isGroup = true),
-   *   stores its transformation matrix, name, and children array against its userData.metadata.id.
-   *   For the children of this group, repeats the process for selectable non-group children.
-   *
-   * @returns An object containing the exported 3D configuration mapped against metadata IDs.
-   */
-  // public export3DConfig(): Record<string, any> {
-  //   const config: Record<string, any> = {};
-
-  //   this.scene.children.forEach((child: Object3D) => {
-  //     const isSelectable = child.userData?.selectable === SelectableState.TRUE;
-
-  //     const isGroup = !!(child.userData?.isGroup && child.userData.isGroup === true);
-
-  //     // Selectable non-group child
-  //     if (isSelectable && !isGroup) {
-  //       const id = child.userData?.metadata?.id;
-  //       if (id) {
-  //         child.updateMatrix();
-  //         config[id] = {
-  //           name: child.userData?.metadata?.name || child.name,
-  //           matrix: child.matrix.clone(),
-  //           children: [],
-  //         };
-  //       }
-  //       return;
-  //     }
-
-  //     // Selectable group child
-  //     if (isSelectable && isGroup) {
-  //       const id = child.userData?.metadata?.id;
-  //       if (id) {
-  //         child.updateMatrix();
-  //         const children: Array<Record<string, any>> = [];
-
-  //         child.children.forEach((groupChild: Object3D) => {
-  //           // Note: When models are added to a group in groupSelectedObjects, their userData.selectable
-  //           // is set to SelectableState.FALSE so raycasting selects the parent group.
-  //           // Hence for group children, we check if they are models (having metadata.id or selectable TRUE/FALSE).
-  //           const childIsSelectable =
-  //             groupChild.userData?.selectable === SelectableState.TRUE ||
-  //             groupChild.userData?.selectable === SelectableState.FALSE ||
-  //             !!groupChild.userData?.metadata?.id;
-
-  //           const childIsGroup = !!(
-  //             groupChild.userData?.isGroup && groupChild.userData.isGroup === true
-  //           );
-
-  //           if (childIsSelectable && !childIsGroup) {
-  //             const childId = groupChild.userData?.metadata?.id;
-  //             if (childId) {
-  //               groupChild.updateMatrix();
-  //               const childData = {
-  //                 name: groupChild.userData?.metadata?.name || groupChild.name,
-  //                 matrix: groupChild.matrix.clone(),
-  //                 children: [],
-  //               };
-  //               const childEntry: Record<string, any> = {
-  //                 [childId]: childData,
-  //               };
-  //               Object.defineProperty(childEntry, "id", {
-  //                 value: childId,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               Object.defineProperty(childEntry, "name", {
-  //                 value: childData.name,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               Object.defineProperty(childEntry, "matrix", {
-  //                 value: childData.matrix,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               Object.defineProperty(childEntry, "children", {
-  //                 value: childData.children,
-  //                 enumerable: false,
-  //                 writable: true,
-  //                 configurable: true,
-  //               });
-  //               children.push(childEntry);
-  //             }
-  //           }
-  //         });
-
-  //         config[id] = {
-  //           name: child.userData?.metadata?.name || child.name,
-  //           matrix: child.matrix.clone(),
-  //           children: children,
-  //         };
-  //       }
-  //     }
-  //   });
-
-  //   return config;
-  // }
-
-
+  * Exports the 3D scene configuration, including model details, group hierarchy,
+  * applied textures, wall material finishes, and floor finish information.
+  *
+  * @returns {Record<string, any>} The exported 3D configuration.
+  */
   public export3DConfig(): Record<string, any> {
     const config: Record<string, any> = {};
 
@@ -7509,9 +7329,6 @@ export class ConfiguratorCore {
         floorId: roomGroup.floorFinishId
       }
       config.floor = floor;
-
-      //@ts-ignore
-      // config.floorId = roomGroup.floorFinishId;
     }
 
     console.log(config, 'config3DExport');
@@ -7521,281 +7338,12 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Loads a GLB model from the specified URL using AssetLoader.
-   *
-   * @param url URL of the GLB model to load.
-   * @param callbacks Optional loading callbacks.
-   * @param isSelectable Whether the loaded model should be selectable.
-   * @returns Promise resolving to the loaded Object3D.
-   */
-  // public async loadGLB(
-  //   url: string,
-  //   callbacks?: ModelLoadCallbacks,
-  //   isSelectable: boolean = true
-  // ): Promise<Object3D> {
-  //   const model = await this.assetLoader.loadGLB(url, callbacks, isSelectable);
-  //   this.enableShadowsOnObject(model);
-  //   this.applyAnisotropicFiltering(model);
-  //   return model;
-  // }
-
-  /**
-   * Imports and loads a 3D configuration object, reconstructing objects and permanent groups.
-   *
-   * - If an object has 0 children: uses loadGLB to load the object, then applies its transformation matrix.
-   * - If an object has children: uses loadGLB to load each child, calls createPermanentGroup to group them,
-   *   and applies transformation matrices relative to the immediate parent for all loaded objects.
-   *
-   * @param config The 3D configuration object (or JSON string).
-   * @returns Promise resolving to a record of loaded top-level objects and groups mapped by ID.
-   */
-  // public async import3DConfig(
-  //   config: Record<string, any> | string
-  // ): Promise<Record<string, Object3D>> {
-  //   const parsedConfig: Record<string, any> =
-  //     typeof config === "string" ? JSON.parse(config) : config;
-
-  //   const result: Record<string, Object3D> = {};
-
-  //   const parseMatrix = (matrixData: any): Matrix4 => {
-  //     const mat = new Matrix4();
-  //     if (!matrixData) return mat;
-  //     if (matrixData instanceof Matrix4) {
-  //       mat.copy(matrixData);
-  //     } else if (matrixData && Array.isArray(matrixData.elements)) {
-  //       mat.fromArray(matrixData.elements);
-  //     } else if (Array.isArray(matrixData)) {
-  //       mat.fromArray(matrixData);
-  //     }
-  //     return mat;
-  //   };
-
-  //   const applyMatrix = (obj: Object3D, matrixData: any) => {
-  //     const mat = parseMatrix(matrixData);
-  //     mat.decompose(obj.position, obj.quaternion, obj.scale);
-  //     obj.updateMatrix();
-  //     obj.updateMatrixWorld(true);
-  //   };
-
-  //   for (const [key, rawObj] of Object.entries(parsedConfig)) {
-  //     if (!rawObj || typeof rawObj !== "object") continue;
-
-  //     const objData = rawObj as any;
-  //     const children = Array.isArray(objData.children) ? objData.children : [];
-
-  //     if (children.length === 0) {
-  //       // Object with 0 children: load via loadGLB and apply transformation matrix
-  //       const modelUrl = objData.url || objData.uri;
-  //       if (!modelUrl) {
-  //         console.warn(`[import3DConfig] Skipping '${key}' as no URL/URI was provided.`);
-  //         continue;
-  //       }
-
-  //       // const model = await this.loadModel(modelUrl, undefined, true);
-  //       const model = await this.loadModel(
-  //         modelUrl,
-  //         false,
-  //         undefined,
-  //         undefined,
-  //         undefined,
-  //         true,
-  //         objData.modelData
-  //       );
-
-
-  //       const modelName = objData.name || key;
-  //       model!.name = modelName;
-  //       model!.userData = {
-  //         ...model!.userData,
-  //         isGLBModel: true,
-  //         selectable: SelectableState.TRUE,
-  //         metadata: objData.modelData || {
-  //           id: key,
-  //           name: modelName,
-  //           category: objData.modelData?.category || "",
-  //           price: objData.modelData?.price || "",
-  //           format: objData.modelData?.format || "gltf",
-  //         },
-  //       };
-
-  //       if (!model!.userData.metadata.id) {
-  //         model!.userData.metadata.id = key;
-  //       }
-  //       if (!model!.userData.metadata.name) {
-  //         model!.userData.metadata.name = modelName;
-  //       }
-
-  //       this.scene.add(model!);
-  //       applyMatrix(model!, objData.matrix);
-
-  //       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
-  //       this.modelRoot = model;
-
-  //       // @ts-ignore
-  //       result[key] = model;
-  //     } else {
-  //       // Object with children: load all child objects via loadGLB, group them with createPermanentGroup,
-  //       // and apply transformation matrix relative to immediate parent for all loaded objects
-  //       const loadedChildren: Array<{
-  //         childObj: Object3D;
-  //         childData: any;
-  //         childId: string;
-  //       }> = [];
-
-  //       for (const childEntry of children) {
-  //         if (!childEntry || typeof childEntry !== "object") continue;
-
-  //         let childId = "";
-  //         let childData: any = null;
-
-  //         const entryKeys = Object.keys(childEntry);
-  //         if (
-  //           entryKeys.length === 1 &&
-  //           typeof childEntry[entryKeys[0]] === "object" &&
-  //           (childEntry[entryKeys[0]]?.url ||
-  //             childEntry[entryKeys[0]]?.uri ||
-  //             childEntry[entryKeys[0]]?.matrix)
-  //         ) {
-  //           childId = entryKeys[0];
-  //           childData = childEntry[entryKeys[0]];
-  //         } else {
-  //           childId = childEntry.id || childEntry.name || `child_${Date.now()}`;
-  //           childData = childEntry;
-  //         }
-
-  //         const childUrl = childData.url || childData.uri;
-  //         if (!childUrl) {
-  //           console.warn(`[import3DConfig] Skipping child '${childId}' in '${key}' - missing url.`);
-  //           continue;
-  //         }
-
-  //         // const childObj = await this.loadModel(childUrl, undefined, false);
-  //         const childObj = await this.loadModel(
-  //           childUrl,
-  //           false,
-  //           undefined,
-  //           undefined,
-  //           undefined,
-  //           false,
-  //           childData.modelData
-  //         );
-
-  //         const childName = childData.name || childId;
-  //         childObj!.name = childName;
-  //         childObj!.userData = {
-  //           ...childObj!.userData,
-  //           isGLBModel: true,
-  //           selectable: SelectableState.FALSE,
-  //           metadata: childData.modelData || {
-  //             id: childId,
-  //             name: childName,
-  //             category: childData.modelData?.category || "",
-  //             price: childData.modelData?.price || "",
-  //             format: childData.modelData?.format || "gltf",
-  //           },
-  //         };
-
-  //         if (!childObj!.userData.metadata.id) {
-  //           childObj!.userData.metadata.id = childId;
-  //         }
-  //         if (!childObj!.userData.metadata.name) {
-  //           childObj!.userData.metadata.name = childName;
-  //         }
-
-  //         loadedChildren.push({
-  //           // @ts-ignore
-  //           childObj,
-  //           childData,
-  //           childId,
-  //         });
-  //       }
-
-  //       if (loadedChildren.length === 0) {
-  //         console.warn(`[import3DConfig] Group '${key}' has no valid children loaded.`);
-  //         continue;
-  //       }
-
-  //       const groupName = objData.name || `Group ${Math.floor(Math.random() * 1000)}`;
-
-  //       // Attach loaded children to furnitureGroup and set modelRoot so createPermanentGroup can group them
-  //       this.furnitureGroup.clear();
-  //       this.furnitureGroup.position.set(0, 0, 0);
-  //       this.furnitureGroup.quaternion.identity();
-  //       this.furnitureGroup.scale.set(1, 1, 1);
-  //       this.furnitureGroup.updateMatrixWorld(true);
-
-  //       for (const item of loadedChildren) {
-  //         this.scene.add(item.childObj);
-  //         this.furnitureGroup.attach(item.childObj);
-  //       }
-  //       this.modelRoot = this.furnitureGroup;
-
-  //       let group: Group | null = null;
-  //       let created = false;
-
-  //       if (loadedChildren.length >= 2) {
-  //         created = this.createPermanentGroup(groupName);
-  //         if (created && this.modelRoot instanceof Group) {
-  //           group = this.modelRoot;
-  //         }
-  //       }
-
-  //       if (!group) {
-  //         // Fallback if children count < 2 or createPermanentGroup did not return a Group
-  //         group = new Group();
-  //         group.name = groupName;
-  //         for (const item of loadedChildren) {
-  //           group.add(item.childObj);
-  //           if (!item.childObj.userData) item.childObj.userData = {};
-  //           item.childObj.userData.selectable = SelectableState.FALSE;
-  //         }
-  //         this.scene.add(group);
-  //         this.modelRoot = group;
-  //       }
-
-  //       // Configure group userData and metadata
-  //       const groupId = objData.modelData?.id || key;
-  //       group.name = groupName;
-  //       group.userData = {
-  //         ...group.userData,
-  //         isGroup: true,
-  //         isGLBModel: true,
-  //         selectable: SelectableState.TRUE,
-  //         metadata: {
-  //           ...(group.userData?.metadata || {}),
-  //           id: groupId,
-  //           name: groupName,
-  //           isGroup: true,
-  //           price: objData.modelData?.price ?? 0,
-  //           format: objData.modelData?.format ?? "Group",
-  //         },
-  //       };
-
-  //       // 1. Apply transformation matrix to the group (relative to scene, its immediate parent)
-  //       applyMatrix(group, objData.matrix);
-
-  //       // 2. Apply transformation matrix relative to immediate parent (the group) for each loaded child
-  //       for (const item of loadedChildren) {
-  //         applyMatrix(item.childObj, item.childData.matrix);
-  //       }
-
-  //       // 3. Update world transformation matrix of the group and all its descendants
-  //       group.updateMatrixWorld(true);
-
-  //       this.prevModelRoot = this.isModelRootEqualToRoomModel() ? null : this.modelRoot;
-  //       this.modelRoot = group;
-
-  //       result[key] = group;
-  //     }
-  //   }
-
-  //   // Emit events so frontend and hierarchy update
-  //   Events.emit(ConfiguratorEventType.HIERARCHY_CHANGED);
-  //   Events.emit(ConfiguratorEventType.MODELS_SUMMARY_UPDATED, this.getModelsSummary());
-
-  //   return result;
-  // }
-
+  * Imports a 3D scene configuration by loading models, restoring group hierarchies,
+  * applying transformations, textures, wall finishes, and floor finishes.
+  *
+  * @param {Record<string, any> | string} config - The 3D configuration to import.
+  * @returns {Promise<Record<string, Object3D>>} A map of imported model IDs to their Object3D instances.
+  */
   public async import3DConfig(
     config: Record<string, any> | string
   ): Promise<Record<string, Object3D>> {
@@ -7886,10 +7434,6 @@ export class ConfiguratorCore {
         ? objData.children
         : [];
 
-      // ============================================================
-      // CASE 1: NORMAL / SINGLE MODEL
-      // ============================================================
-
       if (children.length === 0) {
         const modelUrl = objData.url || objData.uri;
         const textureUrl = objData.textureUrl;
@@ -7956,8 +7500,6 @@ export class ConfiguratorCore {
         // Add model to scene first.
         this.scene.add(model);
 
-        // Apply saved matrix.
-        //
         // Since the model is directly under scene,
         // this matrix is relative to the scene.
         applyMatrix(model, objData.matrix);
@@ -7977,19 +7519,11 @@ export class ConfiguratorCore {
         continue;
       }
 
-      // ============================================================
-      // CASE 2: GROUP
-      // ============================================================
-
       const loadedChildren: Array<{
         childObj: Object3D;
         childData: any;
         childId: string;
       }> = [];
-
-      // ------------------------------------------------------------
-      // Load all children
-      // ------------------------------------------------------------
 
       for (const childEntry of children) {
         if (
@@ -8098,10 +7632,6 @@ export class ConfiguratorCore {
         });
       }
 
-      // ------------------------------------------------------------
-      // Make sure at least one child was loaded
-      // ------------------------------------------------------------
-
       if (loadedChildren.length === 0) {
         console.warn(
           `[import3DConfig] Group '${key}' has no valid children loaded.`
@@ -8112,10 +7642,6 @@ export class ConfiguratorCore {
       const groupName =
         objData.name ||
         `Group ${Math.floor(Math.random() * 1000)}`;
-
-      // ------------------------------------------------------------
-      // Reset furnitureGroup
-      // ------------------------------------------------------------
 
       this.furnitureGroup.clear();
 
@@ -8138,15 +7664,6 @@ export class ConfiguratorCore {
       this.furnitureGroup.updateMatrixWorld(
         true
       );
-
-      // ------------------------------------------------------------
-      // IMPORTANT:
-      //
-      // Add each child and apply its saved LOCAL matrix BEFORE
-      // createPermanentGroup().
-      //
-      // This is the important change.
-      // ------------------------------------------------------------
 
       for (const item of loadedChildren) {
         const child = item.childObj;
@@ -8184,15 +7701,7 @@ export class ConfiguratorCore {
         true
       );
 
-      // ------------------------------------------------------------
-      // Set modelRoot before createPermanentGroup()
-      // ------------------------------------------------------------
-
       this.modelRoot = this.furnitureGroup;
-
-      // ------------------------------------------------------------
-      // Create permanent group
-      // ------------------------------------------------------------
 
       let group: Group | null = null;
       let created = false;
@@ -8210,10 +7719,6 @@ export class ConfiguratorCore {
           group = this.modelRoot;
         }
       }
-
-      // ------------------------------------------------------------
-      // Fallback group
-      // ------------------------------------------------------------
 
       if (!group) {
         group = new Group();
@@ -8238,10 +7743,6 @@ export class ConfiguratorCore {
 
         this.modelRoot = group;
       }
-
-      // ------------------------------------------------------------
-      // Configure group metadata
-      // ------------------------------------------------------------
 
       const groupId =
         objData.modelData?.id || key;
@@ -8271,10 +7772,6 @@ export class ConfiguratorCore {
         },
       };
 
-      // ------------------------------------------------------------
-      // Apply GROUP transformation
-      // ------------------------------------------------------------
-
       /**
        * The group's matrix is relative to its
        * immediate parent.
@@ -8287,34 +7784,8 @@ export class ConfiguratorCore {
         objData.matrix
       );
 
-      // ------------------------------------------------------------
-      // Final matrix update
-      // ------------------------------------------------------------
 
       group.updateMatrixWorld(true);
-
-      // ------------------------------------------------------------
-      // IMPORTANT:
-      //
-      // If createPermanentGroup() or your selection system
-      // maintains/caches a bounding box, this is the point
-      // where the group has its FINAL transformations.
-      //
-      // A Box3 should therefore be calculated here if needed.
-      // ------------------------------------------------------------
-
-      /*
-      const groupBox = new Box3().setFromObject(group);
-  
-      console.log(
-        `[import3DConfig] Group '${groupName}' bounding box:`,
-        groupBox
-      );
-      */
-
-      // ------------------------------------------------------------
-      // Update model root
-      // ------------------------------------------------------------
 
       this.prevModelRoot =
         this.isModelRootEqualToRoomModel()
@@ -8326,10 +7797,6 @@ export class ConfiguratorCore {
       // Store imported group in result.
       result[key] = group;
     }
-
-    // ============================================================
-    // Notify frontend / hierarchy
-    // ============================================================
 
     Events.emit(
       ConfiguratorEventType.HIERARCHY_CHANGED
@@ -8344,8 +7811,11 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Alias for import3DConfig.
-   */
+  * Loads a 3D configuration by delegating to the import3DConfig method.
+  *
+  * @param {Record<string, any> | string} config - The 3D configuration to load.
+  * @returns {Promise<Record<string, Object3D>>} A map of imported model IDs to their Object3D instances.
+  */
   public async load3DConfig(
     config: Record<string, any> | string
   ): Promise<Record<string, Object3D>> {
@@ -8353,15 +7823,16 @@ export class ConfiguratorCore {
   }
 
   /**
-   * Alias for import3DConfig.
+   * Applies a 3D configuration by delegating to the import3DConfig method.
+   *
+   * @param {Record<string, any> | string} config - The 3D configuration to apply.
+   * @returns {Promise<Record<string, Object3D>>} A map of imported model IDs to their Object3D instances.
    */
   public async apply3DConfig(
     config: Record<string, any> | string
   ): Promise<Record<string, Object3D>> {
     return this.import3DConfig(config);
   }
-
-
 
   /**
   * Enables or disables collision detection when models are manipulated (moved or rotated).
@@ -8382,6 +7853,13 @@ export class ConfiguratorCore {
     return this.isCollisionActive;
   }
 
+  /**
+  * Applies material finishes to wall meshes using the provided configuration.
+  * Supports both solid colors and texture-based finishes for individual wall faces.
+  *
+  * @param {ObjectConfig[]} config - An array of wall configurations containing material finish details.
+  * @returns {Promise<void>} Resolves when the material processing is completed.
+  */
   public async processObjectMaterials(
     config: ObjectConfig[]
   ): Promise<void> {
@@ -8389,16 +7867,11 @@ export class ConfiguratorCore {
     console.log("config : ", config);
 
     for (const object of config) {
-      // 1. Call API for the main object
+      // Call API for the main object
       const wallMesh = this.getWallById(object.id);
 
-      // 2. Call API for each material of the object
+      // Call API for each material of the object
       for (const material of object.materials) {
-        // await callMaterialApi(
-        //   object.id,
-        //   material.index,
-        //   material.finishId
-        // );
 
         if (wallMesh) {
 
@@ -8455,6 +7928,12 @@ export class ConfiguratorCore {
     }
   }
 
+  /**
+   * Retrieves a wall mesh from the scene using its wall ID.
+   *
+   * @param {string} wallId - The unique ID of the wall.
+   * @returns {Object3D | undefined} The matching wall object, if found.
+   */
   protected getWallById(
     wallId: string
   ): Object3D | undefined {

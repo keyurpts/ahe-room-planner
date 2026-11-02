@@ -525,23 +525,4 @@ export class FloorplanManager {
   public getLengthUnit(): LengthUnit {
     return this.design2D?.getLengthUnit() ?? this.initialUnit;
   }
-
-  /**
-   * Sets the length unit for displaying dimensions across both 2D and 3D viewers.
-   * @public
-   * @param {LengthUnit | string} unit - The length unit to display ('mm', 'cm', 'inch', 'foot').
-   * @returns {void}
-   */
-  public setUnit(unit: LengthUnit | string): void {
-    this.setLengthUnit(unit);
-  }
-
-  /**
-   * Gets the currently active display length unit.
-   * @public
-   * @returns {LengthUnit} The current display length unit.
-   */
-  public getUnit(): LengthUnit {
-    return this.getLengthUnit();
-  }
 }
