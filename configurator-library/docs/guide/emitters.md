@@ -227,3 +227,21 @@ Below is the complete list of all events emitted by the library.
   });
   ```
 
+### 16. `UNDO_REDO`
+* **Triggered When**: An undo or redo operation is performed in 2D, 3D, or Configure mode.
+* **Payload Structure**: `object`
+  ```typescript
+    interface Undo_Redo_Payload {
+      undo_stack_size: number;
+      redo_stack_size: number;
+    }
+  ```
+* **Integration Example**:
+  ```typescript
+
+    Events.on(ConfiguratorEventType.UNDO_REDO, (payload) => {
+      console.log("Undo Stack Size:", payload.undo_stack_size);
+      console.log("Redo Stack Size:", payload.redo_stack_size);
+    });
+
+

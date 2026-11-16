@@ -2,7 +2,7 @@
 
 # Class: FloorplanManager
 
-Defined in: [Components/FloorplanManager.ts:11](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L11)
+Defined in: [Components/FloorplanManager.ts:13](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L13)
 
 Manages coordination between the 2D editor and the 3D viewer.
 Handles initialization, view switching and data synchronization.
@@ -29,7 +29,7 @@ new FloorplanManager(): FloorplanManager;
 set on2DModeChange(callback): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:182](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L182)
+Defined in: [Components/FloorplanManager.ts:244](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L244)
 
 **`Description`**
 
@@ -51,10 +51,10 @@ Registers a callback function that is triggered whenever the active
 ### addPredefinedShape()
 
 ```ts
-addPredefinedShape(shapeType): void;
+addPredefinedShape(shapeType, isPreview?): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:481](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L481)
+Defined in: [Components/FloorplanManager.ts:575](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L575)
 
 **`Description`**
 
@@ -62,9 +62,10 @@ Adds a predefined shape template to the 2D viewer.
 
 #### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `shapeType` | `Predefined2DShapes` | The predefined shape template to add (e.g. `Predefined2DShapes.RECTANGLE`, `Predefined2DShapes.SQUARE`, `Predefined2DShapes.L_SHAPE`, or `Predefined2DShapes.TRIANGLE`). |
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `shapeType` | `Predefined2DShapes` | `undefined` | The predefined shape template to add (e.g. `Predefined2DShapes.RECTANGLE`, `Predefined2DShapes.SQUARE`, `Predefined2DShapes.L_SHAPE`, or `Predefined2DShapes.TRIANGLE`). |
+| `isPreview` | `boolean` | `false` | - |
 
 #### Returns
 
@@ -81,7 +82,7 @@ triangle, or L-shape) and adds it onto the 2D viewer.
 clear2DLayout(): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:382](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L382)
+Defined in: [Components/FloorplanManager.ts:475](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L475)
 
 **`Description`**
 
@@ -102,7 +103,7 @@ windows and room spaces.
 clearFloorPlanBackgroundImage(): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:434](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L434)
+Defined in: [Components/FloorplanManager.ts:528](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L528)
 
 **`Description`**
 
@@ -122,7 +123,7 @@ This method clears the background image loaded into the 2D viewer.
 deleteSelectedEntity(): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:369](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L369)
+Defined in: [Components/FloorplanManager.ts:462](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L462)
 
 **`Description`**
 
@@ -143,7 +144,7 @@ This method removes the selected element from the 2D layout.
 dispose(): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:319](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L319)
+Defined in: [Components/FloorplanManager.ts:413](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L413)
 
 **`Description`**
 
@@ -165,7 +166,7 @@ component is removed or destroyed.
 enableDimensions(visible): boolean;
 ```
 
-Defined in: [Components/FloorplanManager.ts:220](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L220)
+Defined in: [Components/FloorplanManager.ts:314](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L314)
 
 **`Description`**
 
@@ -194,7 +195,7 @@ measurements drawn in the 2D viewer.
 enableGrid(visible): boolean;
 ```
 
-Defined in: [Components/FloorplanManager.ts:236](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L236)
+Defined in: [Components/FloorplanManager.ts:330](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L330)
 
 **`Description`**
 
@@ -216,13 +217,41 @@ This method toggles the visibility of helper grid lines in the 2D viewer.
 
 ***
 
+### enableJunctionDragging()
+
+```ts
+enableJunctionDragging(enabled): boolean;
+```
+
+Defined in: [Components/FloorplanManager.ts:297](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L297)
+
+**`Description`**
+
+Enables or disables junction dragging (in EDIT mode).
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `enabled` | `boolean` | `true` to enable junction dragging, `false` to disable it. |
+
+#### Returns
+
+`boolean`
+
+Returns a boolean indicating the active junction dragging state.
+
+This method enables or disables junction dragging (in EDIT mode).
+
+***
+
 ### enableSnapping()
 
 ```ts
 enableSnapping(enabled): boolean;
 ```
 
-Defined in: [Components/FloorplanManager.ts:203](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L203)
+Defined in: [Components/FloorplanManager.ts:265](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L265)
 
 **`Description`**
 
@@ -245,13 +274,41 @@ line snapping) while drawing in the 2D viewer.
 
 ***
 
+### enableWallDragging()
+
+```ts
+enableWallDragging(enabled): boolean;
+```
+
+Defined in: [Components/FloorplanManager.ts:281](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L281)
+
+**`Description`**
+
+Enables or disables wall dragging (in EDIT mode).
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `enabled` | `boolean` | `true` to enable wall dragging, `false` to disable it. |
+
+#### Returns
+
+`boolean`
+
+Returns a boolean indicating the active wall dragging state.
+
+This method enables or disables wall dragging (in EDIT mode).
+
+***
+
 ### exportJson()
 
 ```ts
 exportJson(): any;
 ```
 
-Defined in: [Components/FloorplanManager.ts:447](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L447)
+Defined in: [Components/FloorplanManager.ts:541](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L541)
 
 **`Description`**
 
@@ -272,7 +329,7 @@ it to your computer as `floorplan.json`.
 fitToView(): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:395](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L395)
+Defined in: [Components/FloorplanManager.ts:489](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L489)
 
 **`Description`**
 
@@ -287,13 +344,31 @@ entire drawn layout fits within the visible viewer.
 
 ***
 
+### get3DModes()
+
+```ts
+get3DModes(): CurrentMode | undefined;
+```
+
+Defined in: [Components/FloorplanManager.ts:605](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L605)
+
+Retrieves the currently active 3D application mode from the design3D instance.
+
+#### Returns
+
+`CurrentMode` \| `undefined`
+
+The current 3D mode, or undefined if the design3D instance is unavailable.
+
+***
+
 ### getConfiguratorCore()
 
 ```ts
 getConfiguratorCore(): ConfiguratorCore | undefined;
 ```
 
-Defined in: [Components/FloorplanManager.ts:338](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L338)
+Defined in: [Components/FloorplanManager.ts:432](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L432)
 
 **`Description`**
 
@@ -312,13 +387,31 @@ such as modifying lights, controlling the 3D camera, or loading custom
 
 ***
 
+### getLengthUnit()
+
+```ts
+getLengthUnit(): LengthUnit;
+```
+
+Defined in: [Components/FloorplanManager.ts:665](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L665)
+
+Gets the currently active display length unit.
+
+#### Returns
+
+`LengthUnit`
+
+The current display length unit.
+
+***
+
 ### highlightWalls()
 
 ```ts
 highlightWalls(active, theme): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:289](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L289)
+Defined in: [Components/FloorplanManager.ts:383](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L383)
 
 **`Description`**
 
@@ -347,7 +440,7 @@ or hovered. The color updates automatically based on the selected theme
 importJson(json): void | undefined;
 ```
 
-Defined in: [Components/FloorplanManager.ts:463](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L463)
+Defined in: [Components/FloorplanManager.ts:557](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L557)
 
 **`Description`**
 
@@ -374,7 +467,7 @@ using `exportJson`) and restores it on the 2D viewer.
 init(container2D, container3D): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:35](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L35)
+Defined in: [Components/FloorplanManager.ts:43](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L43)
 
 **`Description`**
 
@@ -406,7 +499,7 @@ should toggle visibility dynamically, showing one and hiding the other.
 is2DDataPresent(): Promise<boolean>;
 ```
 
-Defined in: [Components/FloorplanManager.ts:100](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L100)
+Defined in: [Components/FloorplanManager.ts:161](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L161)
 
 **`Description`**
 
@@ -430,7 +523,7 @@ in the 2D viewer.
 loadLayoutFromJson(jsonData): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:355](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L355)
+Defined in: [Components/FloorplanManager.ts:449](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L449)
 
 **`Description`**
 
@@ -452,13 +545,29 @@ annotations.
 
 ***
 
+### redo()
+
+```ts
+redo(): void;
+```
+
+Defined in: [Components/FloorplanManager.ts:635](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L635)
+
+Redo
+
+#### Returns
+
+`void`
+
+***
+
 ### set2DMode()
 
 ```ts
 set2DMode(mode, active): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:142](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L142)
+Defined in: [Components/FloorplanManager.ts:205](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L205)
 
 **`Description`**
 
@@ -486,7 +595,7 @@ inserting doors/windows, or editing existing layout in the 2D viewer.
 set2DUnitScale(cmValue): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:268](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L268)
+Defined in: [Components/FloorplanManager.ts:362](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L362)
 
 **`Description`**
 
@@ -508,13 +617,35 @@ the new grid size.
 
 ***
 
+### set3DModes()
+
+```ts
+set3DModes(mode): void;
+```
+
+Defined in: [Components/FloorplanManager.ts:596](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L596)
+
+Sets the current 3D application mode through the design3D instance.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `mode` | `CurrentMode` | The 3D mode to activate. |
+
+#### Returns
+
+`void`
+
+***
+
 ### setDrawingOverlayVisibility()
 
 ```ts
 setDrawingOverlayVisibility(visible): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:305](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L305)
+Defined in: [Components/FloorplanManager.ts:399](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L399)
 
 **`Description`**
 
@@ -544,7 +675,7 @@ setFloorPlanBackgroundImage(
    isDarkTheme): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:418](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L418)
+Defined in: [Components/FloorplanManager.ts:512](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L512)
 
 **`Description`**
 
@@ -568,13 +699,61 @@ of the layout data and adjusts the colors of the image for dark/light themes.
 
 ***
 
+### setLengthUnit()
+
+```ts
+setLengthUnit(unit): void;
+```
+
+Defined in: [Components/FloorplanManager.ts:649](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L649)
+
+Sets the length unit for displaying dimensions across both 2D and 3D viewers.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `unit` | `string` | The length unit to display ('mm', 'cm', 'inch', 'foot'). |
+
+#### Returns
+
+`void`
+
+***
+
+### setUndoRedoLimit()
+
+```ts
+setUndoRedoLimit(limit): void;
+```
+
+Defined in: [Components/FloorplanManager.ts:616](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L616)
+
+**`Description`**
+
+Set the undo-redo limit (number of actions)
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `limit` | `number` | - |
+
+#### Returns
+
+`void`
+
+This method set the limit of the history i.e. the number of the actions to get stored for undo-redo
+
+***
+
 ### switchTo2D()
 
 ```ts
 switchTo2D(): void;
 ```
 
-Defined in: [Components/FloorplanManager.ts:122](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L122)
+Defined in: [Components/FloorplanManager.ts:183](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L183)
 
 **`Description`**
 
@@ -595,7 +774,7 @@ to exit the 3D view.
 switchTo3D(isRoomDetected?): Promise<boolean>;
 ```
 
-Defined in: [Components/FloorplanManager.ts:59](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/Components/FloorplanManager.ts#L59)
+Defined in: [Components/FloorplanManager.ts:112](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L112)
 
 **`Description`**
 
@@ -617,3 +796,19 @@ Returns `false` if there is no drawing data to display.
 Call this method when switching to 3D mode (e.g., on a "3D" button click)
 to render the 2D viewer layout in the 3D viewer and control the visibility
 of the 3D viewer container element.
+
+***
+
+### undo()
+
+```ts
+undo(): void;
+```
+
+Defined in: [Components/FloorplanManager.ts:624](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/Components/FloorplanManager.ts#L624)
+
+Undo
+
+#### Returns
+
+`void`

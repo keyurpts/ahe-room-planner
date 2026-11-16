@@ -1,11 +1,14 @@
 import Konva from "konva";
 import { v4 as uuidv4 } from 'uuid';
 import { Floorplan } from "../Model/Floorplan";
-import { NodeName, VisualStyle, Config, RoomEditorMode, LengthUnit, normalizeLengthUnit } from "../Constants";
+import { NodeName, VisualStyle, Config, RoomEditorMode } from "../Constants";
 import { RoomDetector } from "../utils/RoomDetector";
 import type { Room } from "../utils/RoomDetector";
 import type { Predefined2DShapes } from "../shapeTemplates";
 import { Events, ConfiguratorEventType } from "../event";
+import { ActionType, type HistoryEntry, Design2DHistoryManager } from './Design2DHistoryManager';
+import type { Undo_Redo_Payload } from "../event/ConfiguratorEventType";
+import { LengthUnitConverter } from "./LengthUnitConverter";
 
 /**
  * Enum for the different interaction modes in the 2D designer.
@@ -17,17 +20,46 @@ type SnapResult = {
   parentGroup: Konva.Group | null;
 };
 
+/*
+ * Represents a wall connected to a junction, storing its group, ID, endpoint type, and original geometry.
+ */
+type JunctionWall = {
+  group: Konva.Group;
+  wallId: string;
+  endpoint: "start" | "end";
+  originalPoints: number[];
+  originalWindows: any[];
+  originalDoors: any[];
+  originalConnections: any[];
+};
+
+/*
+ * Represents a junction point in the floorplan, storing its coordinates and connected walls.
+ */
+type JunctionData = {
+  x: number;
+  y: number;
+  walls: JunctionWall[];
+};
+
+/*
+ * Represents a connection between two walls, storing the connected wall's ID and the intersection point.
+ */
 export interface WallConnection {
-  point: "start" | "end";
+  id: string;
   connectedLineId: string;
-  connectedPoint: "start" | "end";
   intersectionPoint: { x: number; y: number };
 }
 
+/*
+ * Represents a window in the floorplan, storing its dimensions and position.
+ */
 export interface WindowData {
   id: string;
   offset: number;
   width: number;
+  height: number;
+  windowFloorDistance: number;
   isInvalid?: boolean;
 }
 
@@ -35,6 +67,7 @@ export interface DoorData {
   id: string;
   offset: number;
   width: number;
+  height: number,
   isInvalid?: boolean;
 }
 
@@ -107,18 +140,13 @@ export class Design2D {
   private isDrawModeExplicitlyEnabled: boolean = false;
 
   /**
-   * Unit conversion factor (e.g. 30/30 since 30 is the default grid size)
+   * Unit conversion factor (e.g. 50/50 since 50 is the default grid size)
    */
   private unit_conversion_factor: number = 1;
 
   /**
-  * Current length unit for displaying measurements
-  */
-  private currentUnit: LengthUnit = LengthUnit.MM;
-
-  /**
-  *  Stores the last placed point while drawing walls
-  */
+   * Stores the last placed point while drawing walls
+   */
   private lastPoint: { x: number; y: number } | null = null;
 
   /**
@@ -130,6 +158,16 @@ export class Design2D {
    *Indicates if the user is currently panning the canvas
    */
   private isPanning = false;
+
+  /**
+   *Indicates if the user wants wall dragging (in EDIT mode) to be enabled. This is set when the user hovers over a wall's midpoint.
+   */
+  private isWallDragging = true;
+
+  /**
+   *Indicates if the user wants junction dragging (in EDIT mode) to be enabled. This is set when the user hovers over a junction dot.
+   */
+  private isJunctionDragging = true;
 
   /**
    * Stores the last pointer position while panning
@@ -150,6 +188,12 @@ export class Design2D {
    * Visual circle indicator for endpoint snapping
    */
   private snapCircleIndicator: Konva.Group | null = null;
+
+  /**
+   * Visual line indicator for axis snapping (horizontal/vertical)
+   */
+  private junctionDot: Konva.Group | null = null;
+
 
   /**
    * Preview window while placing
@@ -177,9 +221,19 @@ export class Design2D {
   private isAxisSnappingEnabled: boolean = true;
 
   /**
+   * Flag to track if wall dimensions/measurements are visible globally
+   */
+  private areDimensionsVisible: boolean = true;
+
+  /**
    * Currently selected wall groups in EDIT mode
    */
   private selectedWallGroups: Konva.Group[] = [];
+
+  /**
+   * Design2DHistoryManager instance
+   */
+  protected design2DHistoryManager: Design2DHistoryManager;
 
   /**
  * Currently selected window/door group in EDIT mode
@@ -192,7 +246,7 @@ export class Design2D {
  * Currently hovered entity in EDIT mode
  */
   private hoveredEntity:
-    | { type: "wall"; group: Konva.Group }
+    | { type: "wall"; group: Konva.Group[] }
     | { type: "window"; group: Konva.Group }
     | { type: "door"; group: Konva.Group }
     | null = null;
@@ -207,6 +261,8 @@ export class Design2D {
     isInvalid?: boolean;
     originalWindows?: WindowData[];
     originalDoors?: DoorData[];
+    oldWallGroup: string;
+    affectedRoomGroups: Map<string, string>;
   } | null = null;
 
   /**
@@ -218,12 +274,49 @@ export class Design2D {
     wallGroup: Konva.Group;
     entityId: string;
     initialOffset: number;
+    oldWallGroup: string;
   } | null = null;
+
+  /**
+   * Tracks the wall midpoint currently being dragged
+   */
+  private draggingWallMid: {
+    wallGroup: Konva.Group;
+    axis: { x: number; y: number };
+    originalPoints: number[];
+    originalWindows: any[];   // keep your existing types
+    originalDoors: any[];
+    startWorldPos: { x: number; y: number };
+    connectedOriginals: Map<string, { points: number[]; windows: any[]; doors: any[] }>;
+    connectedWallGroupData : string[];
+  } | null = null;
+
+  /**
+   * Tracks the junction currently being dragged
+   */
+  private draggingJunction: {
+    walls: JunctionWall[];
+    connectedWallGroupData: any[];
+    isInvalid: boolean;
+  } | null = null;
+
+  /**
+   * Stores data related to the junction being edited
+   */
+  private junctionData: JunctionData | null = null;
+
+  /**
+   * Stores the custom resize cursors for wall endpoints
+   */
+  private resizeCursors?: {
+    dynamic: (angle: number) => string;
+  };
 
   /**
    * Preview group container for rendering layout preview shapes
    */
   private previewGroup: Konva.Group | null = null;
+
 
   /**
    * When non-null, walls in their default (unselected/unhovered) state
@@ -243,63 +336,6 @@ export class Design2D {
   }
 
   /**
-  * Converts a length in centimeters to the specified or current display length unit.
-  * Note: 1 Konva unit corresponds to 1 cm. 
-  * @private
-  * @param {number} lengthInCm - The length value in centimeters.
-  * @param {LengthUnit} [unit=this.currentUnit] - The target length unit.
-  * @returns {{ value: number; suffix: string }} An object containing the converted numerical value and its unit suffix.
-  */
-  private convertFromCm(lengthInCm: number, unit: LengthUnit = this.currentUnit): { value: number; suffix: string } {
-  switch (unit) {
-    case LengthUnit.MM:
-      return { value: lengthInCm * 10, suffix: "mm" };
-    case LengthUnit.CM:
-      return { value: lengthInCm, suffix: "cm" };
-    case LengthUnit.INCH:
-      return { value: lengthInCm / 2.54, suffix: "inch" };
-    case LengthUnit.FOOT:
-      return { value: lengthInCm / 30.48, suffix: "foot" };
-    default:
-      return { value: lengthInCm * 10, suffix: "mm" };
-    }
-  }
-
-  /**
-  * Converts a numerical value from the specified or current display unit back into centimeters. 
-  * @private
-  * @param {number} value - The numerical value in the given unit.
-  * @param {LengthUnit} [unit=this.currentUnit] - The unit of the provided value.
-  * @returns {number} The converted value in centimeters.
-  */
-  private convertToCm(value: number, unit: LengthUnit = this.currentUnit): number {
-  switch (unit) {
-    case LengthUnit.MM:
-      return value / 10;
-    case LengthUnit.CM:
-      return value;
-    case LengthUnit.INCH:
-      return value * 2.54;
-    case LengthUnit.FOOT:
-      return value * 30.48;
-    default:
-      return value / 10;
-    }
-  }
-
-  /**
-  * Formats a raw Konva length into a user-facing formatted string with the appropriate unit suffix. 
-  * @private
-  * @param {number} length - The raw length on the 2D Konva canvas.
-  * @returns {string} The formatted string (e.g., "1200.0 mm").
-  */
-  private formatWallLength(length: number): string {
-    const lengthInCm = length * (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor;
-    const { value, suffix } = this.convertFromCm(lengthInCm, this.currentUnit);
-    return `${value.toFixed(1)} ${suffix}`;
-  }
-
-  /**
    * Initializes the 2D designer within the provided container.
    * @param container The HTML element to host the Konva stage.
    */
@@ -315,6 +351,7 @@ export class Design2D {
 
     // Initialize all layers
     this.initLayers();
+    this.design2DHistoryManager=new Design2DHistoryManager();
 
     // Link the floorplan model to this layer
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
@@ -350,6 +387,243 @@ export class Design2D {
 
     // Global event listener for releasing mouse outside canvas
     window.addEventListener("mouseup", this.stopPanning);
+  }
+  
+  /**
+   * Undo
+   */
+  public undo(){
+    const historyEntry = this.design2DHistoryManager.undo();
+    if(historyEntry){
+      this.apply(historyEntry, "undo");
+    }
+  }
+
+  /**
+   * Redo
+   */
+  public redo(){
+    const historyEntry = this.design2DHistoryManager.redo();
+    if(historyEntry){
+      this.apply(historyEntry, "redo");
+    }
+  }
+  
+  /**
+   * Apply the history entry according to the requested mode.
+   * @param {HistoryEntry} entry
+   * @param {string} mode
+   */
+  protected apply(entry: HistoryEntry, mode: string): void {
+    switch (entry.action) {
+      case ActionType.UPDATE_WALL: {
+        const { oldGroups, newGroups, affectedRoomNames } = entry.data;
+
+        this.handleUpdate(oldGroups, newGroups, mode);
+        this.detectRooms();
+
+        if (mode === "undo" && affectedRoomNames) {
+          this.restoreRoomNames(affectedRoomNames);
+        }
+        break;
+      }
+
+      case ActionType.ADD_WALL: {
+        const { newGroups } = entry.data;
+
+        this.handleAdd(newGroups, mode);
+        this.detectRooms();
+        break;
+      }
+
+      case ActionType.DELETE_WALL: {
+        const { oldGroups, affectedRoomNames } = entry.data;
+
+        this.handleDelete(oldGroups, mode);
+        this.detectRooms();
+
+        if (mode === "undo") {
+          this.restoreRoomNames(affectedRoomNames);
+        }
+
+        break;
+      }
+
+      case ActionType.UPDATE_ROOM_NAME: {
+        const { oldRoomNames, newRoomNames } = entry.data;
+
+        this.handleRoomNameUpdate(oldRoomNames, newRoomNames, mode);
+        break;
+      }
+    }
+
+    this.stage.batchDraw();
+  }
+
+  /**
+   * Restores room names for detected rooms using the saved room label IDs.
+   * @param {Map<string, string>} affectedRoomNames
+   */
+  private restoreRoomNames(affectedRoomNames: Map<string, string>): void {
+    const roomFillLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
+    const roomLabelLayer = this.getLayer(NodeName.ROOM_LABEL_LAYER);
+
+    if (!roomFillLayer || !roomLabelLayer) {
+      return;
+    }
+
+    affectedRoomNames.forEach((roomName, roomLabelId) => {
+      // Find the text label using its ID.
+      const label = roomLabelLayer.findOne<Konva.Text>(`#${roomLabelId}`);
+
+      if (!label) return;
+
+      // Find the room group associated with this label.
+      const roomGroup = roomFillLayer.findOne<Konva.Group>(
+        (node: Konva.Node) => node.getAttr("roomLabelId") === roomLabelId
+      );
+
+      if (!roomGroup) return;
+
+      RoomDetector.setRoomName(roomGroup, label, roomName);
+    });
+  }
+
+  /**
+   * UPDATE:
+   * Undo: remove new groups and restore old groups.
+   * Redo: remove old groups and restore new groups.
+   * @param {string[]} oldGroups
+   * @param {string[]} newGroups
+   * @param {string} mode
+   */
+  private handleUpdate(oldGroups: string[], newGroups: string[], mode: string,): void {
+    if (mode === "undo") {
+      this.removeGroups(newGroups);
+      this.restoreGroups(oldGroups);
+    } else {
+      this.removeGroups(oldGroups);
+      this.restoreGroups(newGroups);
+    }
+  }
+
+  /**
+   * ADD:
+   * Undo: remove added groups.
+   * Redo: restore added groups.
+   * @param {string[]} newGroups
+   * @param {string} mode
+   */
+  private handleAdd(newGroups: string[], mode: string): void {
+    if (mode === "undo") {
+      this.removeGroups(newGroups);
+    } else {
+      this.restoreGroups(newGroups);
+    }
+  }
+
+  /**
+   * DELETE:
+   * Undo: restore deleted groups.
+   * Redo: remove deleted groups.
+   * @param {string[]} oldGroups
+   * @param {string} mode
+   */
+  private handleDelete(oldGroups: string[], mode: string): void {
+    if (mode === "undo") {
+      this.restoreGroups(oldGroups);
+    } else {
+      this.removeGroups(oldGroups);
+    }
+  }
+
+  /**
+   * Handle Room name update
+   * @param {Map<string, string>} oldRoomNames
+   * @param {Map<string, string>} newRoomNames
+   * @param {string} mode
+  */
+  private handleRoomNameUpdate(oldRoomNames : Map<string, string> , newRoomNames : Map<string, string>, mode : string){
+    if (mode === "undo"){
+      this.restoreRoomNames(oldRoomNames);
+    }
+    else{
+      this.restoreRoomNames(newRoomNames);
+    }
+  }
+
+  /**
+   * Remove Konva groups matching the IDs in the serialized JSON.
+   * @param {string[]} groups
+   */
+  private removeGroups(groups: string[]): void {
+    for (const groupJson of groups) {
+      const parsedGroup = JSON.parse(groupJson);
+      const groupId = parsedGroup.attrs?.userData?.id;
+
+      if (!groupId) {
+        continue;
+      }
+
+      const existingGroups = this.stage.find(
+        (node: Konva.Node) =>
+          node instanceof Konva.Group &&
+          node.getAttr("userData")?.id === groupId,
+      );
+
+      existingGroups.forEach((group) => group.destroy());
+    }
+  }
+
+  /**
+   * Restore serialized Konva groups to the floorplan layer.
+   * @param {string[]} groups
+   */
+  private restoreGroups(groups: string[]): void {
+    const layer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+
+    if (!layer) {
+      console.error("Floorplan layer not found.");
+      return;
+    }
+
+    for (const groupJson of groups) {
+      const group = Konva.Node.create(groupJson);
+      const originalIndex = group.getAttr("index");
+      
+      if (!(group instanceof Konva.Group)) {
+        group.destroy();
+        console.error("Serialized node is not a Konva.Group.");
+        continue;
+      }
+
+      const groupId = group?.getAttr("userData")?.id;
+
+      // Prevent duplicate groups with the same ID.
+      if (
+        groupId &&
+        this.stage.find(
+          (node: Konva.Node) =>
+            node instanceof Konva.Group && node.getAttr("userData")?.id === groupId
+        ).length > 0
+      ) {
+        group.destroy();
+        continue;
+      }
+
+      // Make dimensions visible after restoring the group.
+      const dimensionGroup = group.findOne(`.${NodeName.DIMENSION_GROUP}`);
+
+      dimensionGroup?.visible(true);
+
+      layer.add(group);
+      if (typeof originalIndex === "number") {
+        group.setZIndex(
+          Math.min(originalIndex, layer.getChildren().length - 1)
+        );
+      }
+      group.setAttr("index",group.getZIndex());
+    }
   }
 
   /**
@@ -597,6 +871,23 @@ export class Design2D {
   }
 
   /**
+   * Cancels any active predefined shape placement.
+   */
+  private cancelPredefinedShapePlacement() {
+    if (this.previewGroup) {
+      this.previewGroup.destroy();
+      this.previewGroup = null;
+
+      this.stage.off(".preview");
+      const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+      if (floorplanLayer) {
+        floorplanLayer.draw();
+      }
+      this.detectRooms();
+    }
+  }
+
+  /**
    * Listener for mousedown events on the stage.
    */
   private handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -610,17 +901,7 @@ export class Design2D {
       this.lastPanPointerPosition = this.stage.getPointerPosition();
 
       // discard predefined shape placement on right click
-      if (this.previewGroup) {
-        this.previewGroup.destroy();
-        this.previewGroup = null;
-
-        this.stage.off(".preview");
-        const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
-        if (floorplanLayer) {
-          floorplanLayer.draw();
-        }
-        this.detectRooms();
-      }
+      this.cancelPredefinedShapePlacement();
     } else if (e.evt.button === 0) {
       // Interaction Logic on left click
       this.mouseMoved = false;
@@ -633,9 +914,25 @@ export class Design2D {
       const worldPos = this.getWorldPointerPosition();
       if (!worldPos) return;
 
+      // Red junction dot: select all connected walls and start a junction drag
+      if (this.isJunctionDragging && (this.junctionDot?.visible() && this.junctionData)) {
+        const walls = this.junctionData.walls;
+        const connectedWallGroupData = this.getJunctionData(this.junctionData.walls);
+        if (this.mode !== RoomEditorMode.EDIT) {
+          this.setMode(RoomEditorMode.EDIT, true);
+        }
+
+        this.deselectWall();
+        this.deselectOpening();
+        walls.forEach((w, index) => this.selectWall(w.group, index > 0));
+
+        this.draggingJunction = { walls, connectedWallGroupData,  isInvalid: false };
+        return; // keep the dot visible, it follows the pointer
+      }
+
       const isActivelyDrawing = this.mode === RoomEditorMode.DRAW && this.lastPoint !== null;
 
-      // Check if clicking near an endpoint of the selected wall
+      // Check if clicking near an endpoint or midpoint of the selected wall
       if (this.mode === RoomEditorMode.EDIT && this.selectedWallGroups.length === 1) { //dragging a wall's endpoint is only permitted when exactly one wall is selected
         const selectedGroup = this.selectedWallGroups[0];
         const wallLine = selectedGroup.findOne(`.${NodeName.WALL}`) as Konva.Line;
@@ -643,13 +940,16 @@ export class Design2D {
           const points = wallLine.points();
           const snapRadius = Config.SNAP_RADIUS as number;
           const userData = selectedGroup.getAttr("userData") as WallUserData;
+
           if (Math.hypot(worldPos.x - points[0], worldPos.y - points[1]) < snapRadius) {
             this.draggingEndpoint = {
               wallGroup: selectedGroup,
               point: "start",
               originalPoints: [...points],
               originalWindows: userData?.windows ? userData.windows.map(w => ({ ...w })) : [],
-              originalDoors: userData?.doors ? userData.doors.map(d => ({ ...d })) : []
+              originalDoors: userData?.doors ? userData.doors.map(d => ({ ...d })) : [],
+              oldWallGroup: this.sanitizeWallHistoryJson(selectedGroup.toJSON()),
+              affectedRoomGroups : this.getAffectedRoomGroups([selectedGroup])
             };
             this.showSnapIndicator(points[0], points[1], selectedGroup);
             return;
@@ -659,9 +959,53 @@ export class Design2D {
               point: "end",
               originalPoints: [...points],
               originalWindows: userData?.windows ? userData.windows.map(w => ({ ...w })) : [],
-              originalDoors: userData?.doors ? userData.doors.map(d => ({ ...d })) : []
+              originalDoors: userData?.doors ? userData.doors.map(d => ({ ...d })) : [],
+              oldWallGroup: this.sanitizeWallHistoryJson(selectedGroup.toJSON()),
+              affectedRoomGroups : this.getAffectedRoomGroups([selectedGroup])
             };
             this.showSnapIndicator(points[2], points[3], selectedGroup);
+            return;
+          }
+        }
+      }
+      if (this.isWallDragging && this.mode !== RoomEditorMode.DRAW && !e.evt.ctrlKey) {
+        const info = this.getWallUnderPointer();
+
+        if (info) {
+          const targetGroup = info.wallGroup;
+          const points = info.wallLine.points();
+          const snapRadius = Config.SNAP_RADIUS as number;
+          if (this.isPointerOnWallMid(worldPos, points, snapRadius, 0.6)) {
+            if (this.mode !== RoomEditorMode.EDIT) {
+              this.setMode(RoomEditorMode.EDIT, true);
+            }
+
+            // replaces any other selection with this wall (no-op if it is already the only one selected)
+            this.selectWall(targetGroup, false);
+
+            const userData = targetGroup.getAttr("userData") as WallUserData;
+            const dx = points[2] - points[0];
+            const dy = points[3] - points[1];
+            const length = Math.sqrt(dx * dx + dy * dy);
+
+            if (length === 0) return;
+
+            const perpendicularAxis = {
+              x: -dy / length,
+              y: dx / length,
+            };
+
+            this.stage.container().style.cursor = this.getResizeCursor(perpendicularAxis);
+            this.draggingWallMid = {
+              wallGroup: targetGroup,
+              axis: perpendicularAxis,
+              originalPoints: [...points],
+              originalWindows: userData?.windows ? userData.windows.map(w => ({ ...w })) : [],
+              originalDoors: userData?.doors ? userData.doors.map(d => ({ ...d })) : [],
+              startWorldPos: { x: worldPos.x, y: worldPos.y },
+              connectedOriginals: new Map(),
+              connectedWallGroupData: this.getConnectedWallGroupData(targetGroup),
+            };
             return;
           }
         }
@@ -685,7 +1029,7 @@ export class Design2D {
         let initialOffset = 0;
         if (wallUserData) {
           const items = openingInfo.type === "window" ? wallUserData.windows : wallUserData.doors;
-          const item = items?.find(i => i.id === entityId);
+          const item = items?.find((i) => i.id === entityId);
           if (item) initialOffset = item.offset;
         }
 
@@ -694,7 +1038,8 @@ export class Design2D {
           type: openingInfo.type,
           wallGroup: openingInfo.wallGroup,
           entityId,
-          initialOffset
+          initialOffset,
+          oldWallGroup: this.sanitizeWallHistoryJson(openingInfo.wallGroup.toJSON()),
         };
 
         return;
@@ -713,6 +1058,70 @@ export class Design2D {
       }
     }
   };
+
+  /**
+   * Method to get the junction wall groups JSON for history.
+   * @param walls - Walls connected to the junction.
+   * @returns JSON strings of the connected wall groups.
+   */
+  private getJunctionData(walls: JunctionWall[]): string[] {
+    return walls.map(({ group }) =>
+      this.sanitizeWallHistoryJson(group.toJSON())
+    );
+  }
+
+  /**
+   * Removes temporary selection and hit-point visuals from wall history JSON.
+   */
+  private sanitizeWallHistoryJson(wallJson: string): string {
+    const wallData = JSON.parse(wallJson);
+
+    // Find the wall line and restore its default stroke in the JSON only.
+    const wallLine = wallData.children?.find(
+      (child: any) => child.attrs?.name === NodeName.WALL
+    );
+
+    if (wallLine) {
+      wallLine.attrs.stroke = this.getDefaultWallStroke();
+    }
+
+    // Remove temporary hit-point indicators from the history.
+    wallData.children = wallData.children?.filter(
+      (child: any) => child.attrs?.name !== "endpoint-circle-snap"
+    );
+
+    return JSON.stringify(wallData);
+  }
+
+  /**
+  * Determines the appropriate cursor style for resizing a wall based on its orientation.
+   *
+   * @param wallDx - the horizontal displacement of the wall
+   * @param wallDy - the vertical displacement of the wall
+   * @returns The appropriate cursor style for resizing the wall.
+   */
+  private getResizeCursor(axis: { x: number; y: number }): string {
+    if (!this.resizeCursors) {
+      // horizontal double arrow in a 32x32 box: left head, bar, right head
+      const ARROW_PATH = VisualStyle.BOLD_ARROW_PATH;
+
+      this.resizeCursors = {
+        dynamic: (angle: number) => {
+          const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32" viewBox="0 0 48 32">` +
+            `<path d="${ARROW_PATH}" transform="rotate(${angle} 16 16)" ` +
+            `fill="#333333" stroke="#333333" stroke-width="0.5" stroke-linejoin="round"/>` +
+            `</svg>`;
+
+          return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 16 16, crosshair`;
+        },
+      };
+    }
+
+    const angle = Math.atan2(axis.y, axis.x) * (180 / Math.PI);
+
+    return this.resizeCursors.dynamic(angle);
+  }
 
   /**
    * Returns the colour a wall should use in its default (unselected, unhovered) state.
@@ -786,7 +1195,7 @@ export class Design2D {
   /**
    * Listener for mousemove events on the stage.
    */
-  private handleMouseMove = () => {
+  private handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
     // Pan Logic
     if (this.isPanning && this.lastPanPointerPosition) {
       const currentPosition = this.stage.getPointerPosition();
@@ -807,10 +1216,95 @@ export class Design2D {
       this.lastPanPointerPosition = currentPosition;
       this.stage.batchDraw();
     } else {
-      if (!this.draggingEndpoint && !this.draggingOpening) {
-        if (this.mode !== RoomEditorMode.DRAW && this.mode !== RoomEditorMode.WINDOW && this.mode !== RoomEditorMode.DOOR) {
+      // Junction drag takes over, so hover logic can't hide the dot mid-drag
+      if (this.isJunctionDragging && this.draggingJunction) {
+        const worldPos = this.getWorldPointerPosition();
+        if (worldPos) this.handleJunctionDragging(worldPos.x, worldPos.y);
+        return;
+      }
+
+      let isHoveringJunction = false;
+      let isHoveringEndpoint = false;
+      let isHoveringWallMid = false;
+
+      if (!this.draggingEndpoint && !this.draggingOpening && !this.draggingWallMid) {
+        if (
+          this.mode !== RoomEditorMode.DRAW &&
+          this.mode !== RoomEditorMode.WINDOW &&
+          this.mode !== RoomEditorMode.DOOR
+        ) {
+          const worldPos = this.getWorldPointerPosition();
+          if (!worldPos) return;
+          const snapRadius = Config.SNAP_RADIUS as number;
+
+          // junction only when nothing is selected
+          const junction =this.isJunctionDragging ? this.findJunctionNear(worldPos.x, worldPos.y, snapRadius) : null;
+
+          if (junction) {
+            isHoveringJunction = true;
+            this.showJunctionIndicator(junction);
+            //for the junction dot, we want to hide the cursor so it doesn't obscure the dot
+            this.stage.container().style.cursor = "none";
+          } else {
+            this.hideJunctionIndicator(); // clears junctionData before the highlight check
+
+            // selected wall first (geometry test, works at the very tip),
+            // then the wall under the pointer
+            const candidates: { group: Konva.Group; line: Konva.Line }[] = [];
+            if (this.selectedWallGroups.length === 1) {
+              const g = this.selectedWallGroups[0];
+              const l = g.findOne(`.${NodeName.WALL}`) as Konva.Line | null;
+              if (l) candidates.push({ group: g, line: l });
+            }
+            const wallInfo = this.getWallUnderPointer();
+            if (wallInfo && !candidates.some((c) => c.group === wallInfo.wallGroup)) {
+              candidates.push({ group: wallInfo.wallGroup, line: wallInfo.wallLine });
+            }
+
+            for (const c of candidates) {
+              const points = c.line.points();
+              // endpoint drag is only allowed on the single selected wall (same rule as mouse down)
+              const isSelectedWall =
+                this.selectedWallGroups.length === 1 && this.selectedWallGroups[0] === c.group;
+              if (isSelectedWall && Math.hypot(worldPos.x - points[0], worldPos.y - points[1]) < snapRadius) {
+                this.showSnapIndicator(points[0], points[1], c.group, false);
+                isHoveringEndpoint = true;
+              } else if (isSelectedWall && Math.hypot(worldPos.x - points[2], worldPos.y - points[3]) < snapRadius) {
+                this.showSnapIndicator(points[2], points[3], c.group, false);
+                isHoveringEndpoint = true;
+              } else if (this.isWallDragging && !e.evt.ctrlKey && this.isPointerOnWallMid(worldPos, points, snapRadius, 0.6)) {
+                isHoveringWallMid = true;
+                const dx = points[2] - points[0];
+                const dy = points[3] - points[1];
+                const length = Math.hypot(dx, dy);
+
+                if (length > 0) {
+                  const axis = {
+                    x: -dy / length,
+                    y: dx / length,
+                  };
+
+                  this.stage.container().style.cursor = this.getResizeCursor(axis);
+                  // Apply cursor using your existing Konva/container cursor logic.
+                }
+              }
+              if (isHoveringEndpoint || isHoveringWallMid) break;
+            }
+
+            // nothing hovered: reset here, otherwise the cursor stays stuck
+            if (!isHoveringEndpoint && !isHoveringWallMid) {
+              this.hideSnapIndicator();
+              this.stage.container().style.cursor = "default";
+            }
+          }
+
+          // all junction walls if the dot is visible, usual hover otherwise
           this.updateHoverHighlight();
         }
+      }
+
+      if (!isHoveringJunction) {
+        this.hideJunctionIndicator();
       }
 
       if (this.mode === RoomEditorMode.DRAW) {
@@ -844,7 +1338,10 @@ export class Design2D {
         const worldPos = this.getWorldPointerPosition();
         if (!worldPos) return;
 
-        if (this.draggingEndpoint) {
+        if (this.isWallDragging && this.draggingWallMid) {
+          this.handleWallMidDragging(worldPos.x, worldPos.y);
+        }
+        else if (this.draggingEndpoint) {
           this.handleEndpointDragging(worldPos.x, worldPos.y);
         }
         else if (this.draggingOpening) {
@@ -853,33 +1350,367 @@ export class Design2D {
 
           this.handleOpeningDragging(worldPos.x, worldPos.y);
         }
-        else {
-          let isHoveringEndpoint = false;
-
-          if (this.selectedWallGroups.length === 1) {
-            const selectedGroup = this.selectedWallGroups[0];
-            const wallLine = selectedGroup.findOne(`.${NodeName.WALL}`) as Konva.Line;
-            if (wallLine) {
-              const points = wallLine.points();
-              const snapRadius = Config.SNAP_RADIUS as number;
-
-              if (Math.hypot(worldPos.x - points[0], worldPos.y - points[1]) < snapRadius) {
-                this.showSnapIndicator(points[0], points[1], selectedGroup, false);
-                isHoveringEndpoint = true;
-              } else if (Math.hypot(worldPos.x - points[2], worldPos.y - points[3]) < snapRadius) {
-                this.showSnapIndicator(points[2], points[3], selectedGroup, false);
-                isHoveringEndpoint = true;
-              }
-            }
-          }
-
-          if (!isHoveringEndpoint) {
-            this.hideSnapIndicator();
-          }
-        }
+        // no hover handling here: the top block already does it for every wall
       }
     }
   };
+
+  /**
+   * Handles the dragging of a junction, updating the positions of all connected walls.
+   * @param x - the x-coordinate of the mouse position
+   * @param y - the y-coordinate of the mouse position
+   */
+  private handleJunctionDragging(x: number, y: number) {
+    const drag = this.draggingJunction;
+    if (!drag) return;
+
+    this.mouseMoved = true;
+
+    // snapping on: snap to the grid intersection, snapping off: follow the pointer freely
+    const snapped = this.isAxisSnappingEnabled
+      ? this.getIntersectionSnappedPosition(x, y)
+      : { x, y };
+    const finalX = snapped.x;
+    const finalY = snapped.y;
+
+    const TOL = 1; // stored points can differ slightly from line points
+    const draggedIds = new Set(drag.walls.map((w) => w.wallId).filter(Boolean));
+
+    // move the shared endpoint of every wall and keep userData in sync
+    for (const w of drag.walls) {
+      const line = w.group.findOne(`.${NodeName.WALL}`) as Konva.Line;
+      if (!line) continue;
+
+      const pts = [...w.originalPoints];
+      const o = w.endpoint === "start" ? 0 : 2;
+      pts[o] = finalX;
+      pts[o + 1] = finalY;
+      line.points(pts);
+
+      const ud = w.group.getAttr("userData") as WallUserData | undefined;
+      if (!ud) continue;
+
+      ud.startPoint = { x: pts[0], y: pts[1] };
+      ud.endPoint = { x: pts[2], y: pts[3] };
+
+      // rebuilt from the originals on every move, so the old junction position is never lost
+      const oldX = w.originalPoints[o];
+      const oldY = w.originalPoints[o + 1];
+      ud.connections = w.originalConnections.map((c) =>
+        draggedIds.has(c.connectedLineId) &&
+          Math.hypot(c.intersectionPoint.x - oldX, c.intersectionPoint.y - oldY) <= TOL
+          ? { ...c, intersectionPoint: { x: finalX, y: finalY } }
+          : { ...c, intersectionPoint: { ...c.intersectionPoint } }
+      );
+    }
+
+    // validate once every wall is at its new position
+    let invalid = false;
+    for (const w of drag.walls) {
+      const line = w.group.findOne(`.${NodeName.WALL}`) as Konva.Line;
+      if (!line) continue;
+      const p = line.points();
+      if (
+        this.isWallThroughOpening(p[0], p[1], p[2], p[3], w.group) ||
+        this.isWallOverlapping(p[0], p[1], p[2], p[3], w.group)
+      ) {
+        invalid = true;
+        break;
+      }
+    }
+    drag.isInvalid = invalid;
+
+    for (const w of drag.walls) this.refreshJunctionWall(w, invalid);
+
+    // the red dot follows the final position
+    if (this.junctionDot) {
+      this.junctionDot.position({ x: finalX, y: finalY });
+      this.junctionDot.moveToTop();
+    }
+
+    // cursor: "not-allowed" if any wall is invalid, junction - otherwise hide the cursor so the dot is visible
+    this.stage.container().style.cursor = invalid ? "not-allowed" : "none";
+    this.stage.batchDraw();
+    this.detectRooms();
+  }
+
+  /**
+   * Refreshes the visual representation of a junction wall during dragging.
+   * @param w - the junction wall being dragged
+   * @param invalid - whether the wall is in an invalid state
+   */
+  private refreshJunctionWall(w: JunctionWall, invalid: boolean) {
+    const line = w.group.findOne(`.${NodeName.WALL}`) as Konva.Line;
+    if (!line) return;
+
+    const p = line.points();
+    const ud = w.group.getAttr("userData") as WallUserData;
+
+    line.stroke(
+      invalid ? (VisualStyle.WALL_ERROR_STROKE as string) : (VisualStyle.PREVIEW_STROKE as string)
+    );
+
+    w.group.findOne(`.${NodeName.DIMENSION_GROUP}`)?.destroy();
+    const dimension = this.createDimension(
+      p[0], p[1], p[2], p[3],
+      invalid ? (VisualStyle.WALL_ERROR_STROKE as string) : (VisualStyle.DIMENSION_COLOR as string)
+    );
+    if (dimension) w.group.add(dimension);
+
+    if (ud) {
+      const o = w.originalPoints;
+      const oldLength = Math.hypot(o[2] - o[0], o[3] - o[1]);
+      const newLength = Math.hypot(p[2] - p[0], p[3] - p[1]);
+
+      this.repositionOpeningsOnWall(w.group, oldLength, newLength, w.originalWindows, w.originalDoors);
+      this.resolveAndValidateOpeningsOnWall(w.group);
+
+      if (ud.windows) this.renderWindows(w.group, ud);
+      if (ud.doors) this.renderDoors(w.group, ud);
+    }
+  }
+
+
+  /**
+   * Walls whose hit area is under or around the pointer. Cost is a few pixel reads, independent of wall count.
+   * @param radius - the radius around the pointer to search for walls
+   */
+  private getWallLinesNearPointer(radius: number): Konva.Line[] | null {
+    const pos = this.stage.getPointerPosition(); // screen coords, which is what getIntersection expects
+    const layer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    if (!pos || !layer) return null; // null = gate unavailable, caller falls back to a full scan
+
+    const r = radius * (this.stage.scaleX() || 1); // world radius -> screen px
+    const rings: { factor: number; count: number }[] = [
+      { factor: 0.35, count: 6 },
+      { factor: 0.7, count: 12 },
+      { factor: 1.0, count: 16 },
+    ];
+
+    const offsets: [number, number][] = [[0, 0]];
+    for (const { factor, count } of rings) {
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        offsets.push([Math.cos(angle) * r * factor, Math.sin(angle) * r * factor]);
+      }
+    }
+
+    const found = new Set<Konva.Line>();
+    for (const [dx, dy] of offsets) {
+      const shape = layer.getIntersection({ x: pos.x + dx, y: pos.y + dy });
+      if (shape && shape.hasName(NodeName.WALL)) found.add(shape as Konva.Line);
+    }
+    return [...found];
+  }
+
+  /**
+   * Finds a junction (shared endpoint) near the given coordinates, if any.
+   * @param x - the x-coordinate of the mouse position
+   * @param y - the y-coordinate of the mouse position
+   * @param radius - the radius within which to search for junctions
+   * @returns The junction data if a junction is found, otherwise null
+   */
+  private findJunctionNear(x: number, y: number, radius: number): JunctionData | null {
+    const EPS = 0.5;
+
+    // 1) cheap gate: which walls are near the pointer? (no traversal)
+    const nearby = this.getWallLinesNearPointer(radius);
+    if (nearby && nearby.length === 0) return null;
+
+    // 2) candidate endpoints: only the endpoints of those few walls, within radius
+    const sourceLines = nearby ?? (this.stage.find(`.${NodeName.WALL}`) as Konva.Line[]);
+    const candidates: { x: number; y: number; dist: number }[] = [];
+    for (const line of sourceLines) {
+      const p = line.points();
+      for (const [px, py] of [[p[0], p[1]], [p[2], p[3]]]) {
+        const dist = Math.hypot(x - px, y - py);
+        if (dist <= radius) candidates.push({ x: px, y: py, dist });
+      }
+    }
+    if (candidates.length === 0) return null; // pointer is on a wall but not near an end
+
+    candidates.sort((a, b) => a.dist - b.dist);
+
+    // 3) the full scan runs only now, near a real endpoint
+    const walls = this.stage.find(`.${NodeName.WALL}`) as Konva.Line[];
+
+    for (const c of candidates) {
+      const connected = new Map<Konva.Group, JunctionWall>();
+
+      for (const wall of walls) {
+        const p = wall.points();
+        let endpoint: "start" | "end" | null = null;
+        if (Math.hypot(p[0] - c.x, p[1] - c.y) <= EPS) endpoint = "start";
+        else if (Math.hypot(p[2] - c.x, p[3] - c.y) <= EPS) endpoint = "end";
+        if (!endpoint) continue;
+
+        const group = wall.getParent() as Konva.Group;
+
+        // Skip walls that are already selected
+        if (this.selectedWallGroups.includes(group)) {
+          return null;
+        }
+
+        if (connected.has(group)) continue;
+
+        const ud = group.getAttr("userData") as WallUserData | undefined;
+        connected.set(group, {
+          group,
+          wallId: ud?.id ?? "",
+          endpoint,
+          originalPoints: [...p],
+          originalWindows: ud?.windows ? ud.windows.map((w) => ({ ...w })) : [],
+          originalDoors: ud?.doors ? ud.doors.map((d) => ({ ...d })) : [],
+          originalConnections: ud?.connections ? ud.connections.map((c) => ({
+            ...c,
+            intersectionPoint: { ...c.intersectionPoint },
+          })) : [],
+        });
+      }
+
+      if (connected.size >= 2) {
+        return { x: c.x, y: c.y, walls: [...connected.values()] };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Shows the junction indicator (red dot with crosshair) at the specified junction position.
+   * @param junction - the junction data
+   */
+  private showJunctionIndicator(junction: JunctionData) {
+    const layer = this.getLayer(NodeName.INTERACTION_LAYER);
+    if (!layer) return;
+
+    // drop a stale reference if the layer was cleared
+    if (this.junctionDot && this.junctionDot.getParent() !== layer) {
+      this.junctionDot.destroy();
+      this.junctionDot = null;
+    }
+
+    if (!this.junctionDot) {
+      this.junctionDot = this.createJunctionIndicator();
+      layer.add(this.junctionDot);
+    }
+
+    this.junctionData = junction;
+    this.junctionDot.setAttrs({
+      x: junction.x,
+      y: junction.y,
+      visible: true,
+      userData: {
+        position: { x: junction.x, y: junction.y },
+        connectedWalls: junction.walls.map((w) => ({ wallId: w.wallId, endpoint: w.endpoint })),
+      },
+    });
+
+    this.junctionDot.moveToTop();
+    layer.batchDraw();
+  }
+
+  /**
+   * Hides the junction indicator (red dot with crosshair) and clears the junction data.
+   */
+  private hideJunctionIndicator() {
+    this.junctionData = null;
+
+    if (!this.junctionDot) return;
+
+    if (!this.junctionDot.getParent()) {
+      this.junctionDot = null;
+      return;
+    }
+    if (this.junctionDot.visible()) {
+      this.junctionDot.visible(false);
+      this.junctionDot.setAttr("userData", null);
+      this.junctionDot.getLayer()?.batchDraw();
+    }
+  }
+
+  /**
+   * Helper function to create the junction indicator (red dot with crosshair).
+   * @returns A Konva.Group representing the junction indicator (red dot with crosshair).
+   */
+  private createJunctionIndicator(): Konva.Group {
+    const fill = VisualStyle.JUNCTION_INDICATOR_FILL as string;
+    const ringColor = (VisualStyle.JUNCTION_INDICATOR_RING as string) ?? "black";
+
+    const inner = VisualStyle.SNAP_INDICATOR_RADIUS as number; // red center
+    const ring = inner + 5;                                    // black ring
+    const tickIn = ring - 3;                                   // ticks start slightly inside the ring
+    const tickOut = ring + 7;                                  // and stick out past it
+
+    const group = new Konva.Group({ name: "junction-indicator", listening: false });
+
+    // black ring
+    group.add(
+      new Konva.Circle({
+        radius: ring,
+        fill: "transparent",
+        stroke: ringColor,
+        strokeWidth: 2,
+        listening: false,
+      })
+    );
+
+    // four crosshair ticks (up, down, left, right)
+    const ticks: number[][] = [
+      [0, -tickIn, 0, -tickOut],
+      [0, tickIn, 0, tickOut],
+      [-tickIn, 0, -tickOut, 0],
+      [tickIn, 0, tickOut, 0],
+    ];
+    for (const points of ticks) {
+      group.add(
+        new Konva.Line({ points, stroke: ringColor, strokeWidth: 2, listening: false })
+      );
+    }
+
+    // red center, added last so it draws on top
+    group.add(
+      new Konva.Circle({
+        name: "junction-center",
+        radius: inner,
+        fill,
+        listening: false,
+      })
+    );
+
+    return group;
+  }
+
+  /**
+   * Is pointer on wall mid
+    * @param worldPos - The world position of the pointer.
+    * @param points - The points of the wall line.
+    * @param across - The distance across the wall.
+    * @param zoneRatio - The ratio of the zone along the wall.
+    * @returns {boolean} True if the pointer is on the wall mid, false otherwise.
+   */
+  private isPointerOnWallMid(
+    worldPos: { x: number; y: number },
+    points: number[],
+    across: number,
+    zoneRatio = 0.6
+  ): boolean {
+    const wallLen = Math.hypot(points[2] - points[0], points[3] - points[1]);
+    if (wallLen === 0) return false;
+
+    const midX = (points[0] + points[2]) / 2;
+    const midY = (points[1] + points[3]) / 2;
+
+    const ux = (points[2] - points[0]) / wallLen;
+    const uy = (points[3] - points[1]) / wallLen;
+
+    const px = worldPos.x - midX;
+    const py = worldPos.y - midY;
+
+    const alongDist = Math.abs(px * ux + py * uy);
+    const acrossDist = Math.abs(-px * uy + py * ux);
+
+    return alongDist <= (wallLen * zoneRatio) / 2 && acrossDist <= across;
+  }
 
   /**
    * Is point on opening.
@@ -962,6 +1793,12 @@ export class Design2D {
 
     // If there was a previous point, create a wall between them.
     if (this.lastPoint) {
+      // Prevent creating zero-length walls or extremely short walls
+      const distance = Math.hypot(finalX - this.lastPoint.x, finalY - this.lastPoint.y);
+      if (distance < 0.1) {
+        return;
+      }
+
       // Check for overlap before creating (collinear segments) or check whether the wall is getting passed through doors and windows
       if (this.isWallOverlapping(this.lastPoint.x, this.lastPoint.y, finalX, finalY) ||
         this.isWallThroughOpening(this.lastPoint.x, this.lastPoint.y, finalX, finalY)
@@ -989,6 +1826,20 @@ export class Design2D {
         wallGroup.add(dimension);
       }
 
+      // Wire up connections at both ends of the new wall to any wall(s)
+      // touching those exact points — handles corners and T-junctions,
+      // including junctions where more than one wall meets at once.
+      this.connectWallAtPoint(wallGroup, { x: this.lastPoint.x, y: this.lastPoint.y });
+      this.connectWallAtPoint(wallGroup, { x: finalX, y: finalY });
+      this.design2DHistoryManager.push(
+        {
+          action : ActionType.ADD_WALL,
+          data : {
+            oldGroups : [],
+            newGroups : [wallGroup.toJSON()]
+          }
+        }
+      );
       this.draw(); // Ensure walls are rendered before detection
       this.detectRooms();
     }
@@ -996,6 +1847,186 @@ export class Design2D {
     this.lastPoint = { x: finalX, y: finalY };
     this.draw();
   }
+
+  /**
+ * Finds every existing wall group whose line touches the given point,
+ * either at an endpoint (corner) or along its length (T-junction).
+ * Unlike getEndpointSnap/getSegmentSnap, this does not stop at the first match —
+ * it's used specifically for wiring connections, where a point can be
+ * shared by 2+ walls (e.g. a T-junction plus a corner at the same spot).
+ */
+  private getAllWallsTouchingPoint(
+    x: number,
+    y: number,
+    excludeGroup?: Konva.Group
+  ): Konva.Group[] {
+    const results: Konva.Group[] = [];
+
+    const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    if (!floorplanLayer) return results;
+
+    const endpointTolerance = Config.SNAP_RADIUS as number;
+    const segmentTolerance = Config.SEGMENT_SNAP_RADIUS as number;
+
+    for (const child of floorplanLayer.getChildren()) {
+      if (excludeGroup && child === excludeGroup) continue;
+      if (!(child instanceof Konva.Group)) continue;
+
+      const wall = child.findOne(`.${NodeName.WALL}`) as Konva.Line;
+      if (!wall) continue;
+
+      const points = wall.points();
+      if (points.length < 4) continue;
+
+      const x1 = points[0], y1 = points[1], x2 = points[2], y2 = points[3];
+
+      // Endpoint match (corner)
+      if (
+        Math.hypot(x - x1, y - y1) < endpointTolerance ||
+        Math.hypot(x - x2, y - y2) < endpointTolerance
+      ) {
+        results.push(child);
+        continue;
+      }
+
+      // Segment match (T-junction: point lies along the wall, not at its ends)
+      const dx = x2 - x1, dy = y2 - y1;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq === 0) continue;
+
+      let t = ((x - x1) * dx + (y - y1) * dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+      const projX = x1 + t * dx;
+      const projY = y1 + t * dy;
+
+      if (Math.hypot(x - projX, y - projY) < segmentTolerance) {
+        results.push(child);
+      }
+    }
+
+    return results;
+  }
+  /**
+   * Wires up WallConnection entries between the newly created wall and
+   * every existing wall touching the given endpoint. Handles junctions
+   * where more than one wall meets at the same point (e.g. a T plus a corner).
+   */
+  private connectWallAtPoint(
+    newWallGroup: Konva.Group,
+    point: { x: number; y: number }
+  ) {
+    const newWallData = newWallGroup.getAttr("userData") as WallUserData;
+    if (!newWallData) return;
+
+    const touchingWalls = this.getAllWallsTouchingPoint(point.x, point.y, newWallGroup);
+
+    for (const connectedWallGroup of touchingWalls) {
+      const connectedData = connectedWallGroup.getAttr("userData") as WallUserData;
+      if (!connectedData) continue;
+
+      const connId = this.makeWallConnectionId(newWallData.id, connectedData.id, point);
+
+      const alreadyOnNew = newWallData.connections?.some(c => c.id === connId);
+      const alreadyOnConnected = connectedData.connections?.some(c => c.id === connId);
+
+      if (!alreadyOnNew) {
+        newWallData.connections = newWallData.connections ?? [];
+        newWallData.connections.push({
+          id: connId,
+          connectedLineId: connectedData.id,
+          intersectionPoint: { x: point.x, y: point.y },
+        });
+        newWallData.isConnected = true;
+      }
+
+      if (!alreadyOnConnected) {
+        connectedData.connections = connectedData.connections ?? [];
+        connectedData.connections.push({
+          id: connId,
+          connectedLineId: newWallData.id,
+          intersectionPoint: { x: point.x, y: point.y },
+        });
+        connectedData.isConnected = true;
+      }
+
+      connectedWallGroup.setAttr("userData", connectedData);
+    }
+
+    newWallGroup.setAttr("userData", newWallData);
+  }
+
+  /**
+   * Generates a unique identifier for a wall connection based on the IDs of the two walls and their intersection point.
+   * @param wallIdA - the ID of the first wall
+   * @param wallIdB - the ID of the second wall
+   * @param pt - the intersection point of the two walls
+   * @returns A unique string identifier for the wall connection
+   */
+  private makeWallConnectionId(
+    wallIdA: string,
+    wallIdB: string,
+    pt: { x: number; y: number }
+  ): string {
+    const [first, second] = [wallIdA, wallIdB].sort();
+    return `${first}_${second}_${Math.round(pt.x)}_${Math.round(pt.y)}`;
+  }
+
+  /**
+ * After a wall endpoint is dragged to a new position, removes any
+ * connections that were anchored to its OLD position (on both this wall
+ * and the walls it was connected to), then wires fresh connections at
+ * the NEW position using the same logic as draw-mode wall creation.
+ */
+  private updateWallConnectionsAfterEndpointDrag(
+    wallGroup: Konva.Group,
+    oldPoint: { x: number; y: number },
+    newPoint: { x: number; y: number }
+  ) {
+    const userData = wallGroup.getAttr("userData") as WallUserData;
+    if (!userData) return;
+
+    const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    if (!floorplanLayer) return;
+
+    const ENDPOINT_TOLERANCE = Config.SNAP_RADIUS as number;
+
+    // 1. Find connections that were anchored to the endpoint we just moved
+    //    (identified by proximity of intersectionPoint to its OLD position)
+    const staleConnections = (userData.connections ?? []).filter(
+      c => Math.hypot(c.intersectionPoint.x - oldPoint.x, c.intersectionPoint.y - oldPoint.y) < ENDPOINT_TOLERANCE
+    );
+
+    if (staleConnections.length > 0) {
+      const staleIds = new Set(staleConnections.map(c => c.id));
+
+      // Remove from this wall
+      userData.connections = (userData.connections ?? []).filter(c => !staleIds.has(c.id));
+
+      // Remove the mirrored entry from each wall it was connected to
+      const groups = floorplanLayer.find(`.${NodeName.LINE_GROUP}`);
+      staleConnections.forEach(c => {
+        const connectedGroup = groups.find(
+          g => (g.getAttr("userData") as WallUserData)?.id === c.connectedLineId
+        ) as Konva.Group | undefined;
+        if (!connectedGroup) return;
+
+        const connectedData = connectedGroup.getAttr("userData") as WallUserData;
+        if (!connectedData?.connections) return;
+
+        connectedData.connections = connectedData.connections.filter(cc => cc.id !== c.id);
+        connectedData.isConnected = connectedData.connections.length > 0;
+        connectedGroup.setAttr("userData", connectedData);
+      });
+
+      userData.isConnected = (userData.connections?.length ?? 0) > 0;
+      wallGroup.setAttr("userData", userData);
+    }
+
+    // 2. Wire fresh connections at the endpoint's new position
+    this.connectWallAtPoint(wallGroup, newPoint);
+  }
+
+
 
   /**
    * Listener for double click events on the stage to start wall drawing.
@@ -1006,6 +2037,7 @@ export class Design2D {
 
     const shape = this.stage.getIntersection(pointerPos as any);
     if (shape && shape.name() === NodeName.DIMENSION_TEXT) {
+      if (this.mode === RoomEditorMode.DRAW || this.mode === RoomEditorMode.WINDOW || this.mode === RoomEditorMode.DOOR) return;
       const textNode = shape as Konva.Text;
       const currentValue = textNode.text();
       const dimensionGroup = textNode.getParent() as Konva.Group;
@@ -1018,12 +2050,43 @@ export class Design2D {
           isVertical,
           clientX: e.evt.clientX,
           clientY: e.evt.clientY,
-          unit: this.currentUnit,
           setNewWallDimension: (newValue: number, pointToChange: string) => {
             this.editWallDimensions(wallGroup, newValue, pointToChange);
           }
         }
       )
+      return;
+    }
+    if (shape && shape.name() === NodeName.ROOM_LABEL) {
+      const label = shape as Konva.Text;
+
+      const roomId = label.getAttr("roomId");
+
+      if (!roomId) {
+        return;
+      }
+
+      const fillLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
+      if (!fillLayer) return;
+
+      const roomGroup = fillLayer.findOne(`#${roomId}`) as Konva.Group | undefined;
+
+      if (!roomGroup) {
+        return;
+      }
+
+      const currentName = roomGroup.getAttr("roomName");
+
+      Events.emit(ConfiguratorEventType.EDIT_ROOM_NAME, {
+        currentValue: currentName,
+        clientX: e.evt.clientX,
+        clientY: e.evt.clientY,
+
+        setNewRoomName: (newName: string) => {
+          this.setRoomName(roomGroup, label, newName);
+        },
+      });
+
       return;
     }
     if (e.evt.button === 0) {
@@ -1075,6 +2138,7 @@ export class Design2D {
     newLength: number,
     wallEditPoint: string
   ): boolean {
+    const oldWallGroup = this.sanitizeWallHistoryJson(wallGroup.toJSON());
     if (newLength < 0) return false;
     // Get the wallGroup
     const wall: Konva.Line = wallGroup.findOne(`.${NodeName.WALL}`) as Konva.Line;
@@ -1094,10 +2158,8 @@ export class Design2D {
     const ux = dx / currentLength;
     const uy = dy / currentLength;
 
-    // Convert input newLength (in currentUnit) to cm first
-    const lengthInCm = this.convertToCm(newLength, this.currentUnit);
-
-    // Convert to konva unit (1 konva unit = 1 cm)
+    const lengthInCm = LengthUnitConverter.convertUnitToCentimeters( newLength, LengthUnitConverter.currentUnit);
+    // Convert to konva unit
     newLength = lengthInCm / ((Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor);
     // Final wall coordinates
     let startX = x1;
@@ -1190,6 +2252,14 @@ export class Design2D {
     if (dimension) {
       wallGroup.add(dimension);
     }
+    const newWallgroup = this.sanitizeWallHistoryJson(wallGroup.toJSON());
+    this.design2DHistoryManager.push({
+      action : ActionType.UPDATE_WALL,
+      data : {
+        oldGroups : [oldWallGroup],
+        newGroups : [newWallgroup]
+      }
+    });
 
     if (userData) {
       if (userData.windows) {
@@ -1209,6 +2279,39 @@ export class Design2D {
   }
 
   /**
+   * Edits the room name based on the new name.
+   * @param roomGroup - The Konva group representing the room.
+   * @param label - The new name in physical units.
+   * @param newName - The edit reference point.
+   * @returns Void.
+   */
+  private setRoomName(
+    roomGroup: Konva.Group,
+    label: Konva.Text,
+    newName: string
+  ): void {
+    const roomLabelId = roomGroup.getAttr("roomLabelId");
+    const oldLabel = roomGroup.getAttr("roomName");
+
+    RoomDetector.setRoomName(roomGroup, label, newName);
+
+    this.design2DHistoryManager.push({
+      action: ActionType.UPDATE_ROOM_NAME,
+      data: {
+        oldRoomNames: new Map([
+          [roomLabelId, oldLabel]
+        ]),
+        newRoomNames: new Map([
+          [roomLabelId, newName]
+        ])
+      }
+    });
+    
+    this.stage.batchDraw();
+    this.detectRooms()
+  }
+
+  /**
    * Handle window mode.
    *
    * @param {{ x} worldPos - Parameter description.
@@ -1218,6 +2321,7 @@ export class Design2D {
     const wallInfo = this.getWallUnderPointer();
     if (wallInfo) {
       const { wallGroup, wallLine } = wallInfo;
+      const oldWallData=wallGroup.toJSON();
       const userData = wallGroup.getAttr("userData") as WallUserData;
 
       const points = wallLine.points();
@@ -1229,25 +2333,25 @@ export class Design2D {
         dy = y2 - y1;
       const length = Math.sqrt(dx * dx + dy * dy);
 
-          const t =
-            ((worldPos.x - x1) * dx + (worldPos.y - y1) * dy) /
-            (length * length);
-          const windowWidth = Config.DEFAULT_WINDOW_WIDTH as number;
-                    const windowCanvasWidth = this.getOpeningCanvasWidth(windowWidth);
+      const t =
+        ((worldPos.x - x1) * dx + (worldPos.y - y1) * dy) /
+        (length * length);
+      const windowWidth = Config.DEFAULT_WINDOW_WIDTH as number;
+      const windowCanvasWidth = this.getOpeningCanvasWidth(windowWidth);
 
-          // const halfWidth = windowWidth / 2;
-                    const halfWidth = windowCanvasWidth / 2;
-          const offset = Math.max(
-            halfWidth,
-            Math.min(length - halfWidth, t * length),
-          );
+      // const halfWidth = windowWidth / 2;
+      const halfWidth = windowCanvasWidth / 2;
+      const offset = Math.max(
+        halfWidth,
+        Math.min(length - halfWidth, t * length),
+      );
 
-          const isOverlapping = this.isItemOverlapping(
-            userData,
-            offset,
-            // windowWidth
-            windowCanvasWidth
-          );
+      const isOverlapping = this.isItemOverlapping(
+        userData,
+        offset,
+        // windowWidth
+        windowCanvasWidth
+      );
 
       if (!isOverlapping) {
         if (!userData.windows) userData.windows = [];
@@ -1255,9 +2359,18 @@ export class Design2D {
           id: uuidv4(),
           offset: offset,
           width: windowWidth,
+          height: Config.DEFAULT_WINDOW_HEIGHT as number,
+          windowFloorDistance: Config.DEFAULT_WINDOW_FLOOR_DISTANCE as number,
         });
 
         this.renderWindows(wallGroup, userData);
+        this.design2DHistoryManager.push({
+          action : ActionType.UPDATE_WALL,
+          data : {
+            oldGroups : [oldWallData],
+            newGroups : [wallGroup.toJSON()]
+          }
+        });
         this.draw();
       }
     }
@@ -1273,6 +2386,7 @@ export class Design2D {
     const wallInfo = this.getWallUnderPointer();
     if (wallInfo) {
       const { wallGroup, wallLine } = wallInfo;
+      const oldWallData=wallGroup.toJSON();
       const userData = wallGroup.getAttr("userData") as WallUserData;
 
       const points = wallLine.points();
@@ -1309,9 +2423,17 @@ export class Design2D {
           id: uuidv4(),
           offset: offset,
           width: doorWidth,
+          height: Config.DEFAULT_DOOR_HEIGHT as number
         });
 
         this.renderDoors(wallGroup, userData);
+        this.design2DHistoryManager.push({
+          action : ActionType.UPDATE_WALL,
+          data : {
+            oldGroups : [oldWallData],
+            newGroups : [wallGroup.toJSON()]
+          }
+        });
         this.draw();
       }
     }
@@ -1324,6 +2446,8 @@ export class Design2D {
    */
   private handleEditMode() {
     if (this.draggingEndpoint) {
+      let committed = false; // true only if the endpoint actually ended up at its dragged position
+
       if (this.draggingEndpoint.isInvalid) {
         const { wallGroup, originalPoints } = this.draggingEndpoint;
         const wallLine = wallGroup.findOne(`.${NodeName.WALL}`) as Konva.Line;
@@ -1370,9 +2494,11 @@ export class Design2D {
           VisualStyle.DIMENSION_COLOR as string
         );
         if (dimension) wallGroup.add(dimension);
+
+        committed = true; // valid so far — may still be reverted below by the overlap check
       }
 
-      const { wallGroup, originalPoints } = this.draggingEndpoint;
+      const { wallGroup, originalPoints, point } = this.draggingEndpoint;
 
       const wallLine = wallGroup.findOne(`.${NodeName.WALL}`) as Konva.Line;
 
@@ -1406,14 +2532,55 @@ export class Design2D {
               y: originalPoints[3]
             };
           }
+
+          committed = false; // reverted — no connection update needed
         }
       }
+
+      // Only update connections if the endpoint actually settled at a new position
+      if (committed && wallLine) {
+        const finalPoints = wallLine.points();
+        const oldPoint =
+          point === "start"
+            ? { x: originalPoints[0], y: originalPoints[1] }
+            : { x: originalPoints[2], y: originalPoints[3] };
+        const newPoint =
+          point === "start"
+            ? { x: finalPoints[0], y: finalPoints[1] }
+            : { x: finalPoints[2], y: finalPoints[3] };
+
+        // Only bother if the endpoint actually moved
+        if (Math.hypot(newPoint.x - oldPoint.x, newPoint.y - oldPoint.y) > 0.01) {
+          this.updateWallConnectionsAfterEndpointDrag(wallGroup, oldPoint, newPoint);
+          this.design2DHistoryManager.push(
+            {
+              action : ActionType.UPDATE_WALL,
+              data : {
+                oldGroups : [this.draggingEndpoint.oldWallGroup],
+                newGroups : [this.sanitizeWallHistoryJson(wallGroup.toJSON())],
+                affectedRoomNames : this.draggingEndpoint.affectedRoomGroups
+              }
+            }
+          )
+        }
+      }
+
       this.hideSnapIndicator();
       this.draggingEndpoint = null;
       this.detectRooms();
       this.stage.batchDraw();
     }
     else if (this.draggingOpening) {
+      const wallGroup = this.draggingOpening.wallGroup;
+      this.design2DHistoryManager.push(
+        {
+          action : ActionType.UPDATE_WALL,
+          data : {
+            oldGroups : [this.draggingOpening.oldWallGroup],
+            newGroups : [this.sanitizeWallHistoryJson(wallGroup.toJSON())]
+          }
+        }
+      )
       this.draggingOpening = null;
     }
   }
@@ -1433,6 +2600,12 @@ export class Design2D {
       this.clickHistory.push({ x: e.evt.clientX, y: e.evt.clientY, time: Date.now() });
       if (this.clickHistory.length > 2) {
         this.clickHistory.shift();
+      }
+
+      // Finalize a junction drag, if one was in progress
+      if (this.isJunctionDragging && this.draggingJunction) {
+        this.finalizeJunctionDrag();
+        return;
       }
 
       const worldPos = this.getWorldPointerPosition();
@@ -1456,8 +2629,328 @@ export class Design2D {
       if (this.mode === RoomEditorMode.EDIT) {
         this.handleEditMode();
       }
+
+      // Finalize a wall midpoint drag, if one was in progress
+      if (this.isWallDragging && this.draggingWallMid) {
+        const oldGroups = this.draggingWallMid.connectedWallGroupData;
+        const newGroups = this.getConnectedWallGroupData(this.draggingWallMid.wallGroup);
+        this.design2DHistoryManager.push(
+          {
+            action : ActionType.UPDATE_WALL,
+            data : {
+              oldGroups : oldGroups,
+              newGroups : newGroups
+
+            }
+          }
+        )
+        this.draggingWallMid = null;
+        this.deselectWall();
+        this.detectRooms();
+      }
     }
   };
+
+  /**
+   * Finalizes the drag operation for a junction, restoring wall geometry and userData if the drop was invalid, and updating the stage accordingly.
+   */
+  private finalizeJunctionDrag() {
+    const drag = this.draggingJunction;
+    if (!drag) return;
+
+    const moved = this.mouseMoved;
+    const reverted = moved && drag.isInvalid;
+
+    for (const w of drag.walls) {
+      const line = w.group.findOne(`.${NodeName.WALL}`) as Konva.Line | null;
+      const ud = w.group.getAttr("userData") as WallUserData | undefined;
+      if (!line || !ud) continue;
+
+      if (reverted) {
+        // invalid drop: restore geometry and all userData
+        line.points([...w.originalPoints]);
+        ud.startPoint = { x: w.originalPoints[0], y: w.originalPoints[1] };
+        ud.endPoint = { x: w.originalPoints[2], y: w.originalPoints[3] };
+        ud.connections = w.originalConnections;
+        if (ud.windows) ud.windows = w.originalWindows;
+        if (ud.doors) ud.doors = w.originalDoors;
+        this.refreshJunctionWall(w, false);
+      }
+      else {
+        this.updateExistingConnections(w.group);
+      }
+
+      line.stroke(VisualStyle.PREVIEW_STROKE as string);
+    }
+
+    if (moved && !reverted) {
+      const oldData = drag.connectedWallGroupData;
+      const newData = this.getJunctionData(drag.walls);
+      this.design2DHistoryManager.push({
+        action : ActionType.UPDATE_WALL,
+        data : {
+          oldGroups : oldData,
+          newGroups : newData
+        }
+      })
+    }
+    this.draggingJunction = null;
+
+    this.hideSnapIndicator();
+    this.hideJunctionIndicator();
+    this.stage.container().style.cursor = "default";
+    this.stage.batchDraw();
+    this.deselectWall();
+
+    // re-detect rooms only if the walls moved to a valid place
+    this.detectRooms();
+
+  }
+
+  /**
+   * Handles the movement logic for dragging a wall midpoint.
+   * @param x New world X coordinate
+   * @param y New world Y coordinate
+   */
+  private handleWallMidDragging(x: number, y: number) {
+    if (!this.draggingWallMid) return;
+
+    const { wallGroup, axis, originalPoints, startWorldPos } = this.draggingWallMid;
+
+    const wallLine = wallGroup.findOne(`.${NodeName.WALL}`) as Konva.Line;
+    if (!wallLine) return;
+
+    const deltaX = x - startWorldPos.x;
+    const deltaY = y - startWorldPos.y;
+
+    const distance = deltaX * axis.x + deltaY * axis.y;
+    const moveX = axis.x * distance;
+    const moveY = axis.y * distance;
+
+    const prevPoints = [...wallLine.points()];
+    const newPoints = [...originalPoints];
+
+    newPoints[0] += moveX;
+    newPoints[1] += moveY;
+    newPoints[2] += moveX;
+    newPoints[3] += moveY;
+
+    wallLine.points(newPoints);
+
+    const userData = wallGroup.getAttr("userData") as WallUserData;
+    if (userData) {
+      userData.startPoint = { x: newPoints[0], y: newPoints[1] };
+      userData.endPoint = { x: newPoints[2], y: newPoints[3] };
+    }
+
+    this.updateWallDimension(wallGroup);
+
+    // Length is unchanged, so openings keep their position along the wall;
+    // they only need to be redrawn at the wall's new location.
+    if (userData) {
+      if (userData.windows) this.renderWindows(wallGroup, userData);
+      if (userData.doors) this.renderDoors(wallGroup, userData);
+    }
+
+    this.updateConnectedWallsForMidDrag(wallGroup, prevPoints, newPoints);
+    this.detectRooms();
+    this.stage.batchDraw();
+  }
+
+  /**
+   * Return the array of JSON of all the connected wall groups to parent group.
+   */
+  private getConnectedWallGroupData(wallGroup: Konva.Group): string[] {
+    const connectedWallGroupData: string[] = [];
+    connectedWallGroupData.push(this.sanitizeWallHistoryJson(wallGroup.toJSON()));
+
+    const userData = wallGroup.getAttr("userData") as WallUserData;
+    if (!userData?.connections?.length) return connectedWallGroupData;
+
+    const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    if (!floorplanLayer) return connectedWallGroupData;
+
+    const groups = floorplanLayer.find(`.${NodeName.LINE_GROUP}`);
+
+    for (const connection of userData.connections) {
+      const connectedWallGroup = groups.find(
+        (group) =>
+          (group.getAttr("userData") as WallUserData)?.id ===
+          connection.connectedLineId
+      ) as Konva.Group | undefined;
+
+      if (!connectedWallGroup) continue;
+
+      connectedWallGroupData.push(this.sanitizeWallHistoryJson(connectedWallGroup.toJSON()));
+    }
+
+    return connectedWallGroupData;
+  }
+
+  /**
+   * Updates the positions of walls connected to the dragged wall midpoint.
+   * @param wallGroup The Konva group of the wall being dragged
+   * @param prevPoints The previous points of the dragged wall
+   * @param newPoints The new points of the dragged wall
+   */
+  private updateConnectedWallsForMidDrag(
+    wallGroup: Konva.Group,
+    prevPoints: number[],
+    newPoints: number[]
+  ) {
+    const userData = wallGroup.getAttr("userData") as WallUserData;
+    if (!userData?.connections?.length) return;
+
+    const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    if (!floorplanLayer) return;
+
+    // Movement of the dragged wall since the last frame
+    const dx = newPoints[0] - prevPoints[0];
+    const dy = newPoints[1] - prevPoints[1];
+    if (dx === 0 && dy === 0) return;
+
+    // How close a junction must be to an endpoint to count as a corner
+    const ENDPOINT_TOLERANCE = 2;
+
+    const groups = floorplanLayer.find(`.${NodeName.LINE_GROUP}`);
+
+    for (const connection of userData.connections) {
+      const connectedWallGroup = groups.find(
+        (g) =>
+          (g.getAttr("userData") as WallUserData)?.id ===
+          connection.connectedLineId
+      ) as Konva.Group | undefined;
+
+      if (!connectedWallGroup) {
+        console.warn("Connected wall not found:", connection.connectedLineId);
+        continue;
+      }
+
+      const connectedWall = connectedWallGroup.findOne(
+        `.${NodeName.WALL}`
+      ) as Konva.Line;
+      if (!connectedWall) continue;
+
+      const pts = [...connectedWall.points()];
+      const ip = connection.intersectionPoint;
+
+      // Where is the junction on the CONNECTED wall?
+      const dStart = Math.hypot(pts[0] - ip.x, pts[1] - ip.y);
+      const dEnd = Math.hypot(pts[2] - ip.x, pts[3] - ip.y);
+
+      const atStart = dStart <= ENDPOINT_TOLERANCE && dStart <= dEnd;
+      const atEnd = dEnd <= ENDPOINT_TOLERANCE && dEnd < dStart;
+
+      if (atStart || atEnd) {
+        const connectedData = connectedWallGroup.getAttr("userData") as WallUserData;
+
+        // Cache the state of this wall the first time we touch it (before moving it)
+        const cache = this.draggingWallMid!.connectedOriginals;
+        const wallId = connection.connectedLineId;
+        if (!cache.has(wallId)) {
+          cache.set(wallId, {
+            points: [...pts],
+            windows: connectedData?.windows ? connectedData.windows.map(w => ({ ...w })) : [],
+            doors: connectedData?.doors ? connectedData.doors.map(d => ({ ...d })) : [],
+          });
+        }
+        const orig = cache.get(wallId)!;
+
+        if (atStart) {
+          pts[0] += dx;
+          pts[1] += dy;
+        } else {
+          pts[2] += dx;
+          pts[3] += dy;
+        }
+
+        connectedWall.points(pts);
+
+        if (connectedData) {
+          connectedData.startPoint = { x: pts[0], y: pts[1] };
+          connectedData.endPoint = { x: pts[2], y: pts[3] };
+        }
+
+        this.updateWallDimension(connectedWallGroup);
+
+        // Its length changed, so reposition its doors/windows like in endpoint dragging
+        if (connectedData) {
+          const oldLength = Math.hypot(orig.points[2] - orig.points[0], orig.points[3] - orig.points[1]);
+          const newLength = Math.hypot(pts[2] - pts[0], pts[3] - pts[1]);
+
+          this.repositionOpeningsOnWall(
+            connectedWallGroup,
+            oldLength,
+            newLength,
+            orig.windows,
+            orig.doors
+          );
+          this.resolveAndValidateOpeningsOnWall(connectedWallGroup);
+
+          if (connectedData.windows) this.renderWindows(connectedWallGroup, connectedData);
+          if (connectedData.doors) this.renderDoors(connectedWallGroup, connectedData);
+        }
+      }
+      // else: T-JUNCTION on the middle of the connected wall
+      // -> connected wall stays exactly where it is
+
+      // The junction moves with the dragged wall in both cases
+      connection.intersectionPoint = { x: ip.x + dx, y: ip.y + dy };
+
+      // Keep the reverse connection (stored on the connected wall) in sync
+      const connectedData = connectedWallGroup.getAttr(
+        "userData"
+      ) as WallUserData;
+      connectedData?.connections?.forEach((c) => {
+        if (c.connectedLineId === userData.id) {
+          c.intersectionPoint = {
+            x: c.intersectionPoint.x + dx,
+            y: c.intersectionPoint.y + dy
+          };
+        }
+      });
+    }
+  }
+
+  /**
+   * Updates the dimension display for a wall after it has been moved or resized.
+   * @param wallGroup The Konva group representing the wall
+   */
+  private updateWallDimension(
+    wallGroup: Konva.Group
+  ) {
+    const wallLine = wallGroup.findOne(
+      `.${NodeName.WALL}`
+    ) as Konva.Line;
+
+    if (!wallLine) {
+      return;
+    }
+
+    const points = wallLine.points();
+
+    if (points.length < 4) {
+      return;
+    }
+
+    // Remove old dimension
+    wallGroup
+      .findOne(`.${NodeName.DIMENSION_GROUP}`)
+      ?.destroy();
+
+    // Create dimension using CURRENT wall points
+    const dimension = this.createDimension(
+      points[0],
+      points[1],
+      points[2],
+      points[3],
+      VisualStyle.DIMENSION_COLOR as string
+    );
+
+    if (dimension) {
+      wallGroup.add(dimension);
+    }
+  }
 
   /**
    * Handles the movement logic for dragging a wall endpoint.
@@ -2600,7 +4093,7 @@ export class Design2D {
     const text = new Konva.Text({
       x: midX,
       y: midY,
-      text: this.formatWallLength(length),
+      text: LengthUnitConverter.formatCanvasLength( length, (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor, LengthUnitConverter.currentUnit),
       fontSize: VisualStyle.DIMENSION_FONT_SIZE as number,
       fontFamily: VisualStyle.DIMENSION_FONT_FAMILY as string,
       fill: color,
@@ -2784,6 +4277,8 @@ export class Design2D {
    * @param active Whether to activate or deactivate the mode
    */
   public setMode(mode: RoomEditorMode, active: boolean, isExplicit: boolean = false) {
+    this.cancelPredefinedShapePlacement();
+
     if (active) {
       this.mode = mode;
       if (mode === RoomEditorMode.DRAW) {
@@ -2850,7 +4345,6 @@ export class Design2D {
    * @param wallGroup The wall group to select
    */
   private selectWall(wallGroup: Konva.Group, multiSelect: boolean = false) {
-
     this.deselectOpening();
     this.clearHoveredEntity();
 
@@ -2894,9 +4388,10 @@ export class Design2D {
    * @param cmValue The number of centimeters represented by one grid.
    */
   public setKonvaUnitScale(cmValue: number): void {
+    this.cancelPredefinedShapePlacement();
 
 
-    this.unit_conversion_factor = cmValue / 30;    // 30 cm is the default grid size
+    this.unit_conversion_factor = cmValue / 50;    // 50 cm is the default grid size
 
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (floorplanLayer) {
@@ -3067,29 +4562,11 @@ export class Design2D {
         const length = Math.sqrt(dx * dx + dy * dy);
 
         // update the text with new unit
-        node.text(this.formatWallLength(length));
+        node.text(LengthUnitConverter.formatCanvasLength( length, (Config.KONVA_UNIT_TO_CM as number) * this.unit_conversion_factor, LengthUnitConverter.currentUnit))
 
         // Adjust offset if text width changed
         node.offsetX(node.width() / 2);
         node.offsetY(node.height() / 2);
-
-        // Adjust gap for dimension lines if present
-        const textPadding = Config.DIMENSION_TEXT_PADDING as number;
-        const gap = node.width() + textPadding;
-        const leftLine = dimensionGroup.findOne(`.${NodeName.DIMENSION_LEFT_LINE}`) as Konva.Line;
-        const rightLine = dimensionGroup.findOne(`.${NodeName.DIMENSION_RIGHT_LINE}`) as Konva.Line;
-
-        if (leftLine && rightLine && length > gap) {
-          const dimData = this.calculateDimensionData(x1, y1, x2, y2);
-          if (dimData) {
-            const ux = dx / length;
-            const uy = dy / length;
-            const gapStartDist = (length - gap) / 2;
-            const gapEndDist = (length + gap) / 2;
-            leftLine.points([dimData.sx, dimData.sy, dimData.sx + ux * gapStartDist, dimData.sy + uy * gapStartDist]);
-            rightLine.points([dimData.sx + ux * gapEndDist, dimData.sy + uy * gapEndDist, dimData.ex, dimData.ey]);
-          }
-        }
       }
     });
 
@@ -3100,6 +4577,7 @@ export class Design2D {
    * Restores visibility for all wall dimensions in the floorplan layer.
    */
   private restoreWallDimensions() {
+    if (!this.areDimensionsVisible) return;
     this.getLayer(NodeName.FLOORPLAN_LAYER)?.find(`.${NodeName.DIMENSION_GROUP}`).forEach(node => {
       node.visible(true);
     });
@@ -3229,6 +4707,7 @@ export class Design2D {
    * @returns The current state of grid visibility
    */
   public enableGrid(visible: boolean): boolean {
+    this.cancelPredefinedShapePlacement();
     this.gridGroup.visible(visible);
     // If grid is enabled, hide the background image to avoid visual clutter
     if (visible) this.backgroundRect.visible(false);
@@ -3243,8 +4722,29 @@ export class Design2D {
    * @returns The current state of axis snapping
    */
   public activeSnapping(enabled: boolean): boolean {
+    this.cancelPredefinedShapePlacement();
     this.isAxisSnappingEnabled = enabled;
     return this.isAxisSnappingEnabled;
+  }
+
+  /**
+   * Enables or disables wall dragging (in EDIT mode).
+   * @param enabled Whether wall dragging should be enabled
+   * @returns The current state of wall dragging
+   */
+  public enableWallDragging(enabled: boolean): boolean {
+    this.isWallDragging = enabled;
+    return this.isWallDragging;
+  }
+
+  /**
+   * Enables or disables junction dragging (in EDIT mode).
+   * @param enabled Whether junction dragging should be enabled
+   * @returns The current state of junction dragging
+   */
+  public enableJunctionDragging(enabled: boolean): boolean {
+    this.isJunctionDragging = enabled;
+    return this.isJunctionDragging;
   }
 
   /**
@@ -3253,6 +4753,8 @@ export class Design2D {
    * @returns The new visibility state of the dimensions.
    */
   public toggleDimensions(visible: boolean): boolean {
+    this.cancelPredefinedShapePlacement();
+    this.areDimensionsVisible = visible;
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     floorplanLayer?.find(`.${NodeName.DIMENSION_GROUP}`).forEach((node) => {
       node.visible(visible);
@@ -3284,8 +4786,7 @@ export class Design2D {
     const fillLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
     const labelLayer = this.getLayer(NodeName.ROOM_LABEL_LAYER);
 
-    if (fillLayer) RoomDetector.updateRoomFills(rooms, fillLayer);
-    if (labelLayer) RoomDetector.updateRoomLabels(rooms, labelLayer);
+    if (fillLayer && labelLayer) RoomDetector.updateRoomFills(rooms, fillLayer, labelLayer);
 
     return rooms;
   }
@@ -3306,19 +4807,22 @@ export class Design2D {
    * Exports the 2D floorplan layout, detected rooms, house boundaries, and unit scale.
    * @returns A promise resolving to the floorplan data.
    */
-  public async get2ddata(): Promise<{ layer: any, rooms: any[], houseBoundary: Room | null, unit_conversion_factor: number }> {
+  public async get2ddata(): Promise<{ layer: any, roomsLayer: any, houseBoundary: Room | null, unit_conversion_factor: number }> {
+    this.cancelPredefinedShapePlacement();
     const layer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+    const roomsLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
     if (!layer) {
-      return { layer: null, rooms: [], houseBoundary: null, unit_conversion_factor: this.unit_conversion_factor };
+      return { layer: null, roomsLayer: null, houseBoundary: null, unit_conversion_factor: this.unit_conversion_factor };
     } else {
-      const rooms = await this.detectRooms();
+      await this.detectRooms();
       const houseBoundary = await this.getHouseBoundary();
 
       const jsonString = layer.toJSON();
+      const roomsJson = roomsLayer ? roomsLayer.toJSON() : "{}";
 
       return {
         layer: JSON.parse(jsonString),
-        rooms: rooms,
+        roomsLayer: roomsLayer ? JSON.parse(roomsJson) : {},
         houseBoundary: houseBoundary,
         unit_conversion_factor: this.unit_conversion_factor
       };
@@ -3993,6 +5497,50 @@ export class Design2D {
   }
 
   /**
+   * Gets the affected room names from the room-fill layer due to wall deletion.
+   * @param deletedWallGroups - The wall groups being deleted.
+   * @returns Map of room group IDs to room names.
+   */
+  private getAffectedRoomGroups(deletedWallGroups: Konva.Group[]): Map<string, string> {
+    const roomFillLayer = this.getLayer(NodeName.ROOM_FILL_LAYER);
+    const affectedRoomNames = new Map<string, string>();
+
+    if (!roomFillLayer) {
+      return affectedRoomNames;
+    }
+
+    // IDs of the walls being deleted.
+    const deletedWallIds = new Set<string>(
+      deletedWallGroups
+        .map((group) => group.getAttr("userData")?.id)
+        .filter((id): id is string => Boolean(id))
+    );
+
+    roomFillLayer.getChildren().forEach((node) => {
+      if (!(node instanceof Konva.Group)) {
+        return;
+      }
+
+      const roomWallIds: string[] = node.getAttr("walls") ?? [];
+
+      // Check whether the room contains any deleted wall.
+      const isAffected = roomWallIds.some((wallId) =>
+        deletedWallIds.has(wallId)
+      );
+
+      if (isAffected) {
+        const roomLabelId = node.getAttr("roomLabelId");
+        const roomName = node.getAttr("roomName");
+
+        if (roomLabelId && roomName) {
+          affectedRoomNames.set(roomLabelId, roomName);
+        }
+      }
+    });
+    return affectedRoomNames;
+  }
+
+  /**
    * Draws the layout based on the provided JSON data.
    * @param jsonData The JSON object containing detections with drawing points for walls.
    */
@@ -4004,7 +5552,7 @@ export class Design2D {
     const detections = jsonData.detections;
 
     let i = 0;
-
+    const wallHistory : any[] = [];
     detections.forEach((detection: any) => {
       if (detection.label === "Wall" && detection.drawing_points) {
         const points = detection.drawing_points;
@@ -4029,7 +5577,16 @@ export class Design2D {
           if (dimension) {
             wallGroup.add(dimension);
           }
+          wallHistory.push(wallGroup.toJSON())
         }
+
+        this.design2DHistoryManager.push({
+          action : ActionType.ADD_WALL,
+          data : {
+            oldGroups : [],
+            newGroups : wallHistory
+          }
+        });        
       }
     });
 
@@ -4109,10 +5666,10 @@ export class Design2D {
           if (!isOverlapping) {
             if (detection.label === "Window") {
               if (!userData.windows) userData.windows = [];
-              userData.windows.push({ id: uuidv4(), offset: offset, width: itemWidth });
+              userData.windows.push({ id: uuidv4(), offset: offset, width: itemWidth, height: Config.DEFAULT_WINDOW_HEIGHT as number, windowFloorDistance: Config.DEFAULT_WINDOW_FLOOR_DISTANCE as number });
             } else if (detection.label === "Door") {
               if (!userData.doors) userData.doors = [];
-              userData.doors.push({ id: uuidv4(), offset: offset, width: itemWidth });
+              userData.doors.push({ id: uuidv4(), offset: offset, width: itemWidth, height: Config.DEFAULT_DOOR_HEIGHT as number });
             }
           }
         }
@@ -4130,6 +5687,7 @@ export class Design2D {
    * Automatically scales and centers the drawing to fit the canvas view.
    */
   public fitLayout() {
+    this.cancelPredefinedShapePlacement();
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
     if (!floorplanLayer || floorplanLayer.children.length === 0) return;
 
@@ -4192,6 +5750,17 @@ export class Design2D {
   public deleteSelectedEntity() {
     // Delete selected wall
     if (this.selectedWallGroups.length !== 0) {
+        const oldGroups = this.selectedWallGroups.map(group =>
+            this.sanitizeWallHistoryJson(group.toJSON())
+        );
+        this.design2DHistoryManager.push({
+          action : ActionType.DELETE_WALL,
+          data : {
+            oldGroups,
+            affectedRoomNames : this.getAffectedRoomGroups(this.selectedWallGroups)
+          }
+        });
+
       this.selectedWallGroups.forEach(group => group.destroy());
       this.selectedWallGroups = [];
 
@@ -4209,6 +5778,8 @@ export class Design2D {
         type === "window"
           ? (group.getParent() as Konva.Group)
           : (group.getParent()?.getParent() as Konva.Group);
+        
+      const oldData=wallGroup.toJSON();
 
       const userData = wallGroup?.getAttr("userData") as WallUserData | undefined;
 
@@ -4233,11 +5804,22 @@ export class Design2D {
           }
         }
       }
-      wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+      if (this.areDimensionsVisible) {
+        wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+      }
 
       group.destroy();
       this.selectedOpening = null;
-
+      const newData = wallGroup.toJSON();
+      this.design2DHistoryManager.push(
+        {
+          action : ActionType.UPDATE_WALL,
+          data : {
+            oldGroups : [oldData],
+            newGroups : [newData]
+          }
+        }
+      )
       this.draw();
       this.detectRooms();
       this.stage.batchDraw();
@@ -4257,6 +5839,7 @@ export class Design2D {
     this.getLayer(NodeName.ROOM_LABEL_LAYER)?.destroyChildren();
 
     this.lastPoint = null;
+    this.design2DHistoryManager.clear();
     this.draw();
   }
 
@@ -4349,7 +5932,9 @@ export class Design2D {
     group.findOne(`.${NodeName.OPENING_DIMENSION_GROUP}`)?.hide();
 
     const wallGroup = this.getWallGroupForOpening(group, type);
-    wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+    if (this.areDimensionsVisible) {
+      wallGroup?.findOne(`.${NodeName.DIMENSION_GROUP}`)?.visible(true);
+    }
 
     this.selectedOpening = null;
     this.stage.batchDraw();
@@ -4361,6 +5946,15 @@ export class Design2D {
    * @returns {void}
    */
   private updateHoverHighlight() {
+
+    if (this.junctionDot?.visible() && this.junctionData) {
+      this.setHoveredEntity({
+        type: "wall",
+        group: this.junctionData.walls.map((w) => w.group),
+      });
+      return;
+    }
+
     const openingInfo = this.getOpeningUnderPointer();
 
     if (openingInfo) {
@@ -4376,7 +5970,7 @@ export class Design2D {
     if (wallInfo) {
       this.setHoveredEntity({
         type: "wall",
-        group: wallInfo.wallGroup,
+        group: [wallInfo.wallGroup],
       });
       return;
     }
@@ -4391,27 +5985,35 @@ export class Design2D {
    */
   private setHoveredEntity(
     entity:
-      | { type: "wall"; group: Konva.Group }
+      | { type: "wall"; group: Konva.Group[] }
       | { type: "window"; group: Konva.Group }
       | { type: "door"; group: Konva.Group },
   ) {
+    const newGroups = Array.isArray(entity.group) ? entity.group : [entity.group];
+
     if (
       this.hoveredEntity &&
-      this.hoveredEntity.type === entity.type &&
-      this.hoveredEntity.group === entity.group
+      this.hoveredEntity.type === entity.type
     ) {
-      return;
+      const curGroups = Array.isArray(this.hoveredEntity.group) ? this.hoveredEntity.group : [this.hoveredEntity.group];
+      if (
+        curGroups.length === newGroups.length &&
+        curGroups.every((g) => newGroups.includes(g))
+      ) {
+        return; // same entity/walls as before, nothing to restyle
+      }
     }
 
     this.clearHoveredEntity();
     this.hoveredEntity = entity;
 
-    if (this.isEntitySelected(entity.type, entity.group)) {
-      return;
+    let changed = false;
+    for (const g of newGroups) {
+      if (this.isEntitySelected(entity.type, g)) continue; // keep the selected style
+      this.applyEntityStyle(entity.type, g, "hover");
+      changed = true;
     }
-
-    this.applyEntityStyle(entity.type, entity.group, "hover");
-    this.stage.batchDraw();
+    if (changed) this.stage.batchDraw();
   }
 
   /**
@@ -4422,10 +6024,11 @@ export class Design2D {
   private clearHoveredEntity() {
     if (!this.hoveredEntity) return;
 
-    const { type, group } = this.hoveredEntity;
-
-    if (!this.isEntitySelected(type, group)) {
-      this.applyEntityStyle(type, group, "normal");
+    const { type } = this.hoveredEntity;
+    for (const g of Array.isArray(this.hoveredEntity.group) ? this.hoveredEntity.group : [this.hoveredEntity.group]) {
+      if (!this.isEntitySelected(type, g)) {
+        this.applyEntityStyle(type, g, "normal");
+      }
     }
 
     this.hoveredEntity = null;
@@ -4838,7 +6441,10 @@ export class Design2D {
   }
 
   /**
-   * Exports the current Konva stage as a JSON file download.
+   * Serializes the current Konva stage as JSON.
+   *
+   * @returns {string} The serialized floorplan stage. This method does not trigger a file download.
+   * @public
    */
   public exportJson(): any {
     const json = this.stage.toJSON();
@@ -4894,77 +6500,161 @@ export class Design2D {
       this.previewWindow = interactionLayer.findOne(`.${NodeName.WINDOW_GROUP}`) as Konva.Group;
       this.previewDoor = interactionLayer.findOne(`.${NodeName.DOOR_GROUP}`) as Konva.Group;
     }
+
+    this.stage.find<Konva.Group>(`.${NodeName.ROOM}`).forEach(group => {
+      const poly = group.findOne<Konva.Line>('Line');
+      if (poly && !poly.fillPatternImage() && !poly.fill()) {
+        RoomDetector.applyFloorTexture(poly);
+      }
+    });
+    const newWallGroups: string[] = [];
+
+    this.stage
+      .findOne<Konva.Layer>(`.${NodeName.FLOORPLAN_LAYER}`)
+      ?.getChildren()
+      .forEach((group) => {
+        newWallGroups.push(
+          this.sanitizeWallHistoryJson(group.toJSON())
+        );
+      });
+
+    this.design2DHistoryManager.push({
+      action: ActionType.ADD_WALL,
+      data: {
+        oldGroups: [],
+        newGroups: newWallGroups,
+      },
+    });
     this.stage.draw();
 
     this.fitLayout();
   }
 
   /**
-   * Adds a predefined shape layout to the canvas as a draggable preview group.
-   *
-   * @param shapeType - The predefined shape JSON string (representing L-Shape, Rectangle, Triangle, or Square).
-   */
+  * Adds a predefined floorplan shape (L-shape, Rectangle, Triangle, or Square)
+  * either as a draggable preview or directly at the center of the canvas.
+  *
+  * @param shapeType - The predefined shape to add.
+  * @param isPreview - Whether to add the shape as a draggable preview.
+  */
   public addPredefinedShape(
     shapeType:
       | Predefined2DShapes.L_SHAPE
       | Predefined2DShapes.RECTANGLE
       | Predefined2DShapes.TRIANGLE
-      | Predefined2DShapes.SQUARE
-  ) {
+      | Predefined2DShapes.SQUARE,
+     isPreview: boolean
+  ): void {
+    this.cancelPredefinedShapePlacement();
+
     const jsonData = JSON.parse(shapeType);
     const layerJson = Konva.Node.create(jsonData) as Konva.Layer;
 
-    const preview = new Konva.Group({
-      opacity: 0.5,
-      listening: true,
-      draggable: true,
-      name: "previewFloorplan",
-    });
+    if (isPreview) {
+      const preview = new Konva.Group({
+        opacity: 0.5,
+        listening: true,
+        draggable: true,
+        name: "previewFloorplan",
+      });
 
-    layerJson.getChildren().forEach((child) => {
-      preview.add(child.clone());
-    });
+      layerJson.getChildren().forEach((child) => {
+        preview.add(child.clone());
+      });
 
-    const box = preview.getClientRect({
-      skipTransform: true,
-    });
+      const box = preview.getClientRect({
+        skipTransform: true,
+      });
 
-    preview.offset({
-      x: box.x + box.width / 2,
-      y: box.y + box.height / 2,
-    });
+      preview.offset({
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+      });
 
-    const worldPointer = this.getWorldPointerPosition();
-    if (worldPointer) {
-      preview.position(worldPointer);
+      const worldPointer = this.getWorldPointerPosition();
+      if (worldPointer) {
+        preview.position(worldPointer);
+      }
+
+      this.previewGroup = preview;
+
+      const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+      floorplanLayer?.add(preview);
+
+
+      // Begin dragging immediately
+      preview.startDrag();
+
+      preview.on("dragstart", () => {});
+
+      preview.on("dragmove", () => {});
+
+      preview.on("dragend", (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (this.stage && e.evt?.target && this.stage.container().contains(e.evt.target as Node)) {
+          //Valid drop place the shape permanently on the canvas
+          this.placePreview(true);
+        } else {
+          // Clicked over Overlay UI keep the shape active on cursor
+          if (this.previewGroup) {
+            this.previewGroup.startDrag();
+          }
+        }
+      });
+    } else {
+      // Get the floorplan layer where the shape will be placed
+      const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+      if (!floorplanLayer) return;
+
+      // Create a group to hold all wall elements of the predefined shape
+      const shapeGroup = new Konva.Group();
+      layerJson.getChildren().forEach((child) => {
+        shapeGroup.add(child.clone());
+      });
+
+      // Calculate the shape bounding box and offset its origin to its center
+      const box = shapeGroup.getClientRect({ skipTransform: true });
+      shapeGroup.offset({
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+      });
+
+      // Convert the container center point to world coordinates using current stage scale and position
+      const scale = this.stage.scaleX();
+      const centerX = (this.container.clientWidth / 2 - this.stage.x()) / scale;
+      const centerY = (this.container.clientHeight / 2 - this.stage.y()) / scale;
+      shapeGroup.position({ x: centerX, y: centerY });
+
+      // Add the shape directly to the floorplan layer and redraw
+      floorplanLayer.add(shapeGroup);
+      floorplanLayer.draw();
+      this.previewGroup = shapeGroup;
+      this.placePreview(false);
     }
-
-    this.previewGroup = preview;
-
-    const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
-    floorplanLayer?.add(preview);
-
-    // Begin dragging immediately
-    preview.startDrag();
-    preview.on("dragstart", () => {
-    });
-
-    preview.on("dragmove", () => {
-
-    });
-
-    preview.on("dragend", () => {
-      this.placePreview();
-      preview.stopDrag();
-    });
   }
 
   /**
-   * Place preview.
-   *
-   * @returns {void}
+   * set undo-redo limit to stack
+   * @param {Number} limit
    */
-  private placePreview() {
+  public setUndoRedoLimit(limit : number){
+    this.design2DHistoryManager?.setUndoRedoLimit(limit);
+  }
+
+  /**
+   * Get the undo-redo-satck size
+   * @returns {Undo_Redo_Payload} payload
+   */
+  public getUndoRedoPayload() : Undo_Redo_Payload{
+    return this.design2DHistoryManager.getUndoRedoPayload();
+  }
+
+  /**
+  * Finalizes the preview by adding its walls to the floorplan,
+  * creating dimensions, establishing wall connections and updating history.
+  *
+  * @param isPreview - Whether the shape was added through preview placement.
+  */
+  private placePreview(isPreview: boolean): void {
     if (!this.previewGroup) return;
 
     const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
@@ -4972,6 +6662,11 @@ export class Design2D {
 
     const children = [...this.previewGroup.getChildren()];
 
+    // Track the wall groups created in this placement so we can wire
+    // connections after ALL of them exist (a wall's neighbour might be
+    // created later in this same loop).
+    const newlyCreatedWalls: Konva.Group[] = [];
+    const wallHistory : any[] = [];
     children.forEach((child) => {
       // Absolute position before changing parent
       const absPos = child.getAbsolutePosition();
@@ -4997,47 +6692,202 @@ export class Design2D {
         let ey = points[3] + localPos.y;
 
         const wall = this.floorplan.newWall(sx, sy, ex, ey);
+        newlyCreatedWalls.push(wall);
+
         // Create permanent dimension for the new wall
         const dimension = this.createDimension(sx, sy, ex, ey, VisualStyle.DIMENSION_COLOR as string);
 
         if (dimension) {
           wall.add(dimension);
         }
+        
       }
-
-      child.opacity(1);
-      child.listening(true);
+      if (isPreview) {
+        child.opacity(1);
+        child.listening(true);
+      } 
       child.destroy();
+    });
+
+
+    // Wire connections for every wall placed in this shape:
+    // - to its neighbours within the same shape (e.g. rectangle's own corners)
+    // - to any pre-existing wall on the canvas the shape happens to touch/snap onto
+    // Done after the loop above so every wall in the shape already exists
+    // by the time we search for touching walls.
+    newlyCreatedWalls.forEach((wallGroup) => {
+      const userData = wallGroup.getAttr("userData") as WallUserData;
+      if (!userData) return;
+
+      this.connectWallAtPoint(wallGroup, userData.startPoint);
+      this.connectWallAtPoint(wallGroup, userData.endPoint);
+      wallHistory.push(wallGroup.toJSON()) 
+    });
+    this.design2DHistoryManager.push({
+      action : ActionType.ADD_WALL,
+      data : {
+        oldGroups : [],
+        newGroups :wallHistory
+      }
     });
 
     this.previewGroup.destroy();
     this.previewGroup = null;
-    this.stage.off(".preview");
+    if (isPreview) {
+      this.stage.off(".preview");
+    }
 
     floorplanLayer.draw();
     this.detectRooms();
   }
 
   /**
-  * Sets the unit for displaying wall lengths and dimensions on the 2D canvas,
-  * then refreshes all dimensions, window labels, and door labels.
-  * @public
-  * @param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
-  * @returns {void}
+  * Updates the connections for an existing wall group.
+  *
+  * @param wallGroup - The Konva.Group representing the wall to update connections for.
   */
-  public setLengthUnit(unit: LengthUnit | string): void {
-    this.currentUnit = normalizeLengthUnit(unit);
-    this.refreshDimensions();
-    this.refreshWindows();
-    this.refreshDoors();
+  private updateExistingConnections(wallGroup: Konva.Group) {
+    const wallData =
+      wallGroup.getAttr("userData") as WallUserData | undefined;
+
+    if (!wallData?.connections?.length) return;
+
+    const line = wallGroup.findOne(`.${NodeName.WALL}`) as Konva.Line | null;
+
+    if (!line) return;
+
+    const points = line.points();
+
+    const start = {
+      x: points[0], y: points[1],
+    };
+
+    const end = {
+      x: points[2], y: points[3],
+    };
+
+    /*
+     * Make a copy because connections can be removed
+     * while iterating.
+     */
+    for (const connection of [...wallData.connections]) {
+
+      const connectedGroup = this.getWallGroupById(connection.connectedLineId);
+
+      if (!connectedGroup) {
+        continue;
+      }
+
+      const connectedData = connectedGroup.getAttr("userData") as WallUserData | undefined;
+
+      if (!connectedData) continue;
+
+      const connectedLine = connectedGroup.findOne(`.${NodeName.WALL}`) as Konva.Line | null;
+
+      if (!connectedLine) continue;
+
+      const connectedPoints = connectedLine.points();
+
+      if (connectedPoints.length < 4) continue;
+
+      /*
+       * Check the CURRENT geometry of both walls.
+       */
+      const intersection = this.getLineSegmentIntersection(
+        start.x,
+        start.y,
+        end.x,
+        end.y,
+
+        connectedPoints[0],
+        connectedPoints[1],
+        connectedPoints[2],
+        connectedPoints[3]
+      );
+
+      /*
+       * They no longer intersect.
+       *
+       * Remove the connection from BOTH walls.
+       */
+      if (!intersection) {
+        wallData.connections = wallData.connections.filter(c => c.id !== connection.id);
+
+        connectedData.connections = (connectedData.connections ?? []).filter(c => c.id !== connection.id);
+
+        wallData.isConnected = wallData.connections.length > 0;
+
+        connectedData.isConnected = connectedData.connections.length > 0;
+
+        connectedGroup.setAttr("userData", connectedData);
+
+        continue;
+      }
+
+      /*
+       * They are still connected.
+       *
+       * Keep the SAME connection ID.
+       * Only update the intersection point.
+       */
+      const newIntersection = {
+        x: intersection.x,
+        y: intersection.y,
+      };
+
+      connection.intersectionPoint = { ...newIntersection, };
+
+      /*
+       * Find the mirrored connection using the
+       * stable UUID.
+       */
+      const mirroredConnection = connectedData.connections?.find(
+        c => c.id === connection.id
+      );
+
+      if (mirroredConnection) {
+        mirroredConnection.intersectionPoint = { ...newIntersection, };
+      }
+
+      connectedGroup.setAttr("userData", connectedData);
+    }
+
+    wallData.isConnected = wallData.connections.length > 0;
+
+    wallGroup.setAttr("userData", wallData);
   }
 
   /**
-  * Gets the currently active display length unit on the 2D canvas.
-  * @public
-  * @returns {LengthUnit} The current length unit (e.g., LengthUnit.MM).
+  * Retrieves the wall group associated with a given wall ID.
+  *
+  * @param wallId - The ID of the wall to retrieve.
   */
-  public getLengthUnit(): LengthUnit {
-    return this.currentUnit;
+  private getWallGroupById(
+    wallId: string
+  ): Konva.Group | null {
+    const floorplanLayer = this.getLayer(NodeName.FLOORPLAN_LAYER);
+
+    if (!floorplanLayer) return null;
+
+    const wallGroups = floorplanLayer.find(`.${NodeName.LINE_GROUP}`) as Konva.Group[];
+
+    return (
+      wallGroups.find(group => {
+        const data = group.getAttr("userData") as WallUserData | undefined;
+
+        return data?.id === wallId;
+      }) ?? null
+    );
+  }
+
+  /**
+  * Sets the unit for displaying wall lengths and dimensions on the 2D canvas,
+  * then refreshes all dimensions, window labels, and door labels.
+  * @internal
+  */
+  public update2DLengthUnit(): void {
+    this.refreshDimensions();
+    this.refreshWindows();
+    this.refreshDoors();
   }
 }

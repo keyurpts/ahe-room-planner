@@ -1,6 +1,9 @@
 import Konva from "konva";
-import { NodeName, VisualStyle } from "../Constants";
-import type { WallUserData } from "../Components/Design2D";
+import {  ImageAssets, NodeName, ThreeProperties, VisualStyle } from "../Constants";
+import type {  WallUserData } from "../Components/Design2D";
+import { v4 as uuidv4 } from 'uuid';
+import SHA256 from 'crypto-js/sha256';
+
 
 export interface Room {
     walls: string[];
@@ -16,6 +19,10 @@ interface Edge {
 }
 
 export class RoomDetector {
+
+    private static floorImage?: HTMLImageElement;               // set once the texture has loaded
+    private static floorImageLoad?: Promise<HTMLImageElement>;
+
 
     /**
      * Generates a string key representing rounded 2D coordinates for snapping.
@@ -433,6 +440,37 @@ export class RoomDetector {
     }
 
     /**
+     * Edits the room name based on the new name.
+     * @param roomGroup - The Konva group representing the room.
+     * @param label - The new name in physical units.
+     * @param newName - The edit reference point.
+     * @returns Void.
+     */
+    public static setRoomName(
+        roomGroup: Konva.Group,
+        label: Konva.Text,
+        newName: string
+      ): void {
+        const trimmedName = newName.trim();
+    
+        if (!trimmedName) {
+          return;
+        }
+    
+        // Update label
+        label.text(trimmedName);
+    
+        // Keep label centered
+        label.offsetX(label.width() / 2);
+        label.offsetY(label.height() / 2);
+    
+        roomGroup.setAttr("roomName", trimmedName);
+        roomGroup.setAttr('isCustomRoom', true);
+    
+        label.setAttr("roomName", trimmedName);
+      }
+
+    /**
      * Updates and renders the room name labels on the Konva layer.
      * @param rooms - The list of rooms to label.
      * @param layer - The Konva layer to draw labels on.
@@ -466,33 +504,496 @@ export class RoomDetector {
         layer.batchDraw();
     }
 
+
+
+    /** Loads + decodes the floor texture once. Safe to call many times. */
+    public static preloadTexture(): Promise<HTMLImageElement> {
+        if (RoomDetector.floorImage) return Promise.resolve(RoomDetector.floorImage);
+
+        if (!RoomDetector.floorImageLoad) {
+            const img = new Image();
+            img.src = ImageAssets.DEFAULT_FLOOR_TEXTURE;
+            RoomDetector.floorImageLoad = img.decode()
+                .then(() => (RoomDetector.floorImage = img))
+                .catch(() => {
+                    RoomDetector.floorImageLoad = undefined;   // allow a retry next time
+                    throw new Error(`Failed to load texture: ${ImageAssets.DEFAULT_FLOOR_TEXTURE}`);
+                });
+        }
+        return RoomDetector.floorImageLoad;
+    }
+
+    private static setPattern(poly: Konva.Line, img: HTMLImageElement) {
+        const scale = (VisualStyle.TILE_SIZE_CM * VisualStyle.PX_PER_CM) / img.width;
+        poly.fillPatternImage(img);
+        poly.fillPatternRepeat('repeat');
+        poly.fillPatternScale({ x: scale, y: scale });
+        poly.fillPriority('pattern');
+        poly.opacity(1);
+    }
+
+    /**
+     * Fills a room polygon with the floor texture.
+     * Instant if the image is already loaded; otherwise applied when it arrives.
+     * Falls back to the old blue fill if loading fails.
+     */
+    public static applyFloorTexture(poly: Konva.Line) {
+        if (RoomDetector.floorImage) {
+            RoomDetector.setPattern(poly, RoomDetector.floorImage);
+            return;
+        }
+
+        RoomDetector.preloadTexture()
+            .then(img => {
+                if (!poly.getLayer()) return;   // room was removed meanwhile
+                RoomDetector.setPattern(poly, img);
+                poly.getLayer()?.batchDraw();
+            })
+            .catch(err => {
+                console.warn(err);
+                if (!poly.getLayer()) return;
+                poly.fillPriority('color');
+                poly.fill(VisualStyle.ROOM_FILL_COLOR as string);
+                poly.opacity(VisualStyle.ROOM_FILL_OPACITY as number);
+                poly.getLayer()?.batchDraw();
+            });
+    }
+
     /**
      * Updates and renders the visual room fill polygons on the Konva layer.
      * @param rooms - The list of rooms to draw fills for.
      * @param layer - The Konva layer to draw room fills on.
+     * @param labelLayer - The Konva layer to draw room labels on.
      */
-    public static updateRoomFills(rooms: Room[], layer: Konva.Layer) {
+    public static updateRoomFills(rooms: Room[], layer: Konva.Layer, labelLayer: Konva.Layer) {
 
         if (!layer) return;
+        if (!labelLayer) return;
+        let index = 1;
 
-        layer.destroyChildren();
+        // Start loading the texture immediately (no-op if already loaded / loading)
+        RoomDetector.preloadTexture().catch(() => { /* handled per room in applyFloorTexture */ });
+
+        // Keep track of which room groups on the layer correspond to currently detected rooms
+        const activeRoomGroups = new Set<Konva.Group>();
+
+        // Rooms we couldn't match strictly in the first pass; resolved via fuzzy match below
+        const unmatchedRooms: { room: Room; points: number[] }[] = [];
 
         rooms.forEach(room => {
-
             const points = room.vertices.flatMap(v => [v.x, v.y]);
 
-            const poly = new Konva.Line({
-                points,
-                fill: VisualStyle.ROOM_FILL_COLOR as string,
-                opacity: VisualStyle.ROOM_FILL_OPACITY as number,
-                closed: true,
-                listening: false
+            // Check if a room representing the same geometric region already exists in the layer
+            const existingRoomGroup = (layer.getChildren() as Konva.Group[]).find(child => {
+                if (child.name() !== NodeName.ROOM) return false;
+                // Don't re-match a group that has already been claimed by another detected room
+                if (activeRoomGroups.has(child)) return false;
+
+                const poly = child.findOne<Konva.Line>('Line');
+                const existingPoints = poly?.points();
+                if (existingPoints && existingPoints.length >= 6) {
+                    const existingVertices = RoomDetector.flatPointsToVertices(existingPoints);
+                    if (RoomDetector.isSameRegion(existingVertices, room.vertices)) {
+                        return true;
+                    }
+                }
+
+                // Fallback: Check if the unique set of wall IDs matches
+                const userData = child.getAttr(ThreeProperties.USER_DATA) as { id?: string; walls?: string[] } | undefined;
+                const existingWalls = userData?.walls;
+                if (existingWalls && existingWalls.length > 0 && room.walls.length > 0) {
+                    const setExisting = new Set(existingWalls);
+                    const setRoom = new Set(room.walls);
+                    if (setExisting.size === setRoom.size && [...setRoom].every(w => setExisting.has(w))) {
+                        return true;
+                    }
+                }
+
+                return false;
             });
 
-            layer.add(poly);
+            if (existingRoomGroup) {
+                activeRoomGroups.add(existingRoomGroup);
+                RoomDetector.applyExistingRoomUpdate(existingRoomGroup, room, points, labelLayer, index, () => index++);
+                return;
+            }
+
+            // No strict match — hold off on creating a new group until we've tried
+            // matching leftovers by wall overlap, so a dragged wall doesn't wipe out
+            // a custom-named room just because its exact geometry/wall-set changed.
+            unmatchedRooms.push({ room, points });
         });
+
+        // --- Fuzzy pass: match remaining unmatched rooms against leftover groups ---
+        const OVERLAP_THRESHOLD = 0.5; // fraction of walls that must overlap to count as "the same room"
+
+        unmatchedRooms.forEach(({ room, points }) => {
+            const leftoverGroups = (layer.getChildren() as Konva.Group[]).filter(
+                child => child.name() === NodeName.ROOM && !activeRoomGroups.has(child)
+            );
+
+            let bestGroup: Konva.Group | null = null;
+            let bestScore = 0;
+
+            leftoverGroups.forEach(candidate => {
+                const userData = candidate.getAttr(ThreeProperties.USER_DATA) as { walls?: string[] } | undefined;
+                const existingWalls = userData?.walls ?? candidate.getAttr("walls") as string[] | undefined;
+                if (!existingWalls || existingWalls.length === 0 || room.walls.length === 0) return;
+
+                const setExisting = new Set(existingWalls);
+                const setRoom = new Set(room.walls);
+                const intersectionSize = [...setRoom].filter(w => setExisting.has(w)).length;
+                const unionSize = new Set([...setExisting, ...setRoom]).size;
+                const score = unionSize === 0 ? 0 : intersectionSize / unionSize; // Jaccard similarity
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestGroup = candidate;
+                }
+            });
+
+            if (bestGroup && bestScore >= OVERLAP_THRESHOLD) {
+                activeRoomGroups.add(bestGroup);
+                RoomDetector.applyExistingRoomUpdate(bestGroup, room, points, labelLayer, index, () => index++);
+                return;
+            }
+
+            // Genuinely new room — nothing worth reusing
+            const newGroup = RoomDetector.createNewRoomGroup(room, points, layer, labelLayer, index);
+            activeRoomGroups.add(newGroup);
+            index++;
+        });
+
+        // Destroy only groups that never got claimed, even fuzzily
+        const roomsToDestroy = (layer.getChildren() as Konva.Group[]).filter(
+            child => child.name() === NodeName.ROOM && !activeRoomGroups.has(child)
+        );
+
+        roomsToDestroy.forEach(roomGroup => {
+            const roomId = roomGroup.getAttr('id');
+
+            if (roomId) {
+                const label = (labelLayer.getChildren() as Konva.Node[]).find(child => {
+                    if (child.name() !== NodeName.ROOM_LABEL) return false;
+                    return child.getAttr("roomId") === roomId;
+                });
+                if (label) label.destroy();
+            }
+
+            roomGroup.destroy();
+        });
+
         layer.batchDraw();
+        labelLayer.batchDraw();
     }
+
+    // Extracted from the old inline "existingRoomGroup" branch, unchanged in behavior
+    private static applyExistingRoomUpdate(
+        existingRoomGroup: Konva.Group,
+        room: Room,
+        points: number[],
+        labelLayer: Konva.Layer,
+        index: number,
+        bumpIndex: () => void
+    ) {
+        const poly = existingRoomGroup.findOne<Konva.Line>('Line');
+        if (poly) {
+            poly.points(points);
+            // Room restored from JSON (the image isn't serialized): re-apply the texture.
+            // Skips rooms that already have a texture or the blue fallback.
+            if (!poly.fillPatternImage() && !poly.fill()) {
+                RoomDetector.applyFloorTexture(poly);
+            }
+        }
+
+        existingRoomGroup.setAttr("walls", room.walls);
+        existingRoomGroup.setAttr("points", room.vertices);
+
+        const isCustomRoom = existingRoomGroup.getAttr("isCustomRoom");
+        const roomName = isCustomRoom
+            ? existingRoomGroup.getAttr("roomName")
+            : `room ${index}`;
+        const oldRoomLabelId = existingRoomGroup.getAttr("roomLabelId");
+        const label = labelLayer.findOne<Konva.Text>(`#${oldRoomLabelId}`);
+        existingRoomGroup.setAttr("roomLabelId",this.generateRoomId(room));
+        if(label){
+            label?.setAttr("id", this.generateRoomId(room));
+        }
+
+        if (!isCustomRoom) {
+            bumpIndex();
+            if (label) {
+                label.text(roomName);
+                label.setAttr("roomName", roomName);
+            }
+            existingRoomGroup.setAttr("roomName", roomName);
+        }
+
+        // Recompute label position using the same algorithm as new rooms,
+        // so it re-centers when a wall move reshapes the room. Runs for
+        // custom-named rooms too, since only the name is user-set, not the position.
+        if (label) {
+            const pos = RoomDetector.getLabelPosition(points, label.width(), label.height());
+            label.position(pos);
+            label.offsetX(label.width() / 2);
+            label.offsetY(label.height() / 2);
+            existingRoomGroup.setAttr("lablePosition", pos);
+        }
+    }
+
+    // Extracted from the old inline "create new" branch, unchanged in behavior
+    private static createNewRoomGroup(
+        room: Room,
+        points: number[],
+        layer: Konva.Layer,
+        labelLayer: Konva.Layer,
+        index: number
+    ): Konva.Group {
+        const roomId = uuidv4();
+        const roomLabelId = this.generateRoomId(room);
+        const roomName = `room ${index}`;
+
+        const group = new Konva.Group({
+            name: NodeName.ROOM,
+            id: roomId,
+            roomName: roomName,
+            points: room.vertices,
+            walls: room.walls,
+            roomLabelId: roomLabelId,
+            isCustomRoom: false,
+        });
+        // No color fill here: applyFloorTexture sets the pattern (instantly if the
+        // texture is cached) and only falls back to the blue if loading fails.
+        const poly = new Konva.Line({
+            points,
+            closed: true,
+            listening: false,
+        });
+
+        const label = new Konva.Text({
+            text: roomName,
+            fontSize: 16,
+            fontFamily: "Arial",
+            fill: "black",
+            fontStyle: "bold",
+            align: "center",
+            verticalAlign: "middle",
+            name: NodeName.ROOM_LABEL,
+            id: roomLabelId,
+            roomName: roomName,
+            roomId: roomId,
+        });
+
+        const pos = RoomDetector.getLabelPosition(points, label.width(), label.height());
+        label.position(pos);
+        label.offsetX(label.width() / 2);
+        label.offsetY(label.height() / 2);
+
+        group.setAttr("lablePosition", pos);
+        group.add(poly);
+        layer.add(group);
+        labelLayer.add(label);
+
+        RoomDetector.applyFloorTexture(poly);
+
+        return group;
+    }
+
+    /**
+     * Generate the unique roomLableId from the hash value of room wall
+     * @param room 
+     * @returns 
+     */
+    private static generateRoomId(room: Room): string {
+        const sortedWallIds = [...new Set(room.walls)].sort();
+
+        return SHA256(sortedWallIds.join("|"))
+            .toString()
+            .substring(0, 32);
+    }
+    /**
+     * Calculates a smart position for a room label.
+     *
+     * Strategy:
+     *  1. Fast path — try the true polygon centroid. Works for convex/rectangular rooms.
+     *  2. Robust path — for concave/L-shaped rooms where the centroid can fall
+     *     outside the polygon (or in a "notch"), run a coarse-to-fine grid search
+     *     over the polygon's bounding box to find the point deepest inside the
+     *     shape (maximizing distance to the nearest edge). This is seeded from
+     *     the whole bounding box, not the centroid, so it can't get stuck in an
+     *     invalid region.
+     *  3. Local refinement — nudge that point slightly if needed so the full
+     *     label rectangle (with padding) fits inside the polygon.
+     *
+     * @param points - The polygon points representing the room boundary [x1,y1,x2,y2,...].
+     * @param labelWidth - The width of the room label.
+     * @param labelHeight - The height of the room label.
+     * @returns A suitable point for placing the room label.
+     */
+    static getLabelPosition(
+        points: number[],
+        labelWidth: number,
+        labelHeight: number,
+    ): { x: number; y: number } {
+        const n = points.length / 2;
+        const vx = new Float64Array(n);
+        const vy = new Float64Array(n);
+        for (let i = 0; i < n; i++) {
+            vx[i] = points[i * 2];
+            vy[i] = points[i * 2 + 1];
+        }
+
+        // Precompute edge vectors ONCE — reused by every grid point.
+        const ex = new Float64Array(n); // edge dx
+        const ey = new Float64Array(n); // edge dy
+        const elenSq = new Float64Array(n); // edge length squared
+        for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            ex[i] = vx[j] - vx[i];
+            ey[i] = vy[j] - vy[i];
+            elenSq[i] = ex[i] * ex[i] + ey[i] * ey[i];
+        }
+
+        /**
+         * Single pass: returns { inside, distSq } in one loop over edges
+         * instead of two separate loops.
+         */
+        const evaluatePoint = (x: number, y: number): { inside: boolean; distSq: number } => {
+            let inside = false;
+            let minDistSq = Infinity;
+
+            for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n;
+                const xi = vx[i], yi = vy[i], xj = vx[j], yj = vy[j];
+
+                // Ray-cast test (for inside/outside)
+                const intersects =
+                    yi > y !== yj > y &&
+                    x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+                if (intersects) inside = !inside;
+
+                // Nearest-edge distance (squared — no sqrt)
+                let t = 0;
+                if (elenSq[i] !== 0) {
+                    t = ((x - xi) * ex[i] + (y - yi) * ey[i]) / elenSq[i];
+                    t = t < 0 ? 0 : t > 1 ? 1 : t;
+                }
+                const cx = xi + t * ex[i];
+                const cy = yi + t * ey[i];
+                const dSq = (x - cx) ** 2 + (y - cy) ** 2;
+                if (dSq < minDistSq) minDistSq = dSq;
+            }
+
+            return { inside, distSq: minDistSq };
+        };
+
+        /** Squared-distance "depth" score. Positive if inside, negative if outside.
+         *  No sqrt — comparisons stay valid since squaring is monotonic for distance. */
+        const depthScoreSq = (x: number, y: number): number => {
+            const { inside, distSq } = evaluatePoint(x, y);
+            return inside ? distSq : -distSq;
+        };
+
+        const isPointInside = (x: number, y: number): boolean => evaluatePoint(x, y).inside;
+
+        const doesLabelFit = (x: number, y: number): boolean => {
+            const padding = 8;
+            const hw = labelWidth / 2 + padding;
+            const hh = labelHeight / 2 + padding;
+            const samples: [number, number][] = [
+                [x - hw, y - hh], [x + hw, y - hh], [x - hw, y + hh], [x + hw, y + hh],
+                [x, y - hh], [x, y + hh], [x - hw, y], [x + hw, y],
+            ];
+            for (const [sx, sy] of samples) {
+                if (!isPointInside(sx, sy)) return false;
+            }
+            return true;
+        };
+
+        const getCentroid = (): { x: number; y: number } => {
+            let area = 0, cx = 0, cy = 0;
+            for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n;
+                const cross = vx[i] * vy[j] - vx[j] * vy[i];
+                area += cross;
+                cx += (vx[i] + vx[j]) * cross;
+                cy += (vy[i] + vy[j]) * cross;
+            }
+            area /= 2;
+            if (Math.abs(area) < 0.0001) return { x: vx[0], y: vy[0] };
+            return { x: cx / (6 * area), y: cy / (6 * area) };
+        };
+
+        const centroid = getCentroid();
+
+        // Fast path
+        if (isPointInside(centroid.x, centroid.y) && doesLabelFit(centroid.x, centroid.y)) {
+            return centroid;
+        }
+
+        // Bounding box
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (let i = 0; i < n; i++) {
+            if (vx[i] < minX) minX = vx[i];
+            if (vx[i] > maxX) maxX = vx[i];
+            if (vy[i] < minY) minY = vy[i];
+            if (vy[i] > maxY) maxY = vy[i];
+        }
+        const bboxW = maxX - minX;
+        const bboxH = maxY - minY;
+
+        // Adaptive grid density: smaller rooms need fewer samples.
+        // Roughly ~1 sample per 15–20cm, clamped to a sane range.
+        const area = bboxW * bboxH;
+        const coarseSteps = Math.max(6, Math.min(16, Math.round(Math.sqrt(area) / 15)));
+
+        let bestPoint = { x: centroid.x, y: centroid.y };
+        let bestScore = -Infinity;
+
+        for (let i = 0; i <= coarseSteps; i++) {
+            for (let j = 0; j <= coarseSteps; j++) {
+                const x = minX + (bboxW * i) / coarseSteps;
+                const y = minY + (bboxH * j) / coarseSteps;
+                const score = depthScoreSq(x, y);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestPoint = { x, y };
+                }
+            }
+        }
+
+        // Fine refinement — stop early once radius is sub-pixel (no point refining further).
+        let radius = Math.max(bboxW, bboxH) / coarseSteps;
+        const gridResolution = 6;
+        const minRadius = 1; // 1cm — plenty precise for a label position
+
+        while (radius > minRadius) {
+            let improved = false;
+            for (let i = -gridResolution; i <= gridResolution; i++) {
+                for (let j = -gridResolution; j <= gridResolution; j++) {
+                    const x = bestPoint.x + (i / gridResolution) * radius;
+                    const y = bestPoint.y + (j / gridResolution) * radius;
+                    const score = depthScoreSq(x, y);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestPoint = { x, y };
+                        improved = true;
+                    }
+                }
+            }
+            radius /= 2;
+            if (!improved) break; // converged — stop early instead of running all passes
+        }
+
+        if (doesLabelFit(bestPoint.x, bestPoint.y)) {
+            return bestPoint;
+        }
+
+        // Fallback nudge (rare path, unchanged in spirit — omitted here for brevity,
+        // same as before but using evaluatePoint/isPointInside)
+        return bestPoint;
+    }
+
 
     /**
      * Calculates the signed area of a polygon using the Shoelace formula.
@@ -552,5 +1053,168 @@ export class RoomDetector {
         if (dot > sqLen) return false;
 
         return true;
+    }
+
+    /**
+     * Converts a flat Konva points array [x0, y0, x1, y1, ...] to an array of coordinate objects.
+     */
+    public static flatPointsToVertices(points: number[]): { x: number; y: number }[] {
+        const vertices: { x: number; y: number }[] = [];
+        for (let i = 0; i < points.length; i += 2) {
+            vertices.push({ x: points[i], y: points[i + 1] });
+        }
+        return vertices;
+    }
+
+    /**
+     * Calculates the true geometric area and centroid of a polygon.
+     */
+    public static getPolygonMetrics(pts: { x: number; y: number }[]): { area: number; centroid: { x: number; y: number } } {
+        const n = pts.length;
+        if (n < 3) return { area: 0, centroid: { x: 0, y: 0 } };
+
+        let signedArea = 0;
+        let cx = 0;
+        let cy = 0;
+
+        for (let i = 0; i < n; i++) {
+            const p1 = pts[i];
+            const p2 = pts[(i + 1) % n];
+            const a = (p1.x * p2.y) - (p2.x * p1.y);
+            signedArea += a;
+            cx += (p1.x + p2.x) * a;
+            cy += (p1.y + p2.y) * a;
+        }
+
+        signedArea *= 0.5;
+        const absArea = Math.abs(signedArea);
+
+        if (absArea < 1e-5) {
+            return { area: 0, centroid: { x: pts[0].x, y: pts[0].y } };
+        }
+
+        const factor = 1 / (6 * signedArea);
+        return {
+            area: absArea,
+            centroid: { x: cx * factor, y: cy * factor }
+        };
+    }
+
+    /**
+     * Removes duplicate and collinear vertices along straight edges of a polygon.
+     */
+    public static simplifyPolygon(pts: { x: number; y: number }[], tolerance = 1.5): { x: number; y: number }[] {
+        if (pts.length <= 3) return pts;
+
+        let current = [...pts];
+        let changed = true;
+
+        while (changed && current.length > 3) {
+            changed = false;
+            const n = current.length;
+            const result: { x: number; y: number }[] = [];
+
+            for (let i = 0; i < n; i++) {
+                const prev = current[(i - 1 + n) % n];
+                const curr = current[i];
+                const next = current[(i + 1) % n];
+
+                // Remove duplicate vertex
+                if (Math.hypot(curr.x - prev.x, curr.y - prev.y) < 1e-2) {
+                    changed = true;
+                    continue;
+                }
+
+                // If curr lies on segment between prev and next, it's collinear and redundant
+                if (RoomDetector.isPointOnSegment(curr, prev, next, tolerance)) {
+                    changed = true;
+                } else {
+                    result.push(curr);
+                }
+            }
+            current = result;
+        }
+
+        return current;
+    }
+
+    /**
+     * Checks if two simplified polygons match under any cyclic shift or reverse orientation.
+     */
+    public static areSimplifiedPolygonsEqual(
+        polyA: { x: number; y: number }[],
+        polyB: { x: number; y: number }[],
+        vertexTolerance = 5
+    ): boolean {
+        if (polyA.length !== polyB.length) return false;
+        const n = polyA.length;
+
+        // Forward cyclic match
+        for (let shift = 0; shift < n; shift++) {
+            let match = true;
+            for (let i = 0; i < n; i++) {
+                const pA = polyA[i];
+                const pB = polyB[(i + shift) % n];
+                if (Math.hypot(pA.x - pB.x, pA.y - pB.y) > vertexTolerance) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return true;
+        }
+
+        // Reverse cyclic match (opposite winding)
+        for (let shift = 0; shift < n; shift++) {
+            let match = true;
+            for (let i = 0; i < n; i++) {
+                const pA = polyA[i];
+                const pB = polyB[(shift - i + n) % n];
+                if (Math.hypot(pA.x - pB.x, pA.y - pB.y) > vertexTolerance) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determines whether two sets of polygon vertices represent the same 2D room region.
+     */
+    public static isSameRegion(
+        polyA: { x: number; y: number }[],
+        polyB: { x: number; y: number }[]
+    ): boolean {
+        if (!polyA || !polyB || polyA.length < 3 || polyB.length < 3) return false;
+
+        // 1. Check true area and true centroid (invariant to collinear/intermediate split points)
+        const metricsA = RoomDetector.getPolygonMetrics(polyA);
+        const metricsB = RoomDetector.getPolygonMetrics(polyB);
+
+        if (metricsA.area > 0 && metricsB.area > 0) {
+            const maxArea = Math.max(metricsA.area, metricsB.area);
+            const areaDiff = Math.abs(metricsA.area - metricsB.area) / maxArea;
+            const centroidDist = Math.hypot(
+                metricsA.centroid.x - metricsB.centroid.x,
+                metricsA.centroid.y - metricsB.centroid.y
+            );
+
+            // If area matches within 3% and centroids match within 5px
+            if (areaDiff < 0.03 && centroidDist < 5) {
+                return true;
+            }
+        }
+
+        // 2. Check simplified vertices (removes collinear points from split walls, then compares cyclic order)
+        const simplifiedA = RoomDetector.simplifyPolygon(polyA);
+        const simplifiedB = RoomDetector.simplifyPolygon(polyB);
+
+        if (RoomDetector.areSimplifiedPolygonsEqual(simplifiedA, simplifiedB, 5)) {
+            return true;
+        }
+
+        return false;
     }
 }

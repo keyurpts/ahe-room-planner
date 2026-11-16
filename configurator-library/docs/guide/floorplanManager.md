@@ -173,10 +173,10 @@ public set2DMode(mode: RoomEditorMode | string, active: boolean): void
 
 #### Parameters
 
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `mode` | `RoomEditorMode \| string` | The interaction mode to select. Supported modes: `"draw"`, `"edit"`, `"door"`, or `"window"`. |
-| `active` | `boolean` | `true` to enable the mode, `false` to disable/deactivate it. |
+| Parameter | Type                        | Description                                                                                                                                                                                     |
+| --------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mode`    | `RoomEditorMode \\| string` | The interaction mode to select. Supported modes: `RoomEditorMode.DRAW` (`"Draw"`), `RoomEditorMode.EDIT` (`"Edit"`), `RoomEditorMode.DOOR` (`"Door"`), or `RoomEditorMode.WINDOW` (`"Window"`). |
+| `active`  | `boolean`                   | `true` to enable the specified mode, `false` to disable or deactivate it.                                                                                                                       |
 
 #### Description
 
@@ -185,6 +185,8 @@ This method toggles active drawing states such as drawing walls, inserting doors
 #### Example
 
 ```typescript
+import { RoomEditorMode } from "three-configurator";
+
 // Enable wall drawing mode
 floorplanManager.set2DMode("draw", true);
 
@@ -264,12 +266,12 @@ if (core) {
 
 ### `addPredefinedShape`
 
-Adds a predefined shape template to the 2D viewer.
+Adds a predefined shape template to the 2D viewer, either through mouse-based placement or direct placement.
 
 #### Syntax
 
 ```typescript
-public addPredefinedShape(shapeType: Predefined2DShapes): void
+public addPredefinedShape(shapeType: Predefined2DShapes, isPreview: boolean): void
 ```
 
 #### Parameters
@@ -277,6 +279,7 @@ public addPredefinedShape(shapeType: Predefined2DShapes): void
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `shapeType` | `Predefined2DShapes` | The predefined shape template to add (e.g. `Predefined2DShapes.RECTANGLE`, `Predefined2DShapes.SQUARE`, `Predefined2DShapes.L_SHAPE`, or `Predefined2DShapes.TRIANGLE`). |
+| `isPreview` | `boolean` | Determines the shape placement behavior. If true, the shape attaches to the mouse cursor and is placed when the user clicks on the 2D viewer. If false, the shape is placed directly on the 2D viewer without requiring user interaction. Defaults to false.
 
 #### Description
 
@@ -288,7 +291,7 @@ This method loads a predefined room shape (such as a square, rectangle, triangle
 import { Predefined2DShapes } from "three-configurator";
 
 // Add a predefined L-shape template into the viewer
-floorplanManager.addPredefinedShape(Predefined2DShapes.L_SHAPE);
+floorplanManager.addPredefinedShape(Predefined2DShapes.L_SHAPE, true);
 ```
 
 ---
@@ -375,8 +378,12 @@ Downloads the current floorplan layout as a JSON file.
 #### Syntax
 
 ```typescript
-public exportJson(): void
+public exportJson(): any
 ```
+
+#### Returns
+
+`string | undefined`.
 
 #### Description
 
@@ -386,7 +393,7 @@ This method saves your current 2D layout design to a file and downloads it to yo
 
 ```typescript
 // Export and download the current design as a JSON file
-floorplanManager.exportJson();
+const savedDesignJsonString = floorplanManager.exportJson();
 ```
 
 ---
@@ -523,6 +530,61 @@ This method enables or disables axis snapping (horizontal and vertical line snap
 
 ```typescript
 const isSnappingEnabled = floorplanManager.enableSnapping(true);
+```
+
+---
+
+### `enableWallDragging`
+
+Enables or disables wall dragging in the 2D viewer.
+
+#### Syntax
+
+```typescript
+public enableWallDragging(enabled: boolean): boolean
+```
+
+#### Parameters
+
+| Parameter | Type      | Description                                            |
+| :-------- | :-------- | :----------------------------------------------------- |
+| `enabled` | `boolean` | `true` to enable wall dragging, `false` to disable it. |
+
+#### Description
+
+This method enables or disables the ability to drag walls. By default, wall dragging is enabled (`true`). When enabled, users can drag walls to adjust their positions in the 2D viewer. When disabled, wall dragging is prevented.
+
+#### Example
+
+```typescript
+const isWallDraggingEnabled = floorplanManager.enableWallDragging(true);
+```
+
+---
+### `enableJunctionDragging`
+
+Enables or disables wall junction dragging in the 2D viewer.
+
+#### Syntax
+
+```typescript
+public enableJunctionDragging(enabled: boolean): boolean
+```
+
+#### Parameters
+
+| Parameter | Type      | Description                                                |
+| :-------- | :-------- | :--------------------------------------------------------- |
+| `enabled` | `boolean` | `true` to enable junction dragging, `false` to disable it. |
+
+#### Description
+
+This method enables or disables the ability to drag wall junctions. By default, junction dragging is enabled (`true`). When enabled, users can drag junctions to adjust the connected wall endpoints in the 2D viewer. When disabled, junction dragging is prevented.
+
+#### Example
+
+```typescript
+const isJunctionDraggingEnabled = floorplanManager.enableJunctionDragging(true);
 ```
 
 ---
@@ -874,7 +936,36 @@ This method changes the color of all walls that are not currently selected or ho
 // Highlight walls in dark theme
 floorplanManager.highlightWalls(true, "dark");
 ```
+---
 
+### `setUndoRedoLimit`
+
+Sets the maximum number of actions that can be stored in the undo-redo history stack. When the specified limit is exceeded, the oldest history entries are discarded
+
+#### Syntax
+
+```typescript
+public setUndoRedoLimit(limit : number): void
+```
+
+---
+
+### `undo`
+
+Reverts the most recent action performed, restoring the design to its previous state
+
+```typescript
+public undo(): void
+```
+---
+
+### `redo`
+
+Reapplies the most recently undone action, restoring the design to the state before the undo operation
+
+```typescript
+public redo(): void
+```
 ---
 
 ### `dispose`
@@ -897,3 +988,65 @@ This method frees up memory by destroying the 2D viewer, the 3D viewer, and clea
 // Clean up all resources when destroying the viewer
 floorplanManager.dispose();
 ```
+---
+
+### `setLengthUnit`
+
+Sets the length unit used to display dimensions across both the 2D and 3D viewers.
+
+#### Syntax
+
+```typescript
+public setLengthUnit(unit: LengthUnit | string): void
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `unit` | `LengthUnit \| string` | The length unit to use for displaying dimensions. Supported units include mm, cm, inch, and foot.
+
+#### Description
+
+This method updates the active display length unit across both the 2D and 3D viewers.
+
+#### Example
+
+```typescript
+// Set the display unit to centimeters
+floorplanManager.setLengthUnit(LengthUnit.CM);
+
+// Set the display unit to inches
+floorplanManager.setLengthUnit("inch");
+```
+---
+
+### `getLengthUnit`
+
+Returns the currently active display length unit.
+
+#### Syntax
+
+```typescript
+public getLengthUnit(): LengthUnit
+```
+
+#### Returns
+
+| Type | Description |
+| :--- | :--- |
+| `LengthUnit` | The currently active display length unit used across the 2D and 3D viewers. |
+
+#### Example
+
+```typescript
+// Get the currently active display unit
+const currentUnit = floorplanManager.getLengthUnit();
+
+console.log("Current display unit:", currentUnit);
+```
+
+
+
+
+

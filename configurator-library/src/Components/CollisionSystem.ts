@@ -2,6 +2,16 @@ import * as THREE from "three";
 import { MeshBVH } from "three-mesh-bvh";
 import { FloorNames } from "../Constants";
 
+interface CollisionMeshData {
+    mesh: THREE.Mesh;
+    bounds: THREE.Box3;
+}
+
+interface CollisionContext {
+    selectedMeshes: THREE.Mesh[];
+    collidableMeshes: CollisionMeshData[];
+}
+
 /**
  * CollisionSystem handles all BVH-based spatial intersection tests.
  * This class centralizes collision detection logic to simplify model management
@@ -18,6 +28,12 @@ export class CollisionSystem {
      *  Reusable matrix for coordinate space transformations during intersection tests 
      */
     private tempMatrix = new THREE.Matrix4();
+
+    /**
+    * Indicates whether collision detection is enabled when moving/rotating models.
+    * Default is `true`.
+    */
+    public isCollisionActive: boolean = true;
 
     /**
      * Initializes the CollisionSystem with a reference to the main scene.
@@ -83,6 +99,10 @@ export class CollisionSystem {
                 });
                 if (isSelf || node === preview) return;
 
+                // Skip room-label content (leader lines, dot, callout/floor cards),
+                // regardless of which mode built them.
+                if (this.isLabelMesh(node)) return;
+
                 // Only consider meshes that have a valid BVH tree
                 if ((node.geometry as any).boundsTree) {
                     collidableMeshes.push(node);
@@ -117,6 +137,23 @@ export class CollisionSystem {
         }
         return colliding;
     }
+
+    /**
+     * True if `node` is part of a room-label (leader lines, dot, or text card),
+     * in any annotation mode. Labels shouldn't count as physical colliders.
+     */
+    private isLabelMesh(node: THREE.Object3D): boolean {
+        let current: THREE.Object3D | null = node;
+        while (current) {
+            if (current.userData?.type === "room-label") {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
+    }
+
+
     /**
      * Determines whether a given mesh is considered part of the floor.
      *
@@ -323,94 +360,335 @@ export class CollisionSystem {
         lastValidRotation: THREE.Quaternion,
         currentBoxHelper: THREE.Box3Helper | THREE.LineSegments | null
     ): boolean {
-        if (!mobileModel) return false;
+        if (!mobileModel || !this.isCollisionActive) return false;
 
-        // Ensure matrices are up to date for accurate spatial math
+        const MAX_STEP_DISTANCE = 0.7;
+        const MAX_STEPS = 32;
+        const BINARY_SEARCH_ITERATIONS = 8;
+
+        // Requested transform from TransformControls
+        const targetPosition = mobileModel.position.clone();
+        const targetRotation = mobileModel.quaternion.clone();
+
+        // Previous valid transform
+        const startPosition = lastValidPosition.clone();
+        const startRotation = lastValidRotation.clone();
+
+        const movementDistance =
+            startPosition.distanceTo(targetPosition);
+
+        // Adaptive step count with an upper limit
+        const steps = Math.max(
+            1,
+            Math.min(
+                MAX_STEPS,
+                Math.ceil(movementDistance / MAX_STEP_DISTANCE)
+            )
+        );
+
+        // Create collision context only once
+        const context = this.createCollisionContext(mobileModel);
+
+        // STEP 0: Check the requested destination first
+        mobileModel.position.copy(targetPosition);
+        mobileModel.quaternion.copy(targetRotation);
+
         mobileModel.updateMatrixWorld(true);
         this.scene.updateMatrixWorld(true);
 
-        // Ensure BVH exists for the transformed model
-        this.ensureBVH(mobileModel);
-        const selectedMeshes: THREE.Mesh[] = [];
-        mobileModel.traverse((node) => {
-            if (node instanceof THREE.Mesh) selectedMeshes.push(node);
-        });
+        const destinationInvalid = this.isInvalidModelPosition(
+            mobileModel,
+            context
+        );
 
-        // Collect all potential collidable meshes in the scene
-        this.ensureBVH(this.scene);
-        const collidableMeshes: THREE.Mesh[] = [];
-        this.scene.traverse((node) => {
-            if (node instanceof THREE.Mesh) {
-                // Skip meshes belonging to the active model itself (Self-Collision)
-                let isSelf = false;
-                node.traverseAncestors((ancestor) => {
-                    if (ancestor === mobileModel) isSelf = true;
-                });
-                if (isSelf || node === mobileModel) return;
+        if (!destinationInvalid) {
 
-                if ((node.geometry as any).boundsTree) {
-                    collidableMeshes.push(node);
-                }
+            // Destination is clear, accept the requested transform
+            lastValidPosition.copy(targetPosition);
+            lastValidRotation.copy(targetRotation);
+
+            if (currentBoxHelper) {
+                (currentBoxHelper.material as THREE.LineBasicMaterial)
+                    .color.set(0xffff00);
             }
-        });
 
-        // Iterate through all mesh pairs to detect intersections
-        let collided = false;
-        for (const mesh1 of selectedMeshes) {
-            if (collided) break;
-
-            for (const mesh2 of collidableMeshes) {
-                // Ignore administrative objects (Helpers, Gizmos, Selection UI)
-                let model2: THREE.Object3D | null = mesh2;
-                while (model2 && model2.parent && model2.parent.type !== "Scene") {
-                    model2 = model2.parent;
-                }
-                const parentName = model2?.name.toLowerCase() || '';
-                if (this.isIgnoredCollisionObject(mesh2) || (model2 && this.isIgnoredCollisionObject(model2))) continue;
-                if (parentName.includes("floor001") || this.isFloorMesh(mesh2)) continue;
-
-                // Transfer coordinates to local space of the second mesh
-                this.tempMatrix.copy(mesh2.matrixWorld).invert().multiply(mesh1.matrixWorld);
-
-                // Intersection check
-                if ((mesh2.geometry as any).boundsTree && (mesh2.geometry as any).boundsTree.intersectsGeometry(mesh1.geometry, this.tempMatrix)) {
-                    collided = true;
-                    break;
-                }
-            }
-        }
-
-        const outsideFloorBounds = !this.isModelInsideFloorBounds(mobileModel);
-        const invalidTransform = collided || outsideFloorBounds;
-        const wasIgnoring = mobileModel.userData.ignoreCollisionUntilClear === true;
-
-        // Apply visual feedback to the bounding box helper
-        if (currentBoxHelper) {
-            // Change color to red (0xff0000) on collision, or yellow (0xffff00) when clear
-            (currentBoxHelper.material as THREE.LineBasicMaterial).color.set(invalidTransform ? 0xff0000 : 0xffff00);
-        }
-
-        // Handle collision outcome
-        if (invalidTransform) {
-            if (collided && !outsideFloorBounds && wasIgnoring) {
-                lastValidPosition.copy(mobileModel.position);
-                lastValidRotation.copy(mobileModel.quaternion);
-                return false;
-            }
-            // Revert position to the last valid state to prevent overlapping
-            mobileModel.position.copy(lastValidPosition);
-            mobileModel.quaternion.copy(lastValidRotation);
-            mobileModel.updateMatrixWorld(true);
-            return true;
-        } else {
-            if (wasIgnoring) {
-                mobileModel.userData.ignoreCollisionUntilClear = false;
-            }
-            // update last valid position for future checks
-            lastValidPosition.copy(mobileModel.position);
-            lastValidRotation.copy(mobileModel.quaternion);
             return false;
         }
+
+        // Destination is blocked. Restore the previous valid transform
+        // and continue with intermediate collision checks.
+        mobileModel.position.copy(startPosition);
+        mobileModel.quaternion.copy(startRotation);
+
+        mobileModel.updateMatrixWorld(true);
+        this.scene.updateMatrixWorld(true);
+
+        let lastSafeT = 0;
+        let collisionT = 1;
+        let collisionDetected = false;
+
+        // STEP 1: Check intermediate positions
+        for (let i = 1; i <= steps; i++) {
+
+            const t = i / steps;
+
+            mobileModel.position.lerpVectors(
+                startPosition,
+                targetPosition,
+                t
+            );
+
+            mobileModel.quaternion
+                .copy(startRotation)
+                .slerp(targetRotation, t);
+
+            mobileModel.updateMatrixWorld(true);
+            this.scene.updateMatrixWorld(true);
+
+            if (this.isInvalidModelPosition(mobileModel, context)) {
+
+                collisionDetected = true;
+                collisionT = t;
+                break;
+            }
+
+            lastSafeT = t;
+        }
+
+        // STEP 2: Find closest safe position
+        if (collisionDetected) {
+
+            let low = lastSafeT;
+            let high = collisionT;
+
+            for (
+                let i = 0;
+                i < BINARY_SEARCH_ITERATIONS;
+                i++
+            ) {
+
+                const mid = (low + high) / 2;
+
+                mobileModel.position.lerpVectors(
+                    startPosition,
+                    targetPosition,
+                    mid
+                );
+
+                mobileModel.quaternion
+                    .copy(startRotation)
+                    .slerp(targetRotation, mid);
+
+                mobileModel.updateMatrixWorld(true);
+                this.scene.updateMatrixWorld(true);
+
+                if (this.isInvalidModelPosition(mobileModel, context)) {
+                    high = mid;
+                } else {
+                    low = mid;
+                }
+            }
+
+            // STEP 3: Keep model at last safe position
+            mobileModel.position.lerpVectors(
+                startPosition,
+                targetPosition,
+                low
+            );
+
+            mobileModel.quaternion
+                .copy(startRotation)
+                .slerp(targetRotation, low);
+
+            mobileModel.updateMatrixWorld(true);
+            this.scene.updateMatrixWorld(true);
+
+            lastValidPosition.copy(mobileModel.position);
+            lastValidRotation.copy(mobileModel.quaternion);
+
+            if (currentBoxHelper) {
+                (currentBoxHelper.material as THREE.LineBasicMaterial)
+                    .color.set(0xff0000);
+            }
+
+            return true;
+        }
+
+        // STEP 4: Accept movement if no collision
+        mobileModel.position.copy(targetPosition);
+        mobileModel.quaternion.copy(targetRotation);
+
+        mobileModel.updateMatrixWorld(true);
+        this.scene.updateMatrixWorld(true);
+
+        lastValidPosition.copy(mobileModel.position);
+        lastValidRotation.copy(mobileModel.quaternion);
+
+        if (currentBoxHelper) {
+            (currentBoxHelper.material as THREE.LineBasicMaterial)
+                .color.set(0xffff00);
+        }
+
+        return false;
+    }
+
+    /**
+    * Checks whether the given model's current position results in a collision
+    * with other objects in the scene using the provided collision context.
+    *
+    * @param mobileModel - The THREE.Object3D currently being transformed.
+    * @param context - The collision context containing reusable data and resources required for collision detection.
+    * @returns `true` if a collision is detected, otherwise `false`.
+    */
+    private isInvalidModelPosition(
+        mobileModel: THREE.Object3D,
+        context: CollisionContext,
+    ): boolean {
+
+        // Check collision with walls and other objects
+        const collided = this.hasModelCollision(
+            mobileModel,
+            context
+        );
+
+        // Check whether the model is inside the allowed floor boundary
+        const outsideFloorBounds =
+            !this.isModelInsideFloorBounds(mobileModel);
+
+        const isInvalid = collided || outsideFloorBounds;
+
+        return isInvalid;
+    }
+
+    /**
+ * Checks whether the given model intersects with other objects in the scene.
+ *
+ * @param mobileModel - The THREE.Object3D to check for collisions.
+ * @param context - The collision context containing reusable data and resources required for collision detection.
+ * @returns `true` if a collision is detected, otherwise `false`.
+ */
+    private hasModelCollision(
+        mobileModel: THREE.Object3D,
+        context: CollisionContext
+    ): boolean {
+
+        mobileModel.updateMatrixWorld(true);
+
+        for (const mesh1 of context.selectedMeshes) {
+
+            // Calculate selected mesh world bounds
+            const box1 = new THREE.Box3().setFromObject(mesh1);
+
+            for (const { mesh: mesh2, bounds: box2 } of context.collidableMeshes) {
+
+                // Broad-phase check:
+                // Skip expensive BVH intersection if bounding boxes
+                // cannot intersect.
+                if (!box1.intersectsBox(box2)) {
+                    continue;
+                }
+
+                // Convert selected mesh coordinates into mesh2 local space
+                this.tempMatrix
+                    .copy(mesh2.matrixWorld)
+                    .invert()
+                    .multiply(mesh1.matrixWorld);
+
+                // Precise BVH intersection check
+                if (
+                    (mesh2.geometry as any).boundsTree.intersectsGeometry(
+                        mesh1.geometry,
+                        this.tempMatrix
+                    )
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+ * Creates and initializes a reusable collision context for the given model.
+ * Stores the required collision detection data and resources to optimize
+ * collision checks during model transformations.
+ *
+ * @param mobileModel - The THREE.Object3D for which the collision context is created.
+ * @returns A CollisionContext containing the data and resources required for collision detection.
+ */
+    private createCollisionContext(
+        mobileModel: THREE.Object3D
+    ): CollisionContext {
+
+        this.ensureBVH(mobileModel);
+        this.ensureBVH(this.scene);
+
+        const selectedMeshes: THREE.Mesh[] = [];
+
+        mobileModel.traverse((node) => {
+            if (node instanceof THREE.Mesh) {
+                selectedMeshes.push(node);
+            }
+        });
+
+        const collidableMeshes: CollisionMeshData[] = [];
+
+        this.scene.traverse((node) => {
+
+            if (!(node instanceof THREE.Mesh)) return;
+
+            let isSelf = false;
+
+            node.traverseAncestors((ancestor) => {
+                if (ancestor === mobileModel) {
+                    isSelf = true;
+                }
+            });
+
+            if (isSelf || node === mobileModel) return;
+
+            if (!(node.geometry as any).boundsTree) return;
+
+            let model2: THREE.Object3D | null = node;
+
+            while (
+                model2 &&
+                model2.parent &&
+                model2.parent.type !== "Scene"
+            ) {
+                model2 = model2.parent;
+            }
+
+            const parentName = model2?.name.toLowerCase() || "";
+
+            if (
+                this.isIgnoredCollisionObject(node) ||
+                (model2 && this.isIgnoredCollisionObject(model2))
+            ) {
+                return;
+            }
+
+            if (
+                parentName.includes("floor001") ||
+                this.isFloorMesh(node)
+            ) {
+                return;
+            }
+
+            // Cache the wall's world-space bounding box
+            const bounds = new THREE.Box3().setFromObject(node);
+
+            collidableMeshes.push({
+                mesh: node,
+                bounds
+            });
+        });
+
+        return {
+            selectedMeshes,
+            collidableMeshes
+        };
     }
 }
 

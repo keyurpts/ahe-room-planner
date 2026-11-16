@@ -28,7 +28,7 @@ The size of these containers determines the rendering dimensions. The library mo
 
 The library uses a configurable grid system to map screen drawing distances to physical measurements:
 
-* **Grid Scaling**: By default, one grid square on the 2D viewer represents 30 centimeters. You can change this scale dynamically by calling [`floorplanManager.set2DUnitScale(cmValue)`](./floorplanManager.md#set2dunitscale).
+* **Grid Scaling**: By default, one grid square on the 2D viewer represents 50 centimeters. You can change this scale dynamically by calling [`floorplanManager.set2DUnitScale(cmValue)`](./floorplanManager.md#set2dunitscale).
 * **Frontend Usage**: When you call this method with a new value, the library automatically recalculates and updates the dimension labels, window widths, door sizes, and reflect that new scale on the 2D viewer.
 
 

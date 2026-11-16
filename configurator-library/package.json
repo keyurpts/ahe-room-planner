@@ -37,6 +37,7 @@
     "url": "https://github.com/yourusername/three-configurator"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^22.15.12",
     "@types/three": "^0.176.0",
     "@types/uuid": "^10.0.0",
@@ -52,11 +53,13 @@
   "dependencies": {
     "@mlightcad/three-viewcube": "^0.0.10",
     "@tweenjs/tween.js": "^25.0.0",
+    "crypto-js": "^4.2.0",
     "eventemitter3": "^5.0.1",
     "konva": "^10.0.12",
     "three": "^0.176.0",
     "three-bvh-csg": "^0.0.18",
     "three-mesh-bvh": "^0.9.8",
+    "troika-three-text": "^0.52.5",
     "uuid": "^11.1.0",
     "zod": "^3.25.47"
   }

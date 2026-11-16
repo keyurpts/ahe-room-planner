@@ -171,6 +171,38 @@ if (deleted) {
 
 ---
 
+### `enableKeyboardShortcuts`
+
+Enables or disables keyboard shortcuts for 3D model operations (such as duplicate with `Ctrl+C` / `Cmd+C` and delete with `Delete` key).
+
+#### Syntax
+
+```typescript
+public enableKeyboardShortcuts(enabled: boolean): void
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `enabled` | `boolean` | `true` to enable keyboard shortcuts, `false` to disable them. |
+
+#### Description
+
+This method enables or disables the internal 3D model keyboard shortcuts (`Ctrl+C` / `Cmd+C` to copy, `Delete` to remove selected models). Keyboard shortcuts are enabled by default on initialization.
+
+#### Example
+
+```typescript
+// Disable keyboard shortcuts in the 3D viewer
+configuratorCore.enableKeyboardShortcuts(false);
+
+// Re-enable keyboard shortcuts
+configuratorCore.enableKeyboardShortcuts(true);
+```
+
+---
+
 ### `getPlacedModels`
 
 Gets all placed 3D models in the 3D viewer.
@@ -689,7 +721,7 @@ Applies a texture from a URL to the currently selected model.
 #### Syntax
 
 ```typescript
-public applyTextureToModel(texUrl: string, price?: string | number): void
+public applyTextureToModel(texUrl: string, id?: string, price?: string | number, targetModel?: Object3D): void
 ```
 
 #### Parameters
@@ -697,7 +729,9 @@ public applyTextureToModel(texUrl: string, price?: string | number): void
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `texUrl` | `string` | The web URL or file path pointing to the texture image. |
+| `id` | `string` | *(Optional)* The texture ID to store in model metadata. |
 | `price` | `string \| number` | *(Optional)* The price associated with the applied texture to update the model metadata. |
+| `targetModel` | `Object3D` | *(Optional)* The model to update; defaults to the currently selected model. |
 
 #### Description
 
@@ -707,7 +741,7 @@ This method applies a texture to the currently selected model in the 3D viewer.
 
 ```typescript
 // Apply a wood texture to the selected model
-configuratorCore.applyTextureToModel("https://example.com/textures/wood.jpg", 15);
+configuratorCore.applyTextureToModel("https://example.com/textures/wood.jpg", "wood-finish", 15);
 ```
 
 ---
@@ -915,7 +949,7 @@ Applies a specific paint color to all walls in the 3D viewer.
 #### Syntax
 
 ```typescript
-public applyColorToAllWalls(hexColor: string): void
+public applyColorToAllWalls(hexColor: string, finishId?: string): void
 ```
 
 #### Parameters
@@ -923,6 +957,7 @@ public applyColorToAllWalls(hexColor: string): void
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `hexColor` | `string` | The hex color string (e.g., `"#ffffff"`) to apply to all walls. |
+| `finishId` | `string` | *(Optional)* The finish ID to store with the color. |
 
 #### Description
 
@@ -944,18 +979,14 @@ Applies a specific texture to all walls in the 3D viewer.
 #### Syntax
 
 ```typescript
-public applyTextureToAllWalls(texturePreset: {
-  url: string;
-  repeatX?: number;
-  repeatY?: number;
-}): void
+public applyTextureToAllWalls(texturePreset: { url: string; id?: string; repeatX?: number; repeatY?: number; }): void
 ```
 
 #### Parameters
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `texturePreset` | `object` | An object containing:<br>• `url` (string): The web URL or file path pointing to the texture image file.<br>• `repeatX` (number, optional): The horizontal scaling/repeat factor.<br>• `repeatY` (number, optional): The vertical scaling/repeat factor. |
+| `texturePreset` | `object` | An object containing:<br>• `url` (string): The web URL or file path pointing to the texture image file.<br>• `repeatX` (number, optional): The horizontal scaling/repeat factor.<br>• `repeatY` (number, optional): The vertical scaling/repeat factor.<br>`id` (string, optional): The finish ID. |
 
 #### Description
 
@@ -1004,14 +1035,14 @@ Sets the active paint color for painting walls in the 3D viewer.
 #### Syntax
 
 ```typescript
-public setWallColor(color: string): void
+public setWallColor(colorObj: { color: string; id: string; name: string }): void
 ```
 
 #### Parameters
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `color` | `string` | The hex color string (e.g., `"#ffffff"`) to set as the active paint color. |
+| `colorObj` | `object` | An object with required `color` (string), `id` (string), and `name` (string) fields. |
 
 #### Description
 
@@ -1021,7 +1052,7 @@ Sets the color that will be applied to wall faces when wall coloring mode is act
 
 ```typescript
 // Set the wall paint color to blue
-configuratorCore.setWallColor("#0000ff");
+configuratorCore.setWallColor({ color: "#0000ff", id: "paint-0000ff", name: "Wall paint" });
 ```
 
 ---
@@ -1066,18 +1097,14 @@ Sets the active texture image for texturing walls in the 3D viewer.
 #### Syntax
 
 ```typescript
-public setWallTexture(texturePreset: {
-  url: string;
-  repeatX?: number;
-  repeatY?: number;
-}): void
+public setWallTexture(texturePreset: { url: string; id: string; repeatX?: number; repeatY?: number }): void
 ```
 
 #### Parameters
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `texturePreset` | `object` | An object containing: <br>• `url` (string): The web URL or file path pointing to the texture image file.<br>• `repeatX` (number, optional): The horizontal scaling/repeat factor.<br>• `repeatY` (number, optional): The vertical scaling/repeat factor. |
+| `texturePreset` | `object` | An object containing: <br>• `url` (string): The web URL or file path pointing to the texture image file.<br>• `repeatX` (number, optional): The horizontal scaling/repeat factor.<br>• `repeatY` (number, optional): The vertical scaling/repeat factor.<br>`id` (string): The finish ID. |
 
 #### Description
 
@@ -1088,6 +1115,7 @@ This method configures the texture image and scale factors that will be applied 
 ```typescript
 // Set the wall paint texture to brick
 configuratorCore.setWallTexture({
+  id: "texture-finish",
   url: "https://example.com/textures/brick.jpg",
   repeatX: 1.5,
   repeatY: 1.5
@@ -1168,7 +1196,7 @@ Applies a specific color to all floors in the 3D viewer.
 #### Syntax
 
 ```typescript
-public applyColorToAllFloors(hexColor: string): void
+public applyColorToAllFloors(hexColor: string, id: string): void
 ```
 
 #### Parameters
@@ -1176,6 +1204,7 @@ public applyColorToAllFloors(hexColor: string): void
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `hexColor` | `string` | The hex color string (e.g., `"#ffffff"`) to apply to all floors. |
+| `id` | `string` | The floor finish ID to store on the room group. |
 
 #### Description
 
@@ -1185,7 +1214,7 @@ This method immediately applies the specified color to all floor surfaces in the
 
 ```typescript
 // Paint all floor surfaces light grey
-configuratorCore.applyColorToAllFloors("#d3d3d3");
+configuratorCore.applyColorToAllFloors("#d3d3d3", "floor-paint");
 ```
 
 ---
@@ -1197,18 +1226,14 @@ Applies a specific texture to all floors in the 3D viewer.
 #### Syntax
 
 ```typescript
-public applyTextureToAllFloors(texturePreset: {
-  url: string;
-  repeatX?: number;
-  repeatY?: number;
-}): void
+public applyTextureToAllFloors(texturePreset: { url: string; id: string; repeatX?: number; repeatY?: number }): void
 ```
 
 #### Parameters
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `texturePreset` | `object` | An object containing:<br>• `url` (string): The web URL or file path pointing to the texture image file.<br>• `repeatX` (number, optional): The horizontal scaling/repeat factor.<br>• `repeatY` (number, optional): The vertical scaling/repeat factor. |
+| `texturePreset` | `object` | An object containing:<br>• `url` (string): The web URL or file path pointing to the texture image file.<br>• `repeatX` (number, optional): The horizontal scaling/repeat factor.<br>• `repeatY` (number, optional): The vertical scaling/repeat factor.<br>`id` (string): The finish ID. |
 
 #### Description
 
@@ -1219,6 +1244,7 @@ This method immediately applies the specified texture and scaling/repeat setting
 ```typescript
 // Apply a light wood texture to all floor surfaces
 configuratorCore.applyTextureToAllFloors({
+  id: "texture-finish",
   url: "https://example.com/textures/wood.jpg",
   repeatX: 1.0,
   repeatY: 1.0
@@ -1426,9 +1452,198 @@ const img = document.createElement("img");
 img.src = snapshotUrl;
 document.body.appendChild(img);
 ```
+---
+
+### `getWallHeight`
+
+Gets the current height applied to all walls in the 3D viewer.
+
+#### Syntax
+
+```typescript
+public getWallHeight(): number
+```
+
+#### Description
+
+This method returns the current wall height applied to the walls in the 3D viewer. The value can be used to display the current wall height in the UI.
+
+#### Example
+
+```typescript
+// Get the current wall Height
+const currentWallHeight = configuratorCore.getWallHeight();
+```
 
 ---
 
+### `updateWallHeight`
+
+Updates the height of all 3D wall meshes in the 3D viewer.
+
+#### Syntax
+
+```typescript
+public updateWallHeight(height: number): boolean
+```
+
+#### Description
+
+This method updates the height of all walls in the 3D viewer to the specified height. The existing wall configuration, including wall metadata, doors, windows, and boundary information, is preserved. Returns `true` if the height was successfully updated, or `false` if the height is invalid (e.g., non-positive or insufficient for current door/window dimensions).
+
+#### Example
+
+```typescript
+// Update all walls to a height of 300 design units
+const newWallHeight = 300;
+
+const success = configuratorCore.updateWallHeight(newWallHeight);
+if (!success) {
+  console.warn("Invalid wall height specified.");
+}
+```
+
+---
+
+### `updateDoorHeight`
+
+Updates the height of all doors in the 3D viewer to the specified value.
+
+#### Syntax
+
+```typescript
+public updateDoorHeight(height: number): boolean
+```
+
+#### Description
+
+This method updates the height of all doors in the 3D viewer to the specified height. Returns `true` if the update was successful, or `false` if the specified height violates boundary constraints relative to wall height.
+
+#### Example
+
+```typescript
+// Update all doors to a height of 210 design units
+const newDoorHeight = 210;
+
+const success = configuratorCore.updateDoorHeight(newDoorHeight);
+if (!success) {
+  console.warn("Door height exceeds maximum allowed wall margin.");
+}
+```
+
+---
+
+### `updateDoorWidth`
+
+Updates the width of all doors in the 3D viewer to the specified value.
+
+#### Syntax
+
+```typescript
+public updateDoorWidth(width: number): boolean
+```
+
+#### Description
+
+This method updates the width of all doors in the 3D viewer to the specified width. Returns `true` if successful, or `false` if the width is less than 0 or exceeds max height.
+
+#### Example
+
+```typescript
+// Update all doors to a width of 90 design units
+const newDoorWidth = 90;
+
+const success = configuratorCore.updateDoorWidth(newDoorWidth);
+if (!success) {
+  console.warn("Door width exceeds maximum allowed constraints.");
+}
+```
+
+---
+
+### `updateWindowHeight`
+
+Updates the height of all windows in the 3D viewer to the specified value.
+
+#### Syntax
+
+```typescript
+public updateWindowHeight(height: number): boolean
+```
+
+#### Description
+
+This method updates the height of all windows in the 3D viewer to the specified height. Returns `true` if successful, or `false` if the height violates boundary constraints relative to wall height.
+
+#### Example
+
+```typescript
+// Update all windows to a height of 120 design units
+const newWindowHeight = 120;
+
+const success = configuratorCore.updateWindowHeight(newWindowHeight);
+if (!success) {
+  console.warn("Window height exceeds maximum allowed wall margin.");
+}
+```
+
+---
+
+### `updateWindowWidth`
+
+Updates the width of all windows in the 3D viewer to the specified value.
+
+#### Syntax
+
+```typescript
+public updateWindowWidth(width: number): boolean
+```
+
+#### Description
+
+This method updates the width of all windows in the 3D viewer to the specified width. Returns `true` if successful, or `false` if the width is less than 0 or exceeds max limit.
+
+#### Example
+
+```typescript
+// Update all windows to a width of 150 design units
+const newWindowWidth = 150;
+
+const success = configuratorCore.updateWindowWidth(newWindowWidth);
+if (!success) {
+  console.warn("Window width exceeds maximum allowed constraints.");
+}
+```
+
+---
+
+### `updateWindowFloorDistance`
+
+Updates the distance between the floor and the bottom edge of all windows.
+
+#### Syntax
+
+```typescript
+public updateWindowFloorDistance(distance: number): boolean
+```
+
+#### Description
+
+Updates the vertical position of all windows by setting their distance from the floor to the specified value in design units. The walls are recreated to apply the updated window position. Returns `true` if successful, or `false` if the distance is negative or causes the top of the window to exceed wall height constraints.
+
+#### Example
+
+```typescript
+// Update the floor distance for all windows to 90 design units
+const newFloorDistance = 90;
+
+const success = configuratorCore.updateWindowFloorDistance(newFloorDistance);
+if (!success) {
+  console.warn("Window floor distance exceeds available wall space.");
+}
+```
+
+---
 ### `dispose`
 
 Cleans up all configurator resources.
@@ -1449,3 +1664,243 @@ This method properly destroys the configurator instance, frees up system resourc
 // Clean up configurator when unmounting a component or leaving the page
 configuratorCore.dispose();
 ```
+---
+### `set3DModes`
+
+Sets the current 3D mode.
+
+#### Syntax
+```typescript
+public set3DModes(mode: CurrentMode): void
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `mode` | `CurrentMode` | The 3D mode to activate. Accepts `THREE_D_MODE` (`"3d_mode"`) for standard 3D viewing and interaction, or `CONFIGURE_MODE` (`"configure_mode"`) for modifying and managing 3D models. |
+
+#### Description
+
+This method sets the currently active 3D mode and emits the `UNDO_REDO` event to notify listeners about the current undo/redo stack status.
+
+The `CurrentMode` enum defines the available modes:
+- **`THREE_D_MODE`**: Standard 3D viewing and interaction mode.
+- **`CONFIGURE_MODE`**: Configuration mode for modifying and managing 3D models.
+
+#### Example
+```typescript
+import { CurrentMode } from "three-configurator";
+
+// Activate standard 3D mode
+configuratorCore.set3DModes(CurrentMode.THREE_D_MODE);
+
+// Activate Configure mode
+configuratorCore.set3DModes(CurrentMode.CONFIGURE_MODE);
+```
+---
+
+### `get3DModes`
+
+Retrieves the currently active 3D mode.
+
+#### Syntax
+```typescript
+public get3DModes(): CurrentMode
+```
+
+#### Parameters
+
+This method does not require any parameters.
+
+#### Returns
+
+| Type | Description |
+| :--- | :--- |
+| `CurrentMode` | The currently active 3D mode. |
+
+#### Description
+
+This method returns the current 3D mode, allowing you to determine which mode is currently active.
+
+#### Example
+```typescript
+// Get the current 3D mode
+const currentMode = configuratorCore.get3DModes();
+
+console.log(currentMode);
+```
+---
+
+### `setRoomAnnotationMode`
+
+Sets the room annotation display mode.
+
+#### Syntax
+```typescript
+public setRoomAnnotationMode(mode: AnnotationMode): void
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `mode` | `AnnotationMode` | The room annotation display mode to activate. Accepts `LINE_ANNOTATION` for displaying line annotations, `FLOOR_ANNOTATION` for displaying floor annotations, or `NONE` to hide room annotations. |
+
+#### Description
+
+This method sets the active room annotation display mode.
+
+The `AnnotationMode` enum defines the available modes:
+- **`LINE_ANNOTATION`**: Displays line annotations for room walls.
+- **`FLOOR_ANNOTATION`**: Displays floor annotations for rooms.
+- **`NONE`**: Hides all room annotations.
+
+#### Example
+```typescript
+import { AnnotationMode } from "three-configurator";
+
+// Activate line annotations
+configuratorCore.setRoomAnnotationMode(AnnotationMode.LINE_ANNOTATION);
+
+// Activate floor annotations
+configuratorCore.setRoomAnnotationMode(AnnotationMode.FLOOR_ANNOTATION);
+
+// Hide room annotations
+configuratorCore.setRoomAnnotationMode(AnnotationMode.NONE);
+```
+
+---
+
+### `getRoomAnnotationMode`
+
+Retrieves the currently active room annotation display mode.
+
+#### Syntax
+```typescript
+public getRoomAnnotationMode(): AnnotationMode
+```
+
+#### Parameters
+
+This method does not require any parameters.
+
+#### Returns
+
+| Type | Description |
+| :--- | :--- |
+| `AnnotationMode` | The currently active room annotation display mode. |
+
+#### Description
+
+This method returns the current room annotation display mode, allowing you to determine whether line annotations, floor annotations, or no annotations are active.
+
+#### Example
+```typescript
+// Get the current room annotation mode
+const currentMode = configuratorCore.getRoomAnnotationMode();
+
+console.log(currentMode);
+```
+---
+
+### `setCollisionStatus`
+
+Enables or disables collision detection when models are moved or rotated in the 3D workspace.
+
+#### Syntax
+```typescript
+public setCollisionStatus(): boolean
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `isActive` | `boolean` | Set to `true` to enable collision detection; set to `false` to disable it. | Default is `true`
+
+#### Description
+
+This method controls collision detection during model manipulation. When enabled, collision checking is performed. When disabled, models can be moved or rotated without collision restrictions.
+
+#### Example
+```typescript
+// Enable collision detection
+configuratorCore.setCollisionStatus(true);
+
+// Disable collision detection
+configuratorCore.setCollisionStatus(false);
+```
+---
+
+### `export3DConfig`
+
+Saves and exports the current 3D room setup, including all placed items, grouped furniture, wall colors/textures, and flooring finishes.
+
+#### Syntax
+
+```typescript
+public export3DConfig(): Record<string, any>
+```
+
+#### Returns
+
+| Type | Description |
+| :--- | :--- |
+| `Record<string, any>` | A configuration object containing your saved items, groups, wall finishes, and floor design. |
+
+#### Description
+
+Save the user's current room design. It captures everything placed in the room such as furniture positions, custom materials, groupings, wall finishes and floor styles so the design can be saved, shared or reloaded later.
+
+#### Example
+
+```typescript
+// Save the current room design
+const savedDesign = configuratorCore.export3DConfig();
+console.log("Saved room design:", savedDesign);
+```
+
+---
+
+### `import3DConfig`
+
+Restores and loads a previously saved 3D room design, reconstructing all items, groups, wall finishes, and floor materials.
+
+#### Syntax
+
+```typescript
+public async import3DConfig(
+  config: Record<string, any> | string
+): Promise<Record<string, Object3D>>
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `config` | `Record<string, any> \| string` | The saved room configuration object or JSON string. |
+
+#### Returns
+
+| Type | Description |
+| :--- | :--- |
+| `Promise<Record<string, Object3D>>` | Resolves to a collection of all restored models and furniture groups in the room. |
+
+#### Description
+
+Use this method to load an existing room design. It automatically brings back:
+- Placed models and furniture with their saved positions and rotations.
+- Applied textures, materials, and colors on items.
+- Grouped furniture arrangements.
+- Selected wall paint colors, wall textures, and floor finishes.
+
+#### Example
+
+```typescript
+// Load a saved room design
+const restoredItems = await configuratorCore.import3DConfig(savedDesign);
+console.log("Restored room items:", restoredItems);
+```
+
+---

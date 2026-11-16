@@ -2,6 +2,12 @@
  * Defines the types of events dispatched by the configurator.
  */
 export enum ConfiguratorEventType {
+
+  /**
+   * Fired when a Room Name are edited.
+   */
+  EDIT_ROOM_NAME = "editRoomName",
+
   /**
    * Fired when a wall's dimensions are edited.
    */
@@ -55,5 +61,37 @@ export enum ConfiguratorEventType {
   /**
    * Fired when rotation of a model changes.
    */
-  ROTATION_CHANGED = "rotationChanged"
+  ROTATION_CHANGED = "rotationChanged",
+
+  /**
+   * Fired when a 3D model is deleted.
+   */
+  DELETE = "delete",
+
+  /**
+   * Fired when undo or redo in 2D and 3D
+   */
+  UNDO_REDO = "undo_redo",
+
+  /**
+   * Fires when a 3D model is dragged for placement.
+   */
+  MODEL_DRAG_START = "modelDragStart",
+
+  /**
+   * Fires when 3D model drag for placement is ended.
+   */
+  MODEL_DRAG_END = "modelDragEnd"
+
+
+
 }
+
+/**
+ * payload for the undo-redo event in 2D and 3D
+ */
+export interface Undo_Redo_Payload{
+  undo_stack_size :number,
+  redo_stack_size :number
+}
+

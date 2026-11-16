@@ -2,7 +2,7 @@
 
 # Class: ConfiguratorCore
 
-Defined in: [ConfiguratorCore.ts:91](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L91)
+Defined in: [ConfiguratorCore.ts:90](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L90)
 
 Core class for the 3D configurator
 Handles scene setup, model management, and state export
@@ -15,7 +15,7 @@ Handles scene setup, model management, and state export
 new ConfiguratorCore(options): ConfiguratorCore;
 ```
 
-Defined in: [ConfiguratorCore.ts:478](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L478)
+Defined in: [ConfiguratorCore.ts:535](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L535)
 
 Creates a new ConfiguratorCore instance
 
@@ -40,7 +40,7 @@ measurementState: {
 };
 ```
 
-Defined in: [ConfiguratorCore.ts:316](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L316)
+Defined in: [ConfiguratorCore.ts:370](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L370)
 
 Public state object for distance measurement to be accessed and updated by the frontend.
 
@@ -58,13 +58,35 @@ isWallsOnly: boolean = false;
 
 ## Methods
 
+### apply3DConfig()
+
+```ts
+apply3DConfig(config): Promise<Record<string, Object3D<Object3DEventMap>>>;
+```
+
+Defined in: [ConfiguratorCore.ts:9683](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9683)
+
+Alias for import3DConfig.
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `config` | `string` \| `Record`\<`string`, `any`\> |
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `Object3D`\<`Object3DEventMap`\>\>\>
+
+***
+
 ### applyColorToAllFloors()
 
 ```ts
 applyColorToAllFloors(hexColor): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6878](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6878)
+Defined in: [ConfiguratorCore.ts:7481](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7481)
 
 **`Description`**
 
@@ -91,7 +113,7 @@ in the room, clearing any custom textures that were previously applied.
 applyColorToAllWalls(hexColor): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6760](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6760)
+Defined in: [ConfiguratorCore.ts:7243](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7243)
 
 **`Description`**
 
@@ -117,7 +139,7 @@ This method immediately applies the specified color to all visible walls in the 
 applyMaterialToModel(materialData): Promise<void>;
 ```
 
-Defined in: [ConfiguratorCore.ts:5286](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5286)
+Defined in: [ConfiguratorCore.ts:5545](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5545)
 
 **`Description`**
 
@@ -151,7 +173,7 @@ metalness, and textures) to the active selected model in the workspace.
 applyTextureToAllFloors(texturePreset): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6922](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6922)
+Defined in: [ConfiguratorCore.ts:7577](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7577)
 
 **`Description`**
 
@@ -181,7 +203,7 @@ settings to all floor surfaces in the room.
 applyTextureToAllWalls(texturePreset): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6794](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6794)
+Defined in: [ConfiguratorCore.ts:7319](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7319)
 
 **`Description`**
 
@@ -207,10 +229,14 @@ This method immediately applies the specified texture to all visible walls in th
 ### applyTextureToModel()
 
 ```ts
-applyTextureToModel(texUrl, price?): void;
+applyTextureToModel(
+   texUrl, 
+   id?, 
+   price?, 
+   targetModel?): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5190](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5190)
+Defined in: [ConfiguratorCore.ts:5374](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5374)
 
 **`Description`**
 
@@ -221,7 +247,9 @@ Applies a texture from a URL to the currently selected model.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `texUrl` | `string` | The web URL or file path pointing to the texture image. |
+| `id?` | `string` | - |
 | `price?` | `string` \| `number` | (Optional) The price associated with the applied texture to update the model metadata. |
+| `targetModel?` | `Object3D`\<`Object3DEventMap`\> | - |
 
 #### Returns
 
@@ -237,7 +265,7 @@ This method applies a texture to the currently selected model in the 3D viewer.
 clearAllMeasurements(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6069](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6069)
+Defined in: [ConfiguratorCore.ts:6592](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6592)
 
 **`Description`**
 
@@ -251,13 +279,45 @@ Removes all currently visible distance measurements from the viewer.
 
 ***
 
+### clearConfigureHistory()
+
+```ts
+clearConfigureHistory(): void;
+```
+
+Defined in: [ConfiguratorCore.ts:9143](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9143)
+
+Clears the undo and redo history for configuration operations.
+
+#### Returns
+
+`void`
+
+***
+
+### clearDesign2DHistory()
+
+```ts
+clearDesign2DHistory(): void;
+```
+
+Defined in: [ConfiguratorCore.ts:8489](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8489)
+
+Clears the undo and redo history for 3D design operations.
+
+#### Returns
+
+`void`
+
+***
+
 ### clearHoverHighlight()
 
 ```ts
 clearHoverHighlight(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6277](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6277)
+Defined in: [ConfiguratorCore.ts:6782](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6782)
 
 **`Description`**
 
@@ -273,13 +333,38 @@ This method clears the hover status by performing the following actions:
 
 ***
 
+### createPermanentGroup()
+
+```ts
+createPermanentGroup(customName?): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:7862](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7862)
+
+Creates a permanent group from the current furniture items.
+The items are grouped together and the new group becomes selected.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `customName?` | `string` | Optional name for the new group. |
+
+#### Returns
+
+`boolean`
+
+true if the group was created, otherwise false.
+
+***
+
 ### deleteModel()
 
 ```ts
 deleteModel(): boolean;
 ```
 
-Defined in: [ConfiguratorCore.ts:4818](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L4818)
+Defined in: [ConfiguratorCore.ts:4897](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L4897)
 
 **`Description`**
 
@@ -302,7 +387,7 @@ movement controls and cleans up the model's bounding box outlines and collision 
 dispose(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:4950](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L4950)
+Defined in: [ConfiguratorCore.ts:5132](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5132)
 
 **`Description`**
 
@@ -324,7 +409,7 @@ unmounting the 3D configurator component.
 duplicateModel(): boolean;
 ```
 
-Defined in: [ConfiguratorCore.ts:4664](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L4664)
+Defined in: [ConfiguratorCore.ts:4781](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L4781)
 
 **`Description`**
 
@@ -342,13 +427,35 @@ you to click and place it in the 3D viewer.
 
 ***
 
+### enableKeyboardShortcuts()
+
+```ts
+enableKeyboardShortcuts(enabled): void;
+```
+
+Defined in: [ConfiguratorCore.ts:7797](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7797)
+
+Enables or disables keyboard shortcuts for model operations (duplicate, delete).
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `enabled` | `boolean` | True to enable keyboard shortcuts, false to disable. |
+
+#### Returns
+
+`void`
+
+***
+
 ### enablePostProcessing()
 
 ```ts
 enablePostProcessing(enable): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:7000](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L7000)
+Defined in: [ConfiguratorCore.ts:7785](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7785)
 
 Enables or disables the post-processing manager pass.
 
@@ -370,7 +477,7 @@ Enables or disables the post-processing manager pass.
 enableVR(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6107](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6107)
+Defined in: [ConfiguratorCore.ts:6629](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6629)
 
 **`Description`**
 
@@ -391,7 +498,7 @@ design in an immersive environment on supported VR headsets.
 enableWallColoringMode(active): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6676](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6676)
+Defined in: [ConfiguratorCore.ts:7163](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7163)
 
 **`Description`**
 
@@ -418,7 +525,7 @@ in the room will apply the currently selected wall color.
 enableWallHiding(enabled): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:7014](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L7014)
+Defined in: [ConfiguratorCore.ts:7819](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7819)
 
 **`Description`**
 
@@ -446,7 +553,7 @@ their associated fixtures (such as doors and windows) are immediately restored t
 enableWallMaterialResetMode(active): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6725](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6725)
+Defined in: [ConfiguratorCore.ts:7206](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7206)
 
 **`Description`**
 
@@ -473,7 +580,7 @@ wall face in the room will revert its material/color back to the wall's original
 enableWallTextureMode(active): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6706](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6706)
+Defined in: [ConfiguratorCore.ts:7184](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7184)
 
 **`Description`**
 
@@ -494,13 +601,109 @@ in the room will apply the texture selected with `SetSelectedWallTexture`.
 
 ***
 
+### export3DConfig()
+
+```ts
+export3DConfig(): Record<string, any>;
+```
+
+Defined in: [ConfiguratorCore.ts:9200](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9200)
+
+Exports the 3D configuration of selectable objects in the scene.
+
+Traverses the first-level children of the scene:
+- If an object has userData.selectable = "true" and !userData.isGroup,
+  stores its transformation matrix against its userData.metadata.id.
+- If an object has userData.selectable = "true" and userData.isGroup === true,
+  stores its transformation matrix, name, and children array against its userData.metadata.id.
+
+#### Returns
+
+`Record`\<`string`, `any`\>
+
+An object containing the exported 3D configuration mapped against metadata IDs.
+
+***
+
+### get3DModes()
+
+```ts
+get3DModes(): CurrentMode;
+```
+
+Defined in: [ConfiguratorCore.ts:992](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L992)
+
+Retrieves the currently active 3D mode.
+
+#### Returns
+
+`CurrentMode`
+
+The current 3D mode.
+
+***
+
+### getCurrentOpeningDimensions()
+
+```ts
+getCurrentOpeningDimensions(): {
+  door: {
+     height: number;
+     width: number;
+  };
+  window: {
+     height: number;
+     width: number;
+     windowFloorDistance: number;
+  };
+};
+```
+
+Defined in: [ConfiguratorCore.ts:8160](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8160)
+
+**`Description`**
+
+Gets the current geometry dimensions of doors and windows  in the 3D viewer.
+
+#### Returns
+
+```ts
+{
+  door: {
+     height: number;
+     width: number;
+  };
+  window: {
+     height: number;
+     width: number;
+     windowFloorDistance: number;
+  };
+}
+```
+
+Current door and window dimensions in design units.
+
+ Return the current opening width and height
+
+| Name | Type | Defined in |
+| ------ | ------ | ------ |
+| `door` | \{ `height`: `number`; `width`: `number`; \} | [ConfiguratorCore.ts:8161](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8161) |
+| `door.height` | `number` | [ConfiguratorCore.ts:8161](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8161) |
+| `door.width` | `number` | [ConfiguratorCore.ts:8161](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8161) |
+| `window` | \{ `height`: `number`; `width`: `number`; `windowFloorDistance`: `number`; \} | [ConfiguratorCore.ts:8162](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8162) |
+| `window.height` | `number` | [ConfiguratorCore.ts:8162](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8162) |
+| `window.width` | `number` | [ConfiguratorCore.ts:8162](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8162) |
+| `window.windowFloorDistance` | `number` | [ConfiguratorCore.ts:8162](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8162) |
+
+***
+
 ### getModelId()
 
 ```ts
 getModelId(): string | null;
 ```
 
-Defined in: [ConfiguratorCore.ts:5756](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5756)
+Defined in: [ConfiguratorCore.ts:6241](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6241)
 
 **`Description`**
 
@@ -524,7 +727,7 @@ model does not have an ID in its metadata.
 getModelMetadata(): any;
 ```
 
-Defined in: [ConfiguratorCore.ts:5778](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5778)
+Defined in: [ConfiguratorCore.ts:6263](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6263)
 
 **`Description`**
 
@@ -554,7 +757,7 @@ getModelRotation():
   | null;
 ```
 
-Defined in: [ConfiguratorCore.ts:5838](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5838)
+Defined in: [ConfiguratorCore.ts:6341](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6341)
 
 **`Description`**
 
@@ -591,7 +794,7 @@ getModelsSummary(): {
 };
 ```
 
-Defined in: [ConfiguratorCore.ts:6140](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6140)
+Defined in: [ConfiguratorCore.ts:6644](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6644)
 
 **`Description`**
 
@@ -619,29 +822,88 @@ including their names, quantities, individual prices, and the grand total price.
 
 | Name | Type | Defined in |
 | ------ | ------ | ------ |
-| `grandTotal` | `number` | [ConfiguratorCore.ts:6140](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6140) |
-| `models` | \{ `id`: `string`; `name`: `string`; `quantity`: `number`; `unitPrice`: `number`; \}[] | [ConfiguratorCore.ts:6140](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6140) |
+| `grandTotal` | `number` | [ConfiguratorCore.ts:6644](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6644) |
+| `models` | \{ `id`: `string`; `name`: `string`; `quantity`: `number`; `unitPrice`: `number`; \}[] | [ConfiguratorCore.ts:6644](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6644) |
 
 ***
 
-### getPlacedModels()
+### getRoomAnnotationMode()
 
 ```ts
-getPlacedModels(): Object3D<Object3DEventMap>[];
+getRoomAnnotationMode(): AnnotationMode;
 ```
 
-Defined in: [ConfiguratorCore.ts:6117](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6117)
+Defined in: [ConfiguratorCore.ts:8390](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8390)
 
-**`Description`**
-
-Gets all placed 3D models in the 3D viewer.
+Gets the current room annotation display mode.
 
 #### Returns
 
-`Object3D`\<`Object3DEventMap`\>[]
+`AnnotationMode`
 
-An array of all 3D models currently placed in the workspace (excluding the room model).
- Gets all placed 3D models in the 3D viewer.
+The active annotation mode.
+
+***
+
+### getSelectableObjectHierarchy()
+
+```ts
+getSelectableObjectHierarchy(): HierarchyNode[];
+```
+
+Defined in: [ConfiguratorCore.ts:8061](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8061)
+
+Returns the hierarchy of selectable objects in the scene.
+
+Furniture items are added as top-level objects, while selectable groups
+include their child objects. The room model and non-selectable objects
+are excluded.
+
+#### Returns
+
+`HierarchyNode`[]
+
+An array of selectable object hierarchy nodes.
+
+***
+
+### getUndoRedoPayload()
+
+```ts
+getUndoRedoPayload(): Undo_Redo_Payload;
+```
+
+Defined in: [ConfiguratorCore.ts:9160](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9160)
+
+Get the undo-redo-satck size
+
+#### Returns
+
+`Undo_Redo_Payload`
+
+payload
+
+***
+
+### getWallHeight()
+
+```ts
+getWallHeight(): number;
+```
+
+Defined in: [ConfiguratorCore.ts:8129](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8129)
+
+**`Description`**
+
+Gets the current wall height applied to the walls in the 3D viewer.
+
+#### Returns
+
+`number`
+
+Current wall height in design units.
+ This method returns the current wall height applied to the walls in the 3D viewer.
+The returned value can be used to display the current wall height in the UI.
 
 ***
 
@@ -651,7 +913,7 @@ An array of all 3D models currently placed in the workspace (excluding the room 
 hoverModelByIdAndName(id, name): boolean;
 ```
 
-Defined in: [ConfiguratorCore.ts:6246](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6246)
+Defined in: [ConfiguratorCore.ts:6750](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6750)
 
 **`Description`**
 
@@ -683,13 +945,37 @@ as non-selectable.
 
 ***
 
+### import3DConfig()
+
+```ts
+import3DConfig(config): Promise<Record<string, Object3D<Object3DEventMap>>>;
+```
+
+Defined in: [ConfiguratorCore.ts:9345](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9345)
+
+Imports a 3D configuration into the scene.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `config` | `string` \| `Record`\<`string`, `any`\> | The 3D configuration object or JSON string. |
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `Object3D`\<`Object3DEventMap`\>\>\>
+
+A map of loaded models and groups mapped by their keys.
+
+***
+
 ### isModelSelected()
 
 ```ts
 isModelSelected(): boolean;
 ```
 
-Defined in: [ConfiguratorCore.ts:7045](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L7045)
+Defined in: [ConfiguratorCore.ts:7850](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7850)
 
 **`Description`**
 
@@ -705,13 +991,35 @@ a model is selected and the move/rotate/scale handles are currently active and a
 
 ***
 
+### load3DConfig()
+
+```ts
+load3DConfig(config): Promise<Record<string, Object3D<Object3DEventMap>>>;
+```
+
+Defined in: [ConfiguratorCore.ts:9674](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9674)
+
+Alias for import3DConfig.
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `config` | `string` \| `Record`\<`string`, `any`\> |
+
+#### Returns
+
+`Promise`\<`Record`\<`string`, `Object3D`\<`Object3DEventMap`\>\>\>
+
+***
+
 ### loadEnvironmentMap()
 
 ```ts
 loadEnvironmentMap(envUrl, intensity?): Promise<void>;
 ```
 
-Defined in: [ConfiguratorCore.ts:5477](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5477)
+Defined in: [ConfiguratorCore.ts:5836](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5836)
 
 **`Description`**
 
@@ -746,7 +1054,7 @@ loadModel(
 metadata?): Promise<Object3D<Object3DEventMap> | null>;
 ```
 
-Defined in: [ConfiguratorCore.ts:4568](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L4568)
+Defined in: [ConfiguratorCore.ts:4640](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L4640)
 
 **`Description`**
 
@@ -785,7 +1093,7 @@ mode where it floats with the mouse cursor until placed.
 modelView(camView): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5397](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5397)
+Defined in: [ConfiguratorCore.ts:5757](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5757)
 
 **`Description`**
 
@@ -806,13 +1114,29 @@ Defaults to the "front" view if the provided value is invalid.
 
 ***
 
+### redo()
+
+```ts
+redo(): void;
+```
+
+Defined in: [ConfiguratorCore.ts:2569](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L2569)
+
+Handles the redo operation based on the current 3D mode.
+
+#### Returns
+
+`void`
+
+***
+
 ### replaceModel()
 
 ```ts
 replaceModel(newUri, metadata?): Promise<boolean>;
 ```
 
-Defined in: [ConfiguratorCore.ts:5874](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5874)
+Defined in: [ConfiguratorCore.ts:6377](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6377)
 
 **`Description`**
 
@@ -849,7 +1173,7 @@ the system automatically restores the old model.
 resetFloor(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6981](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6981)
+Defined in: [ConfiguratorCore.ts:7749](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7749)
 
 **`Description`**
 
@@ -870,7 +1194,7 @@ the floors in the 3D viewer, restoring them to their original default material s
 resetMaterial(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5339](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5339)
+Defined in: [ConfiguratorCore.ts:5657](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5657)
 
 **`Description`**
 
@@ -891,7 +1215,7 @@ selected model back to its original material configuration.
 resetTexture(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5367](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5367)
+Defined in: [ConfiguratorCore.ts:5706](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5706)
 
 **`Description`**
 
@@ -912,7 +1236,7 @@ back to its original texture.
 resetWalls(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6852](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6852)
+Defined in: [ConfiguratorCore.ts:7423](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7423)
 
 **`Description`**
 
@@ -933,7 +1257,7 @@ any walls in the 3D viewer, restoring them to their original default material st
 rotateModel(axis, angle): boolean;
 ```
 
-Defined in: [ConfiguratorCore.ts:5800](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5800)
+Defined in: [ConfiguratorCore.ts:6303](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6303)
 
 **`Description`**
 
@@ -963,7 +1287,7 @@ This method rotates the currently selected model around the specified axis
 selectModelByIdAndName(id, name): boolean;
 ```
 
-Defined in: [ConfiguratorCore.ts:6201](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6201)
+Defined in: [ConfiguratorCore.ts:6705](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6705)
 
 **`Description`**
 
@@ -997,13 +1321,35 @@ as non-selectable.
 
 ***
 
+### set3DModes()
+
+```ts
+set3DModes(mode): void;
+```
+
+Defined in: [ConfiguratorCore.ts:981](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L981)
+
+Sets the current 3D mode.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `mode` | `CurrentMode` | The 3D mode to activate. |
+
+#### Returns
+
+`void`
+
+***
+
 ### setBackgroundColor()
 
 ```ts
 setBackgroundColor(backgroundColor): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5049](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5049)
+Defined in: [ConfiguratorCore.ts:5233](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5233)
 
 **`Description`**
 
@@ -1029,7 +1375,7 @@ This method updates the background color of the 3D canvas scene dynamically.
 setCameraType(type): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6292](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6292)
+Defined in: [ConfiguratorCore.ts:6797](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6797)
 
 Sets the camera type between perspective and orthographic projection views.
 
@@ -1037,7 +1383,51 @@ Sets the camera type between perspective and orthographic projection views.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `type` | `"perspective"` \| `"orthographic"` | The view mode to activate (either `"perspective"` or `"orthographic"`). |
+| `type` | `CameraTypes` | The view mode to activate (either `"perspective"` or `"orthographic"`). |
+
+#### Returns
+
+`void`
+
+***
+
+### setCollisionStatus()
+
+```ts
+setCollisionStatus(isActive): void;
+```
+
+Defined in: [ConfiguratorCore.ts:9175](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9175)
+
+Enables or disables collision detection when models are manipulated (moved or rotated).
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `isActive` | `boolean` | `true` to enable collision checking and automatic revert; `false` to allow freely overlapping placement. |
+
+#### Returns
+
+`void`
+
+***
+
+### setRoomAnnotationMode()
+
+```ts
+setRoomAnnotationMode(mode): void;
+```
+
+Defined in: [ConfiguratorCore.ts:8381](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8381)
+
+Sets the room annotation display mode.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `mode` | `AnnotationMode` | The room annotation display mode. |
 
 #### Returns
 
@@ -1051,7 +1441,7 @@ Sets the camera type between perspective and orthographic projection views.
 setTransformMode(mode): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5707](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5707)
+Defined in: [ConfiguratorCore.ts:6193](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6193)
 
 **`Description`**
 
@@ -1079,7 +1469,7 @@ effect if the active control mode is set to `"transform"` (using
 setTransformSize(size): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5725](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5725)
+Defined in: [ConfiguratorCore.ts:6210](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6210)
 
 **`Description`**
 
@@ -1099,13 +1489,35 @@ This method adjusts the scale and size of the active transform controls gizmo in
 
 ***
 
+### setUndoRedoLimit()
+
+```ts
+setUndoRedoLimit(limit): void;
+```
+
+Defined in: [ConfiguratorCore.ts:9151](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L9151)
+
+set undo-redo limit to stack
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `limit` | `number` | - |
+
+#### Returns
+
+`void`
+
+***
+
 ### setWallColor()
 
 ```ts
 setWallColor(color): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6662](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6662)
+Defined in: [ConfiguratorCore.ts:7150](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7150)
 
 **`Description`**
 
@@ -1131,7 +1543,7 @@ Sets the color that will be applied to wall faces when wall coloring mode is act
 setWallTexture(texturePreset): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6747](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6747)
+Defined in: [ConfiguratorCore.ts:7231](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7231)
 
 **`Description`**
 
@@ -1161,7 +1573,7 @@ applied to wall faces when wall texturing mode is active.
 showAllMeasurements(): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:6044](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6044)
+Defined in: [ConfiguratorCore.ts:6567](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6567)
 
 **`Description`**
 
@@ -1182,7 +1594,7 @@ active preview model, if present) to surrounding elements in the 3D viewer.
 switchControlMode(type): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5551](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5551)
+Defined in: [ConfiguratorCore.ts:5908](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L5908)
 
 **`Description`**
 
@@ -1192,7 +1604,7 @@ Switches the active camera or model interaction control mode.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `type` | `"orbit"` \| `"trackball"` \| `"pointerlock"` \| `"transform"` | The type of control mode to activate: - `"orbit"`: Default orbital rotation, zoom, and panning. - `"trackball"`: Free rotation controls. - `"pointerlock"`: First-person keyboard/mouse navigation. - `"transform"`: Gizmo controls to translate, rotate, or scale the selected model. |
+| `type` | `ORBIT` \| `TRACKBALL` \| `POINTER_LOCK` \| `TRANSFORM` | The type of control mode to activate: - `"orbit"`: Default orbital rotation, zoom, and panning. - `"trackball"`: Free rotation controls. - `"pointerlock"`: First-person keyboard/mouse navigation. - `"transform"`: Gizmo controls to translate, rotate, or scale the selected model. |
 
 #### Returns
 
@@ -1210,7 +1622,7 @@ model so users can reposition it.
 takeSnapshot(): string;
 ```
 
-Defined in: [ConfiguratorCore.ts:6526](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6526)
+Defined in: [ConfiguratorCore.ts:7015](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7015)
 
 **`Description`**
 
@@ -1233,7 +1645,7 @@ PNG image data URL.
 toggleMeasurement(): boolean | undefined;
 ```
 
-Defined in: [ConfiguratorCore.ts:6005](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L6005)
+Defined in: [ConfiguratorCore.ts:6528](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6528)
 
 **`Description`**
 
@@ -1268,7 +1680,7 @@ If `measurementState.isActive` is set to `false`, calling `toggleMeasurement()` 
 toggleTransformAxis(axis, visible): void;
 ```
 
-Defined in: [ConfiguratorCore.ts:5740](https://github.com/rahulkhandepts/3d-configurator-library/blob/8cfc5502bcd92a8ab69344ffdb9876c58674ec0e/Library/three-configurator/src/ConfiguratorCore.ts#L5740)
+Defined in: [ConfiguratorCore.ts:6225](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L6225)
 
 **`Description`**
 
@@ -1287,3 +1699,199 @@ Shows or hides a specific translation/rotation/scaling axis on the transform giz
 
 This method allows toggling the visibility of individual transform handles
 (X, Y, or Z axes) on the active transform gizmo.
+
+***
+
+### undo()
+
+```ts
+undo(): void;
+```
+
+Defined in: [ConfiguratorCore.ts:2555](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L2555)
+
+Handles the undo operation based on the current 3D mode.
+
+#### Returns
+
+`void`
+
+***
+
+### ungroupSelectedGroup()
+
+```ts
+ungroupSelectedGroup(): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:7985](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L7985)
+
+Disbands/ungroups the currently selected permanent group or target group.
+
+#### Returns
+
+`boolean`
+
+true if group was successfully disbanded, false otherwise.
+
+***
+
+### updateDoorHeight()
+
+```ts
+updateDoorHeight(height): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:8218](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8218)
+
+**`Description`**
+
+Updates the height of all doors in the 3D viewer to the specified value.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `height` | `number` | The new door height in design units. |
+
+#### Returns
+
+`boolean`
+
+`true` if successful, or `false` if the specified height violates boundary constraints relative to wall height.
+ Updates the height of all doors in the 3D viewer to the specified height.
+
+***
+
+### updateDoorWidth()
+
+```ts
+updateDoorWidth(width): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:8244](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8244)
+
+**`Description`**
+
+Updates the width of all doors in the 3D viewer to the specified value.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `width` | `number` | The new door width in design units. |
+
+#### Returns
+
+`boolean`
+
+`true` if successful, or `false` if the width is less than 0 or exceeds `Opening3DConstraints.MAX_DOOR_WIDTH`.
+ Updates the width of all doors in the 3D viewer to the specified width.
+
+***
+
+### updateWallHeight()
+
+```ts
+updateWallHeight(height): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:8348](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8348)
+
+**`Description`**
+
+Updates the height of all 3D wall meshes in the 3D viewer.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `height` | `number` | The new wall height in design units. |
+
+#### Returns
+
+`boolean`
+
+`true` if the height was successfully updated, or `false` if the height is invalid (e.g., non-positive or insufficient for current door/window dimensions).
+ Updates the height of all walls in the 3D viewer to the specified height. The existing wall configuration, including wall metadata, doors, windows, and boundary information, is preserved while the wall geometry is rebuilt and trimmed.
+
+***
+
+### updateWindowFloorDistance()
+
+```ts
+updateWindowFloorDistance(distance): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:8318](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8318)
+
+**`Description`**
+
+Updates the distance between the floor and the bottom edge of all windows.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `distance` | `number` | The new distance between the floor and the bottom edge of the windows in design units. |
+
+#### Returns
+
+`boolean`
+
+`true` if successful, or `false` if the distance is negative or causes the top of the window to exceed wall height constraints.
+ Updates the vertical position of all windows by setting their distance from the floor to the specified value in design units.
+
+***
+
+### updateWindowHeight()
+
+```ts
+updateWindowHeight(height): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:8270](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8270)
+
+**`Description`**
+
+Updates the height of all windows in the 3D viewer to the specified value.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `height` | `number` | The new window height in design units. |
+
+#### Returns
+
+`boolean`
+
+`true` if successful, or `false` if the height violates boundary constraints relative to wall height.
+ Updates the height of all windows in the 3D viewer to the specified height.
+
+***
+
+### updateWindowWidth()
+
+```ts
+updateWindowWidth(width): boolean;
+```
+
+Defined in: [ConfiguratorCore.ts:8294](https://github.com/rahulkhandepts/3d-configurator-library/blob/a79d327b61a9aa580050f34f2f5d81c9e44bfac7/Library/three-configurator/src/ConfiguratorCore.ts#L8294)
+
+**`Description`**
+
+Updates the width of all windows in the 3D viewer to the specified value.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `width` | `number` | The new window width in design units. |
+
+#### Returns
+
+`boolean`
+
+`true` if successful, or `false` if the width is less than 0 or exceeds `Opening3DConstraints.MAX_WINDOW_WIDTH`.
+ Updates the width of all windows in the 3D viewer to the specified width.

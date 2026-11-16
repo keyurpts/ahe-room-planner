@@ -1,10 +1,13 @@
 import * as THREE from "three";
 import { ConfiguratorCore } from "../ConfiguratorCore";
 import { Converter } from "./Converter";
-import type { Wall3DData } from "./Converter";
-import { Config, ImageAssets, FixtureType, LengthUnit } from "../Constants";
-import { WallCutter, type DoorWindowData } from "./WallCutter";
-import { DoorWindowHelper } from "./DoorWindowHelper";
+import type { Room3DData } from "./Converter";
+import { Config, CurrentMode, ImageAssets } from "../Constants";
+import { WallCutter } from "./WallCutter";
+import { WallBuilder } from "./WallBuilder";
+import { RoomAnnotationManager } from "./RoomAnnotationManager";
+import type { Undo_Redo_Payload } from "../event/ConfiguratorEventType";
+
 
 /**
  * Design3D class handles the 3D representation of the floorplan.
@@ -21,15 +24,7 @@ export class Design3D {
    */
   private converter: Converter;
 
-  /**
-   * Raw wall meshes (input to WallCutter)
-   */
-  private sourceWallGroup: THREE.Group | null = null;
 
-  /**
-   * The CSG-trimmed group that is actually added to the scene
-   */
-  private active3DWallGroup: THREE.Group | null = null;
 
   /**
    * Group containing generated 3D floor meshes.
@@ -57,6 +52,16 @@ export class Design3D {
   private wallCutter: WallCutter;
 
   /**
+   * LabelManager helper instance for managing labels.
+   */
+  private roomAnnotationManager: RoomAnnotationManager;
+
+  /**
+   * WallBuilder helper instance for constructing wall meshes from 2D data.
+   */
+  private wallBuilder: WallBuilder;
+
+  /**
    * Retrieves the current unit conversion scale factor.
    * @returns The unit conversion factor as a number.
    */
@@ -69,14 +74,15 @@ export class Design3D {
    * @param container - The HTML element to host the 3D canvas.
    */
   constructor(container: HTMLDivElement) {
-    // Initialize the 3D core
     this.core = this.createConfiguratorCore(container);
     // Instantiate the converter
     this.converter = new Converter();
-    this.wallCutter = new WallCutter();
+    this.wallCutter = WallCutter.getInstance();
+    this.roomAnnotationManager = RoomAnnotationManager.getInstance();
+    this.wallBuilder = WallBuilder.getInstance();
   }
 
-  /**
+    /**
    * Creates and returns a new ConfiguratorCore instance.
    *
    * @param container - The HTML element to host the 3D canvas.
@@ -92,256 +98,41 @@ export class Design3D {
   }
 
   /**
-   * Creates 3D meshes for the walls based on 2D floorplan data and loads them into the core.
-   * @param wallData - Array of wall data objects.
-   * @param houseBoundary - Optional house boundary room.
-   */
-  private make3DMesh(wallData: Wall3DData[], houseBoundary?: any) {
-
-    // wall height and thickness
-    const wallHeight = (Config.WALL_HEIGHT as number) * (Config.WORLD_SCALE as number);
-    const wallThickness = (Config.WALL_THICKNESS as number) * (Config.WORLD_SCALE as number);
-
-    const wallGroup = new THREE.Group();
-
-    wallData.forEach((wall) => {
-      const points = wall.points;
-
-      if (points.length >= 4) {
-        // Map indexes to objects and scale them
-        const startPoint = {
-          // need to be multiplied by unit conversion factor **
-          x: points[0] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
-          // need to be multiplied by unit conversion factor **
-          z: points[1] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
-        };
-
-        const endPoint = {
-          // need to be multiplied by unit conversion factor **
-          x: points[2] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
-          // need to be multiplied by unit conversion factor **
-          z: points[3] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
-        };
-
-        // Direction vector (already scaled because points are scaled)
-        const dx = endPoint.x - startPoint.x;
-        const dz = endPoint.z - startPoint.z;
-
-        // Wall length
-        const length = (Math.sqrt(dx * dx + dz * dz) + (10 * wallThickness));
-
-
-        // Rotation angle
-        const angle = Math.atan2(dz, dx);
-
-        // Find intersecting walls at start and end points
-        const startPointWallIds: string[] = [];
-        const endPointWallIds: string[] = [];
-
-        wallData.forEach((otherWall) => {
-          if (otherWall.id === wall.id) return;
-          const otherPoints = otherWall.points;
-          const otherStart = {
-            // need to be multiplied by unit conversion factor **
-            x: otherPoints[0] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
-            // need to be multiplied by unit conversion factor **
-            z: otherPoints[1] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor()
-          };
-          const otherEnd = {
-            // need to be multiplied by unit conversion factor **
-            x: otherPoints[2] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor(),
-            // need to be multiplied by unit conversion factor **
-            z: otherPoints[3] * (Config.WORLD_SCALE as number) * this.getUnitScaleFactor()
-          };
-
-          const epsilon = 0.1 * (Config.WORLD_SCALE as number); // Small tolerance for floating point comparison
-
-          // Check if other wall touches this wall's start point
-          if (
-            (Math.abs(startPoint.x - otherStart.x) < epsilon && Math.abs(startPoint.z - otherStart.z) < epsilon) ||
-            (Math.abs(startPoint.x - otherEnd.x) < epsilon && Math.abs(startPoint.z - otherEnd.z) < epsilon)
-          ) {
-            startPointWallIds.push(otherWall.id);
-          }
-
-          // Check if other wall touches this wall's end point
-          if (
-            (Math.abs(endPoint.x - otherStart.x) < epsilon && Math.abs(endPoint.z - otherStart.z) < epsilon) ||
-            (Math.abs(endPoint.x - otherEnd.x) < epsilon && Math.abs(endPoint.z - otherEnd.z) < epsilon)
-          ) {
-            endPointWallIds.push(otherWall.id);
-          }
-        });
-
-        // Geometry & material
-        const geometry = new THREE.BoxGeometry(
-          length,
-          wallHeight,
-          wallThickness,
-        );
-
-        const material = new THREE.MeshStandardMaterial({
-          color: 0xaaaaaa,
-          roughness: 0.4,
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        //Add material as user data into the mesh used to restore it
-        mesh.userData.defaultMaterial = material;
-        // Position wall at midpoint
-        mesh.position.set(
-          startPoint.x + dx / 2,
-          wallHeight / 2,
-          startPoint.z + dz / 2,
-        );
-
-        // Rotate wall to match direction
-        mesh.rotation.y = -angle;
-        (mesh as any).startPoint = startPoint;
-        (mesh as any).endPoint = endPoint;
-        (mesh as any).startPointWallIds = startPointWallIds;
-        (mesh as any).endPointWallIds = endPointWallIds;
-        (mesh as any).wall_id = wall.id;
-        (mesh as any).windows = wall.windows || [];
-        (mesh as any).doors = wall.doors || [];
-
-        wallGroup.add(mesh);
-      }
-    });
-
-    // Store the raw group and run the cutter
-    this.sourceWallGroup = wallGroup;
-
-    this.wallCutter.setWallGroup(this.sourceWallGroup);
-    const trimmedWallGroup = this.wallCutter.cutWalls();
-
-    // Track whichever group is actually added to the scene
-    this.active3DWallGroup = trimmedWallGroup ?? this.sourceWallGroup;
-
-    // Add small cubes to the outer faces of boundary walls AFTER cutting
-    // We parent them to the wall meshes so they follow the wall's hierarchy.
-    if (houseBoundary && houseBoundary.boundaryWalls) {
-      for (const bw of houseBoundary.boundaryWalls) {
-        // Find ALL meshes that belonged to this wall ID (could be multiple if split by window)
-        const wallMeshes = this.active3DWallGroup!.children.filter(
-          (child: any) => child.wall_id === bw.id
-        ) as THREE.Mesh[];
-
-        if (wallMeshes.length > 0) {
-          // Add the cube to the first/main fragment of the wall
-          const targetMesh = wallMeshes[0];
-          const wallThickness = (Config.WALL_THICKNESS as number) * (Config.WORLD_SCALE as number);
-
-          const cubeSize = 20 * (Config.WORLD_SCALE as number);
-          const cubeGeom = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize / 3);
-          const cubeMat = new THREE.MeshStandardMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
-
-          const cube = new THREE.Mesh(cubeGeom, cubeMat);
-
-          // For parenting, we use LOCAL coordinates.
-          // In local space, the wall center is (0,0,0).
-          // Offset to outer face along local Z.
-          const side = bw.isReversed ? -1 : 1;
-
-          cube.position.set(0, 105 * (Config.WORLD_SCALE as number), side * (wallThickness / 2));
-
-          cube.name = `boundary_cube_${bw.id}`;
-          targetMesh.add(cube);
-        }
-      }
-    }
-
-    if (this.roomGroup && this.active3DWallGroup) {
-      this.roomGroup.add(this.active3DWallGroup);
-    }
-
-    const placements = this.wallCutter.getPlacements();
-
-    if (this.roomGroup) {
-      this.addDoorAndWindow(placements, wallThickness);
-    }
-  }
-
-  /**
-   * Helper method to add the door and windows to the roomGroup by creating them.
-   * @param doorWindows - Array of door and window data.
-   * @param wallThickness - Thickness of the walls.
-   */
-  private addDoorAndWindow(doorWindows: DoorWindowData[], wallThickness: number): void {
-    if (!this.active3DWallGroup) {
-      return;
-    }
-  for (const doorWindow of doorWindows) {
-      let model: THREE.Group;
-      if (doorWindow.type === FixtureType.DOOR) {
-        model = DoorWindowHelper.createDoor(doorWindow.width, doorWindow.height, wallThickness);
-      } else {
-        model = DoorWindowHelper.createWindow(doorWindow.width, doorWindow.height, wallThickness);
-      }
-
-      const bbox = new THREE.Box3().setFromObject(model);
-      const center = bbox.getCenter(new THREE.Vector3());
-
-      const wrapper = new THREE.Group();
-      wrapper.name = `${doorWindow.type}_${doorWindow.id}`;
-      model.position.set(-center.x, -center.y, -center.z);
-      wrapper.add(model);
-
-      wrapper.userData = {
-        id: doorWindow.id,
-        type: doorWindow.type,
-        selectable: "false",
-        wallId: doorWindow.wallId
-      };
-
-      // Find the parent wall this door/window belongs to
-      const wallMesh = this.active3DWallGroup.children.find(
-        (child: THREE.Object3D) => (child as any).wall_id === doorWindow.wallId
-      ) as THREE.Mesh | undefined;
-
-      if (wallMesh) {
-        // Convert world transform to wall-local transform
-        const localPos = doorWindow.position.clone();
-        wallMesh.worldToLocal(localPos);
-        wrapper.position.copy(localPos);
-
-        const wallWorldQuaternion = new THREE.Quaternion();
-        wallMesh.getWorldQuaternion(wallWorldQuaternion);
-        wrapper.quaternion
-          .copy(wallWorldQuaternion)
-          .invert()
-          .multiply(doorWindow.quaternion);
-
-        // Add as child of the wall mesh
-        wallMesh.add(wrapper);
-      } else if (this.roomGroup) {
-        wrapper.position.copy(doorWindow.position);
-        wrapper.quaternion.copy(doorWindow.quaternion);
-        this.roomGroup.add(wrapper);
-      }
-    }
-  }
-
-  /**
    * Converts 2D data to 3D walls and floors and renders them.
    * @param data - The JSON dataset containing layout information.
    */
   public loadFromJson(data: any): void {
-    const json = data.layer || data;
-    const rooms = data.rooms || [];
+    const wallLayer = data.layer || data;
+    const roomsLayer = data.roomsLayer || null;
     const houseBoundary = data.houseBoundary || null;
     this.unit_conversion_factor = data.unit_conversion_factor || 1;
-    this.wallCutter.setUnitConversionFactor(this.unit_conversion_factor);
-
-    const walls = this.converter.convert2dto3d(json);
-
     this.clearWalls();
+    // Create the room group before passing it to WallBuilder.
     this.roomGroup = new THREE.Group();
 
-    this.make3DMesh(walls, houseBoundary);
+    // Share the same roomGroup instance with WallBuilder.
+    this.wallBuilder.setRoomGroup(this.roomGroup);
+    // Set the required conversion factor.
+    this.wallBuilder.setUnitConversionFactor(this.unit_conversion_factor);
+
+    const walls = this.converter.convert2dto3d(wallLayer);
+    const rooms = this.converter.convertRoom2dto3d(roomsLayer);
+
+    // WallBuilder creates the walls and adds them to the shared roomGroup.
+    this.wallBuilder.make3DMesh(walls, houseBoundary);
+
 
     if (rooms.length > 0) {
-      this.makeFloorMesh(rooms);
+      this.roomGroup.updateMatrixWorld(true);
+
+      // 2. Calculate the bounding box of the entire group
+      const box = new THREE.Box3().setFromObject(this.roomGroup);
+
+      // 3. Get the bounding sphere (contains both center and radius)
+      const boundingSphere = new THREE.Sphere();
+      box.getBoundingSphere(boundingSphere);
+
+      this.makeFloorMesh(rooms, boundingSphere);
       this.makeFloorMeshTrimmer(rooms);
     }
 
@@ -355,8 +146,12 @@ export class Design3D {
    * Creates 3D floors for each room based on room layout.
    * @param rooms - Array of room objects containing vertices.
    */
-  private makeFloorMesh(rooms: { vertices: { x: number; y: number }[] }[]): void {
+  private makeFloorMesh(rooms: Room3DData[], boundingSphere: THREE.Sphere): void {
     const floorGroup = new THREE.Group();
+    this.roomAnnotationManager.registerRootGroup(floorGroup);
+    const center = boundingSphere.center; // THREE.Vector3 { x, y, z }
+    const radius = boundingSphere.radius;
+    const wallHight = Math.round(((this.roomGroup?.children[0]?.children[0] as any)?.currentHeight ?? 0) / (Config.WORLD_SCALE as number));
 
     rooms.forEach((room) => {
       const shape = new THREE.Shape();
@@ -387,6 +182,11 @@ export class Design3D {
         metalness: 0.1,
       });
 
+      // Store initial texture metadata
+      material.userData.textureUrl = ImageAssets.DEFAULT_FLOOR_TEXTURE;
+      material.userData.repeatX = 1;
+      material.userData.repeatY = 1;
+
       if (material.map) material.map.anisotropy = 16;
 
       const floorMesh = new THREE.Mesh(geometry, material);
@@ -408,10 +208,43 @@ export class Design3D {
       floorMesh.material.polygonOffset = true;
       floorMesh.material.polygonOffsetFactor = -1;
       floorMesh.material.polygonOffsetUnits = -1;
+      let lable = this.roomAnnotationManager.createLabel({
+        id: room.id,
+        roomName: room.roomName,
+        startPosition: new THREE.Vector3(
+          room.lablePosition.x *
+          (Config.WORLD_SCALE as number) *
+          this.getUnitScaleFactor(),
+
+          0.1,
+
+          room.lablePosition.y *
+          (Config.WORLD_SCALE as number) *
+          this.getUnitScaleFactor()
+        ),
+        wallHeight: wallHight,
+        center,
+        radius,
+      });
+
+      // Counter-rotate the label so it remains upright despite the floorMesh's rotation
+      lable.rotation.x = -Math.PI / 2;
+
+      floorMesh.add(lable);
       floorGroup.add(floorMesh);
     });
 
     this.floorGroup = floorGroup;
+
+    // Set the panning boundary on OrbitControls to floor + tiny buffer
+    if (this.core && (this.core as any).controlsManager) {
+      const orbitControls = (this.core as any).controlsManager.getControl("orbit");
+      if (orbitControls) {
+        (orbitControls as any).minPanY = 0.01 * (Config.WORLD_SCALE as number) + 0.1;
+      }
+    }
+
+
     if (this.roomGroup && this.floorGroup) {
       this.roomGroup.add(this.floorGroup);
     }
@@ -457,6 +290,11 @@ export class Design3D {
         roughness: 0.4,
         metalness: 0.1,
       });
+      // Store the original texture information
+      topMaterial.userData.textureUrl = ImageAssets.DEFAULT_FLOOR_TEXTURE;
+      topMaterial.userData.repeatX = 1;
+      topMaterial.userData.repeatY = 1;
+
 
       const sideMaterial = new THREE.MeshStandardMaterial({
         color: 0xd8d2c4,
@@ -582,10 +420,10 @@ export class Design3D {
     }
 
     // Remove the group that was added to the scene (the trimmed result)
-    if (this.active3DWallGroup) {
-      this.active3DWallGroup = null;
+    if (this.roomGroup) {
+      this.roomGroup = null;
     }
-    this.sourceWallGroup = null;
+    this.roomGroup = null;
     if (this.floorGroup) {
       this.floorGroup = null;
     }
@@ -597,6 +435,7 @@ export class Design3D {
    */
   public enter3DView(): void {
     if (!this.core) return;
+    this.core?.enableWallHiding(false);
     this.core.resumeRenderer();
 
     requestAnimationFrame(() => {
@@ -610,6 +449,9 @@ export class Design3D {
   public exit3DView(): void {
     this.core?.clearScene();
     this.core?.pauseRenderer();
+    this.core?.enableWallHiding(false);
+    this.core?.clearDesign2DHistory();
+    this.core?.clearConfigureHistory();
   }
 
   /**
@@ -633,13 +475,45 @@ export class Design3D {
   }
 
   /**
-   * Sets the length measurement unit used in the 3D scene (e.g. for distance measurements).
+ * Sets the current 3D application mode through the core instance.
+ *
+ * @param {CurrentMode} mode - The 3D mode to activate.
+ * @returns {void}
+ */
+  public set3DModes(mode: CurrentMode): void {
+    this.core?.set3DModes(mode);
+  }
+
+  /**
+   * Retrieves the currently active 3D application mode from the core instance.
    *
-   * @public
-   * @param {LengthUnit | string} unit - The target length unit ('mm', 'cm', 'inch', 'foot').
-   * @returns {void}
+   * @returns {CurrentMode | undefined} The current 3D mode, or undefined if the core instance is unavailable.
    */
-  public setLengthUnit(unit: LengthUnit | string): void {
-    this.core?.setLengthUnit(unit);
+  public get3DModes(): CurrentMode | undefined {
+    return this.core?.get3DModes();
+  }
+
+  /**
+   * set undo-redo limit to stack
+   * @param {Number} limit
+   */
+  public setUndoRedoLimit(limit: number) {
+    this.core?.setUndoRedoLimit(limit);
+  }
+
+  /**
+   * Get the undo-redo-satck size
+   * @returns {Undo_Redo_Payload} payload
+   */
+  public getUndoRedoPayload(): Undo_Redo_Payload {
+    return this.core?.getUndoRedoPayload() || { undo_stack_size: 0, redo_stack_size: 0 };
+  }
+
+  /**
+   * Sets the length measurement unit used in the 3D scene (e.g. for distance measurements).
+   * @internal
+   */
+  public update3DLengthUnit(): void {
+    this.core?.set3DMeasurementUnit();
   }
 }

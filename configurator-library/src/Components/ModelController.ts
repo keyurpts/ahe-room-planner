@@ -955,9 +955,23 @@ export class ModelController {
    * box parented to the model for automatic transform synchronization.
    *
    * @param model - The THREE.Object3D to attach the bounding box helper to.
+   * @param type - Whether this helper is for hover or select state.
    */
-  public addBoundingBoxHelper(model: THREE.Object3D): void {
-    this.removeBoundingBoxHelper();
+  public addBoundingBoxHelper(model: THREE.Object3D, type: "hover" | "select" = "select"): THREE.LineSegments | void {
+    let color: number;
+    let isHover: boolean;
+    if (type === "hover") {
+      color = 0x0000ff;
+      isHover = true;
+    } else {
+      color = 0xffff00;
+      isHover = false;
+    }
+
+    //Creating a hover box doesn't destroy current yellow selection box.
+    if (!isHover) {
+      this.removeBoundingBoxHelper();
+    }
 
     const localBox = this.computePreciseLocalBox(model);
 
@@ -973,13 +987,19 @@ export class ModelController {
     const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
     // Create an EdgesGeometry to get a wireframe-like outline of the box
     const edges = new THREE.EdgesGeometry(geometry);
-    const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
-    this.currentBoxHelper = new THREE.LineSegments(edges, material);
+    const material = new THREE.LineBasicMaterial({ color: color });
+    const helper = new THREE.LineSegments(edges, material);
 
     // Initial position of the helper relative to the model's origin
-    this.currentBoxHelper.position.copy(center);
+    helper.position.copy(center);
 
-    model.add(this.currentBoxHelper);
+    model.add(helper);
+
+    if (isHover) {
+      return helper;
+    } else {
+      this.currentBoxHelper = helper; //continue tracking the main selection box
+    }
   }
 
   /**

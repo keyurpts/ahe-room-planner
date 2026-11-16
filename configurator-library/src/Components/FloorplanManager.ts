@@ -1,8 +1,10 @@
 import type { ConfiguratorCore } from "../ConfiguratorCore";
 import { Design3D } from "./Design3D";
-import { RoomEditorMode, LengthUnit, normalizeLengthUnit } from "../Constants";
+import { CurrentMode, DOMEvents, RoomEditorMode, LengthUnit } from "../Constants";
 import { Design2D } from "./Design2D";
 import { Predefined2DShapes } from "../shapeTemplates";
+import { Events, ConfiguratorEventType } from "../event";
+import { LengthUnitConverter } from "./LengthUnitConverter";
 
 /**
  * Manages coordination between the 2D editor and the 3D viewer.
@@ -11,7 +13,12 @@ import { Predefined2DShapes } from "../shapeTemplates";
 export class FloorplanManager {
   private design2D: Design2D | null = null;
   private design3D: Design3D | null = null;
-  private initialUnit: LengthUnit = LengthUnit.MM;
+
+  /**
+   * Current Modes
+   */
+  private currentMode: CurrentMode = CurrentMode.TWO_D_MODE;
+
 
   /**
    * Initializes both the 2D viewer and the 3D viewer
@@ -33,11 +40,12 @@ export class FloorplanManager {
    * should toggle visibility dynamically, showing one and hiding the other.
    *
    */
-  public init(container2D: HTMLDivElement, container3D: HTMLDivElement):     void {
+  public init(container2D: HTMLDivElement, container3D: HTMLDivElement): void {
     this.design2D = this.createDesign2D(container2D);
-    this.design2D.setLengthUnit(this.initialUnit);
+    this.design2D.update2DLengthUnit();
     this.design3D = this.createDesign3D(container3D);
-    this.design3D.setLengthUnit(this.initialUnit);
+    this.design3D.update3DLengthUnit();
+    window.addEventListener(DOMEvents.KEY_DOWN, this.handleKeyDown);
   }
 
   /**
@@ -61,6 +69,31 @@ export class FloorplanManager {
   }
 
   /**
+   * Handles keyboard shortcuts for undo and redo operations.
+   *
+   * @param event - Keyboard event.
+   */
+  private handleKeyDown = (event: KeyboardEvent): void => {
+    const key = event.key.toLowerCase();
+
+    // Undo: Ctrl + Z
+    if (event.ctrlKey && key === "z") {
+      event.preventDefault();
+      this.undo();
+
+      return;
+    }
+
+    // Redo: Ctrl + Y
+    if (event.ctrlKey && key === "y") {
+      event.preventDefault();
+      this.redo();
+
+      return;
+    }
+  };
+
+  /**
    * Switches the view from the 2D viewer to the 3D viewer.
    *
    * @param {(isDetected: boolean) => void} [isRoomDetected]
@@ -81,6 +114,13 @@ export class FloorplanManager {
   ): Promise<boolean> {
     if (!this.design2D || !this.design3D) return false;
 
+    this.set2DMode("draw", false);
+    Events.emit(ConfiguratorEventType.UNDO_REDO, 
+      {
+        undo_stack_size: 0,
+        redo_stack_size: 0
+      });
+
     const data = await this.design2D.get2ddata();
     if (
       data &&
@@ -89,7 +129,7 @@ export class FloorplanManager {
       data.layer.children.length > 0
     ) {
       if (isRoomDetected) {
-        if (data.rooms && data.rooms.length > 0) {
+        if (data.roomsLayer && data.roomsLayer.children.length > 0) {
           isRoomDetected(true);
         } else {
           isRoomDetected(false);
@@ -98,6 +138,8 @@ export class FloorplanManager {
 
       this.design3D.loadFromJson(data);
       this.design3D.enter3DView();
+      this.currentMode = CurrentMode.THREE_D_MODE;
+      Events.emit(ConfiguratorEventType.UNDO_REDO, this.design3D.getUndoRedoPayload());
       return true;
     } else {
       return false;
@@ -140,6 +182,8 @@ export class FloorplanManager {
    */
   public switchTo2D(): void {
     this.design3D?.exit3DView();
+    this.currentMode = CurrentMode.TWO_D_MODE;
+    Events.emit(ConfiguratorEventType.UNDO_REDO, this.design2D?.getUndoRedoPayload());
   }
 
   /**
@@ -220,6 +264,38 @@ export class FloorplanManager {
    */
   public enableSnapping(enabled: boolean): boolean {
     return this.design2D?.activeSnapping(enabled) ?? false;
+  }
+
+  /**
+   * Enables or disables wall dragging (in EDIT mode).
+   *
+   * @param {boolean} enabled
+   * `true` to enable wall dragging, `false` to disable it.
+   *
+   * @returns {boolean}
+   * Returns a boolean indicating the active wall dragging state.
+   *
+   * @description
+   * This method enables or disables wall dragging (in EDIT mode).
+   */
+  public enableWallDragging(enabled: boolean): boolean {
+    return this.design2D?.enableWallDragging(enabled) ?? false;
+  }
+
+  /**
+   * Enables or disables junction dragging (in EDIT mode).
+   *
+   * @param {boolean} enabled
+   * `true` to enable junction dragging, `false` to disable it.
+   *
+   * @returns {boolean}
+   * Returns a boolean indicating the active junction dragging state.
+   *
+   * @description
+   * This method enables or disables junction dragging (in EDIT mode).
+   */
+  public enableJunctionDragging(enabled: boolean): boolean {
+    return this.design2D?.enableJunctionDragging(enabled) ?? false;
   }
 
   /**
@@ -397,6 +473,7 @@ export class FloorplanManager {
    * windows and room spaces.
    */
   public clear2DLayout(): void {
+    this.set2DMode("draw", false);
     this.design2D?.clearAll();
   }
 
@@ -453,13 +530,10 @@ export class FloorplanManager {
   }
 
   /**
-   * Downloads the current floorplan layout as a JSON file.
+   * Returns the current 2D floorplan layout as JSON.
    *
-   * @returns {void}
-   *
-   * @description
-   * This method saves your current 2D layout design to a file and downloads
-   * it to your computer as `floorplan.json`.
+   * @returns {string | undefined} The serialized Konva stage, or undefined if the 2D viewer is not initialized.
+   * @public
    */
   public exportJson(): any {
     return this.design2D?.exportJson();
@@ -500,21 +574,84 @@ export class FloorplanManager {
       | Predefined2DShapes.L_SHAPE
       | Predefined2DShapes.RECTANGLE
       | Predefined2DShapes.TRIANGLE
-      | Predefined2DShapes.SQUARE
+      | Predefined2DShapes.SQUARE,
+      isPreview: boolean = false
   ) {
-    this.design2D?.addPredefinedShape(shapeType);
+    this.set2DMode("draw", false);
+    this.set2DMode("door", false);
+    this.set2DMode("window", false);
+
+    this.design2D?.addPredefinedShape(shapeType, isPreview);
   }
 
   /**
-   * Sets the length unit for displaying dimensions across both 2D and 3D viewers.
-   * @public
-   * @param {LengthUnit | string} unit - The length unit to display ('mm', 'cm', 'inch', 'foot').
+   * Sets the current 3D application mode through the design3D instance.
+   *
+   * @param {CurrentMode} mode - The 3D mode to activate.
    * @returns {void}
    */
+  public set3DModes(mode: CurrentMode): void {
+    this.design3D?.set3DModes(mode);
+  }
+
+  /**
+   * Retrieves the currently active 3D application mode from the design3D instance.
+   *
+   * @returns {CurrentMode | undefined} The current 3D mode, or undefined if the design3D instance is unavailable.
+   */
+  public get3DModes(): CurrentMode | undefined {
+    return this.design3D?.get3DModes();
+  }
+
+  /**
+   * Set the undo-redo limit (number of actions)
+   * @param {number} limit
+   * @returns {void}
+   * @description 
+   * This method set the limit of the history i.e. the number of the actions to get stored for undo-redo
+   */
+  public setUndoRedoLimit(limit: number) {
+    this.design2D?.setUndoRedoLimit(limit);
+    this.design3D?.setUndoRedoLimit(limit);
+  }
+
+  /**
+   * Undo 
+   */
+  public undo(): void {
+    if (this.currentMode === CurrentMode.TWO_D_MODE) {
+      this.design2D?.undo();
+    } else {
+      this.design3D?.getCore()?.undo();
+    }
+  }
+
+  /**
+   * Redo 
+   */
+  public redo(): void {
+    if (this.currentMode === CurrentMode.TWO_D_MODE) {
+      this.design2D?.redo();
+    } else {
+      this.design3D?.getCore()?.redo();
+    }
+  }
+
+  /**
+  * Sets the length unit for displaying dimensions across both 2D and 3D viewers.
+  * @public
+  * @param {LengthUnit | string} unit - The length unit to display ('mm', 'cm', 'inch', 'foot').
+  * @returns {void}
+  */
   public setLengthUnit(unit: LengthUnit | string): void {
-    this.initialUnit = normalizeLengthUnit(unit);
-    this.design2D?.setLengthUnit(this.initialUnit);
-    this.design3D?.setLengthUnit(this.initialUnit);
+    const normalizedUnit = LengthUnitConverter.normalizeUnit(unit);
+
+    if (LengthUnitConverter.currentUnit  === normalizedUnit) return;
+
+    LengthUnitConverter.currentUnit  = normalizedUnit;
+
+    this.design2D?.update2DLengthUnit();
+    this.design3D?.update3DLengthUnit();
   }
 
   /**
@@ -523,6 +660,6 @@ export class FloorplanManager {
    * @returns {LengthUnit} The current display length unit.
    */
   public getLengthUnit(): LengthUnit {
-    return this.design2D?.getLengthUnit() ?? this.initialUnit;
+    return LengthUnitConverter.currentUnit ;
   }
 }
