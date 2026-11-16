@@ -13,6 +13,7 @@ interface Props {
   onStepChange: (step: PlannerStep) => void;
   onSave: () => void;
   onItemList: () => void;
+  setDisplayLeaveDialog: (displayLeaveDialog: boolean) => void;
 }
 
 // Navbar Component
@@ -23,8 +24,14 @@ export function PlannerNavigation({
   onSave,
   onItemList,
   total,
+  setDisplayLeaveDialog
 }: Props) {
+  
   const formattedTotal = total === null ? 'Unavailable' : `$${total.toFixed(2)}`;
+  const isRoomDetected = () => {
+    console.log(isRoomDetected);
+  }
+
   return (
     <header className="planner-navigation" data-step={step}>
       <div className="planner-project-heading">
@@ -42,9 +49,39 @@ export function PlannerNavigation({
                 type="button"
                 aria-current={step === label ? 'step' : undefined}
                 data-complete={index < plannerSteps.indexOf(step)}
-              // onClick={() => {
-              //   onStepChange(label);
-              // }}
+                onClick={async () => {
+                  switch (step) {
+                    case 'Room setup':
+                      if (label === 'Walls & floors') {
+                        onStepChange(label);
+                      }
+                      else if (label === 'Add items') {
+                        onStepChange(label);
+                      }
+                      break;
+
+                    case 'Walls & floors':
+                      if (label === 'Add items') {
+                        onStepChange(label);
+                      }
+                      else if (label === 'Room setup') {
+                        setDisplayLeaveDialog(true);
+                      }
+                      break;
+
+                    case 'Add items':
+                      if (label === 'Walls & floors') {
+                        onStepChange(label)
+                      }
+                      else if (label === 'Room setup') {
+                        setDisplayLeaveDialog(true);
+                      }
+                      break;
+
+                    default:
+                      break;
+                  }
+                }}
               >
                 <span className="planner-step-number" aria-hidden="true">
                   {index < plannerSteps.indexOf(step) ? (

@@ -3,7 +3,7 @@
 import drawIcon from '@/assets/icons/draw.svg';
 import deleteIcon from '@/assets/icons/delete.svg';
 import { useState, useEffect } from 'react';
-import { LengthUnit } from 'wrapper';
+import { LengthUnit } from 'three-configurator';
 import doorIcon from '@/assets/icons/door.svg';
 import windowIcon from '@/assets/icons/window.svg';
 import fitIcon from '@/assets/icons/zoom-fit.svg';
@@ -48,9 +48,10 @@ interface Props {
   selected: PlannerTool | null;
   onSelect: (tool: PlannerTool | null) => void;
   onFit: () => void;
+  showToast: (message: string) => void
 }
 
-export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChange }: Props) {
+export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChange, showToast }: Props) {
   const floorPlanManager = useAppSelector((state) => state.configurator.floorPlanManager);
 
   const [unit, setUnit] = useState(() => floorPlanManager?.getLengthUnit() ?? LengthUnit.MM);
@@ -100,10 +101,14 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
             if (tool.id === 'snap') {
               floorPlanManager?.enableSnapping(!snapping);
               onSnapChange(!snapping);
+              if(!snapping){
+                showToast("Snapping enabled");
+              }
               return;
             }
             if (tool.id === 'delete') {
               floorPlanManager?.deleteSelectedEntity();
+              showToast("Entity deleted successfully")
               return;
             }
             if (tool.id === 'fit') {
@@ -140,6 +145,7 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
         onChange={(next) => {
           floorPlanManager?.setLengthUnit(next);
           setUnit(next);
+          showToast(`Unit changed to ${next}`);
         }}
       />
       <ClearLayoutDialog
@@ -149,6 +155,7 @@ export function PlannerToolbar({ selected, onSelect, onFit, snapping, onSnapChan
         }}
         onConfirm={() => {
           floorPlanManager?.clear2DLayout();
+          showToast("Layout cleared successfully");
           onSelect(selected === clearLayout ? null : (clearLayout as "erase"));
           setClearLayout(null);
         }}

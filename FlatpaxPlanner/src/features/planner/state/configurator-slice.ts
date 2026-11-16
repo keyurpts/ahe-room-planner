@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { FloorplanManager, ConfiguratorCore } from 'wrapper';
+import type { FloorplanManager, ConfiguratorCore } from 'three-configurator';
 
 interface ConfiguratorState {
   floorPlanManager: FloorplanManager | null;

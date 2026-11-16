@@ -7,6 +7,7 @@ interface CreatedProject {
   regionId: string;
   status: string;
   designCode: string;
+  roomType: string
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,7 @@ export interface ProjectResponse {
   regionId: string;
   status: string;
   designCode: string;
+  roomType: string;
   project2DJson: string;
   project3DJson: string;
   projectMetadata: string | null;
@@ -43,6 +45,7 @@ function parseCreateProjectResponse(value: unknown): CreatedProject {
     regionId: string(project.regionId, 'regionId'),
     status: string(project.status, 'status'),
     designCode: string(project.designCode, 'designCode'),
+    roomType: string(project.roomType, 'roomType'),
     createdAt: string(project.createdAt, 'createdAt'),
     updatedAt: string(project.updatedAt, 'updatedAt'),
   };
@@ -60,6 +63,7 @@ function parseProjectResponse(value: unknown): ProjectResponse {
     regionId: string(project.regionId, 'regionId'),
     status: string(project.status, 'status'),
     designCode: string(project.designCode, 'designCode'),
+    roomType: string(project.roomType, 'roomType'),
     project2DJson: string(project.project2DJson, 'project2DJson'),
     project3DJson: string(JSON.stringify(project.project3DJson), 'project3DJson'),
     projectMetadata: project.projectMetadata != null
@@ -70,7 +74,7 @@ function parseProjectResponse(value: unknown): ProjectResponse {
   };
 }
 
-export function createProject(projectName: string): Promise<CreatedProject> {
+export function createProject(projectName: string, roomType: string): Promise<CreatedProject> {
   return apiClient.request('/Projects', {
     method: 'POST',
     body: {
@@ -78,6 +82,7 @@ export function createProject(projectName: string): Promise<CreatedProject> {
       project2DJson: {},
       project3DJson: {},
       projectMetadata: 'string',
+      roomType
     },
     parse: parseCreateProjectResponse,
   });

@@ -7,7 +7,7 @@ import hide from '@/assets/icons/wall-hide.svg';
 import view from '@/assets/icons/camera.svg';
 import measure from '@/assets/icons/measure.svg';
 // import { Fragment, useState } from 'react';
-// import { LengthUnit, type ConfiguratorCore } from 'wrapper';
+// import { LengthUnit, type ConfiguratorCore } from 'three-configurator';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   ConfiguratorEventType,
@@ -15,7 +15,7 @@ import {
   LengthUnit,
   TransformControlsMode,
   type ConfiguratorCore,
-} from 'wrapper';
+} from 'three-configurator';
 import { useAppSelector } from '@/app/store-hooks';
 import { ToolbarDropdown, type DropdownGroup } from '@/components/ui/ToolbarDropdown';
 import { UnitSelector } from '@/features/planner/components/UnitSelector';
@@ -28,7 +28,6 @@ import deleteHover from '@/assets/icons/delete-h.svg';
 import wallhideHover from '@/assets/icons/wall-hide-h.svg';
 import cameraHover from '@/assets/icons/camera-h.svg';
 import measureHover from '@/assets/icons/measure-h.svg';
-import { Toast } from './Toast';
 
 type MeasurementMode = 'nearby' | 'walls' | 'all' | 'selected';
 type CameraMode = 'orthographic' | 'perspective';
@@ -71,6 +70,7 @@ interface Props {
   onHideWallsSelectedChange: (selected: boolean) => void;
   onCopy: () => void;
   onRemove: () => void;
+  showToast: (message: string) => void
 }
 
 function configureMeasurements(core: ConfiguratorCore, mode: MeasurementMode | null) {
@@ -91,6 +91,7 @@ export function ItemsToolbar({
   onHideWallsSelectedChange,
   onCopy,
   onRemove,
+  showToast
 }: Props) {
   const configuratorCore = useAppSelector((state) => state.configurator.configuratorCore);
   const manager = useAppSelector((state) => state.configurator.floorPlanManager);
@@ -105,15 +106,6 @@ export function ItemsToolbar({
   const [objectSelectionStep, setObjectSelectionStep] = useState<0 | 1 | 2 | 3>(0);
   const objectSelectionStepRef = useRef<0 | 1 | 2 | 3>(0);
   const objectToObjectMeasurementActiveRef = useRef<boolean>(false);
-  const [toast, setToast] = useState({
-    open: false,
-    message: '',
-  });
-
-  // helper method to set toast state and show the toast notification
-  const showToast = (message: string) => {
-    setToast({ open: true, message });
-  };
 
   useEffect(() => {
     objectToObjectMeasurementActiveRef.current = objectToObjectMeasurementActive;
@@ -128,15 +120,6 @@ export function ItemsToolbar({
     objectSelectionStepRef.current = objectSelectionStep;
   }, [objectSelectionStep]);
 
-  useEffect(() => {
-    if (!toast.open) return;
-
-    const timer = setTimeout(() => {
-      setToast({ open: false, message: '' });
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [toast.open]);
 
   const canUseSelectedModelTools = Boolean(configuratorCore) && hasSelectedModel;
   useEffect(() => {
@@ -231,8 +214,8 @@ export function ItemsToolbar({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
     configuratorCore.setCameraType(mode as Parameters<ConfiguratorCore['setCameraType']>[0]);
     setCamera(mode);
+    showToast(`Camera type set to ${mode} `);
   }
-
 
 
   return (
@@ -261,7 +244,9 @@ export function ItemsToolbar({
               if (tool.id === 'delete') {
                 onRemove();
                 const isRemoved = configuratorCore?.deleteModel();
-                console.log(isRemoved);
+                if(isRemoved){
+                  showToast("Item deleted successfully.");
+                }
               }
               else if (tool.id === 'move' || tool.id === 'rotate') {
                 onTransformToolChange(tool.id);
@@ -271,25 +256,27 @@ export function ItemsToolbar({
                   configuratorCore?.toggleTransformAxis('y', false);
                   configuratorCore?.toggleTransformAxis('x', true);
                   configuratorCore?.toggleTransformAxis('z', true);
+                  showToast("Transform mode set to translate");
                 } else {
                   configuratorCore?.setTransformMode(TransformControlsMode.ROTATE);
                   configuratorCore?.toggleTransformAxis('y', true);
                   configuratorCore?.toggleTransformAxis('x', false);
                   configuratorCore?.toggleTransformAxis('z', false);
+                  showToast("Transform mode set to rotate");
                 }
               }
               else if (tool.id === 'replace') onReplaceSelectedChange(!replaceSelected);
               else if (tool.id === 'copy') {
                 onCopy();
                 const isCopied = configuratorCore?.duplicateModel();
-                if (!isCopied) {
-                  console.log(isCopied);
+                if (isCopied) {
+                  showToast("Item copied successfully.");
                 }
               }
-              // else onHideWallsSelectedChange(!hideWallsSelected);
               else if (tool.id === "hidewalls") {
                 configuratorCore?.enableWallHiding(!hideWallsSelected);
                 onHideWallsSelectedChange(!hideWallsSelected);
+                showToast(!hideWallsSelected ? "walls hiding enabled" : "walls hiding disabled")
               }
             }}
           >
@@ -317,7 +304,6 @@ export function ItemsToolbar({
                   />
                 </>
               }
-            // disabled={!canUseSelectedModelTools}
             />
           )}
         </Fragment>
@@ -349,19 +335,12 @@ export function ItemsToolbar({
         onChange={(next) => {
           manager?.setLengthUnit(next);
           setUnit(next);
-          showToast(`Length unit changed to ${next}.`);
+          showToast(`Unit changed to ${next}.`);
         }}
       />
       <p className="sr-only" role="status">
         {message}
       </p>
-      <Toast
-        open={toast.open}
-        message={toast.message}
-        onClose={() => setToast({ open: false, message: '' })}
-        // className="fixed bottom-6 left-1/2 z-toast -translate-x-1/2"
-        className="fixed bottom-6 right-6 z-toast"
-      />
     </div>
   );
 }

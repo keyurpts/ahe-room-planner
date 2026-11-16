@@ -6,7 +6,7 @@ import {
   formatModelsSummary,
   type RawModelSummaryItem,
 } from '@/features/planner/item-summary';
-import { ConfiguratorEventType, Events } from 'wrapper';
+import { ConfiguratorEventType, Events } from 'three-configurator';
 import {
   Navigate,
   Outlet,
@@ -47,6 +47,7 @@ import {
   type ItemFinishes,
 } from '@/features/planner/components/ItemCustomisationSidebar';
 import { LeaveDesignDialog2 } from '@/features/planner/components/LeaveDesignDialog2';
+import { Toast } from '@/features/planner/components/Toast';
 
 export function Component() {
 
@@ -103,27 +104,26 @@ export function Component() {
   // }, [location.pathname, location.search, dispatch]);
 
 
-  
   const [snapping, setSnapping] = useState(true);                                    // 2D snapping state
   const [tool, setTool] = useState<PlannerTool | null>(null);                        // 2D tools state
   const [transformTool, setTransformTool] = useState<'move' | 'rotate'>('move');      // transform tool state
   const [replaceSelected, setReplaceSelected] = useState(false);                     // replace button state
-  
-  
+
+
   const [customising, setCustomising] = useState(false);                             // customize button in Items Sidebar
   const [itemFinishes, setItemFinishes] = useState<ItemFinishes>({ sink: null, benchtop: null });     // for customize tab
   const [hideWallsSelected, setHideWallsSelected] = useState(false);                 // hide walls button state
   const [finishesOpen, setFinishesOpen] = useState(false);                           // finishes panel state
   // const [selectedProduct, setSelectedProduct] = useState<string | null>('floor-1');
 
-  
+
   const [panel, setPanel] = useState<'save' | 'items' | null>(null);                 // save or items button state
   const [announcement, setAnnouncement] = useState('');                              // announcement for toast
   const isSavingProject = useRef(false);
 
   // taking loaded project state from open saved design flow
   const savedProject = location.state?.savedProject;
-  
+
   let p2dJSON, p3dJSON;
   if (savedProject) {
     p2dJSON = savedProject.project2DJson;
@@ -204,7 +204,7 @@ export function Component() {
           await updateProject3DJson(projectID, project3DJson);
         }
       } else {
-        const { id, designCode } = await createProject(draft.projectName);
+        const { id, designCode } = await createProject(draft.projectName, draft.roomType);
 
         const mode = location.pathname === paths.design ? '3d' : '2d';
         if (mode === "2d") {
@@ -237,6 +237,7 @@ export function Component() {
 
   const isRoomDetected = (room: boolean) => {
     console.log(room);
+    // display warnong toast to prompt user to draw atleast one room 
   };
 
   function changeStep(next: PlannerStep) {
@@ -257,37 +258,72 @@ export function Component() {
         setAnnouncement('Unable to change the design step. Please try again.');
       });
   }
-  async function nextStep() {
-    if (step === 'Room setup') {
-      try {
+
+  async function nextStep(nextStep: PlannerStep) {
+    if (nextStep === 'Walls & floors') {
+      if (step === 'Add items') {
+        // TODO :
+      }
+      else {
+        try {
+          const success = await floorPlanManager?.switchTo3D(isRoomDetected);
+          if (!success) {
+            setAnnouncement('Draw a room before continuing to the 3D design.');
+            return;
+          }
+        } catch {
+          setAnnouncement('Unable to open the 3D design. Please try again.');
+          return;
+        }
+      }
+
+    }
+    else if (nextStep === 'Add items') {
+      if (step === 'Room setup') {
         const success = await floorPlanManager?.switchTo3D(isRoomDetected);
         if (!success) {
           setAnnouncement('Draw a room before continuing to the 3D design.');
           return;
         }
-      } catch {
-        setAnnouncement('Unable to open the 3D design. Please try again.');
-        return;
       }
-    } else if (step === 'Walls & floors') {
       configuratorCore?.enableWallColoringMode?.(false);
       configuratorCore?.enableWallTextureMode?.(false);
       configuratorCore?.enableWallMaterialResetMode?.(false);
     }
-    changeStep(
-      step === 'Room setup'
-        ? 'Walls & floors'
-        : step === 'Walls & floors'
-          ? 'Add items'
-          : 'Walls & floors',
-    );
+    else if (nextStep === 'Room setup') {
+      // Library calls required for Room Setup Page
+    }
+    // passing next step to changeStep method
+    changeStep(nextStep);
   }
+
   if (!draft) return <Navigate to={paths.home} replace />;
   const total = summaryRows.reduce<number | null>((sum, row) => {
     return sum === null || row.unitPrice === null ? null : sum + row.unitPrice * row.quantity;
   }, 0);
 
   const [displayLeaveDialog, setDisplayLeaveDialog] = useState(false);
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+  });
+  const [toastTrigger, setToastTrigger] = useState(0);
+
+  // helper method to set toast state and show the toast notification
+  const showToast = (message: string) => {
+    setToast({ open: true, message });
+    setToastTrigger((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    if (!toast.open) return;
+
+    const timer = setTimeout(() => {
+      setToast({ open: false, message: '' });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast.open, toastTrigger]);
 
   return (
     <div
@@ -298,13 +334,14 @@ export function Component() {
         total={total}
         projectName={draft.projectName}
         step={step}
-        onStepChange={changeStep}
+        onStepChange={nextStep}
         onSave={() => {
           void saveProject();
         }}
         onItemList={() => {
           setPanel('items');
         }}
+        setDisplayLeaveDialog={setDisplayLeaveDialog}
       />
       <div
         className={`planner-workspace ${step === 'Walls & floors' ? 'planner-finishes-workspace' : ''}`}
@@ -318,13 +355,14 @@ export function Component() {
           <ItemsSidebar
             active={step === 'Add items'}
             onAdd={addItem}
-            onSelect={()=> {}}
+            onSelect={() => { }}
             selected={null}
             canCustomise={summaryRows.length > 0}
             hidden={customising && summaryRows.length > 0}
             onCustomise={() => {
               setCustomising(true);
             }}
+            showToast={showToast}
           />
           {customising && summaryRows.length > 0 && (
             <ItemCustomisationSidebar
@@ -391,6 +429,7 @@ export function Component() {
               onFit={() => {
                 setAnnouncement('Zoom to fit will be available when the 2D viewer is connected.');
               }}
+              showToast={showToast}
             />
           )}
           {step === 'Add items' && (
@@ -405,13 +444,30 @@ export function Component() {
                 console.log('Copy item requested.');
               }}
               onRemove={removeItem}
+              showToast={showToast}
             />
           )}
+          {/* Next step button */}
           <button
             type="button"
             className={`planner-next ${step === 'Room setup' ? 'room-setup-next' : ''}`}
             onClick={() => {
-              void nextStep();
+              switch (step) {
+                case 'Room setup':
+                  nextStep('Walls & floors');
+                  break;
+
+                case 'Walls & floors':
+                  nextStep('Add items');
+                  break;
+
+                case 'Add items':
+                  nextStep('Walls & floors');
+                  break;
+
+                default:
+                  break;
+              }
             }}
           >
             {step === 'Room setup'
@@ -474,6 +530,12 @@ export function Component() {
         }}
         draft={draft}
         rows={summaryRows}
+      />
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast({ open: false, message: '' })}
+        className="fixed bottom-6 right-6 z-toast w-fit max-w-[calc(100vw-3rem)]"
       />
     </div>
   );

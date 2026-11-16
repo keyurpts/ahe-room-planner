@@ -5,6 +5,7 @@ import {
   ConfiguratorEventType,
   FloorNames,
   ModelController,
+  LengthUnitConverter,
 } from "three-configurator";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import {
@@ -130,7 +131,7 @@ export class ConfiguratorCoreWrapper extends ConfiguratorCore {
         .addVectors(startPoint, endPoint)
         .multiplyScalar(0.5);
       midPoint.y += 0.1;
-      const labelSprite = super.createTextSprite("0.00 unit");
+      const labelSprite = super.createTextSprite(LengthUnitConverter.formatLengthFromCentimeters(0, LengthUnitConverter.currentUnit, 2));
       labelSprite.position.copy(midPoint);
       this.measurementGroup.add(labelSprite);
     }
@@ -599,6 +600,9 @@ export class ConfiguratorCoreWrapper extends ConfiguratorCore {
       }
 
       const result = this.addModel(this.mainModel, position, rotation);
+      if (!this.modelController.placedModels.includes(this.mainModel)) {
+        this.modelController.placedModels.push(this.mainModel);
+      }
       this.switchControlMode("transform" as any);
       const currentMode = this.controlsManager.getCurrentTransformMode();
       this.setTransformMode(currentMode);

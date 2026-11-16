@@ -52,12 +52,28 @@ export function SavedDesignDialog({ open, onClose }: Props) {
     close();
     // void navigate(paths.roomSetup);
     const project3DJSON = JSON.parse(project.project3DJson);
+
     if (hasValid3DJson(project3DJSON)) {
-      void navigate(paths.design, {
-        state: {
-          savedProject: project,
-        },
-      });
+
+      const hasOtherObjects = Object.keys(project3DJSON).some(
+        (key) => key !== "floor" && key !== "walls"
+      );
+
+      if (hasOtherObjects) {
+        // Case 2: Other objects exist along with floor and walls
+        void navigate(`${paths.design}?step=items`, {
+          state: {
+            savedProject: project,
+          },
+        });
+      } else {
+        // Case 1: Only floor and walls are present
+        void navigate(paths.design, {
+          state: {
+            savedProject: project,
+          },
+        });
+      }
     }
     else {
       void navigate(paths.roomSetup, {

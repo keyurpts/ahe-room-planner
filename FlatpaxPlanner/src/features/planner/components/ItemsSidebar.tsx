@@ -14,7 +14,7 @@ import {
   type ModelVariant,
 } from '@/features/planner/catalogue/catalogue-api';
 import placeholder from '@/assets/images/cupboard-placeholder.svg';
-import { ConfiguratorEventType, Events } from 'wrapper';
+import { ConfiguratorEventType, Events } from 'three-configurator';
 import { SidebarChevron } from '@/features/planner/components/SidebarChevron';
 import { registerItemCodes } from '../state/configurator-slice';
 
@@ -26,10 +26,11 @@ interface Props {
   selected: string | null;
   canCustomise: boolean;
   onCustomise: () => void;
+  showToast: (message: string) => void;
   hidden?: boolean;
 }
 
-type ProductHandlers = Pick<Props, 'onAdd' | 'onSelect' | 'selected'> & {
+type ProductHandlers = Pick<Props, 'onAdd' | 'onSelect' | 'selected' | 'showToast'> & {
   onModelAdding: (textureId: string) => void;
   onModelAddFailed: () => void;
 };
@@ -44,6 +45,9 @@ function Retry({ label, retry }: { label: string; retry: () => void }) {
     </div>
   );
 }
+
+
+
 function ColourOptions({
   label,
   options,
@@ -77,6 +81,9 @@ function ColourOptions({
     </fieldset>
   );
 }
+
+
+
 function Product({
   model,
   variant,
@@ -85,8 +92,11 @@ function Product({
   selected,
   onModelAdding,
   onModelAddFailed,
+  showToast
 }: { model: CatalogueModel; variant: ModelVariant } & ProductHandlers) {
   const [getModelDownloadUrl] = useLazyGetModelDownloadUrlQuery();
+
+
   const thumbnail = useGetThumbnailQuery(
     { categoryId: model.categoryId, modelId: model.id, textureId: variant.textureId },
     { skip: !variant.thumbnailPath, refetchOnMountOrArgChange: true },
@@ -123,7 +133,7 @@ function Product({
     skuNumber: variant.skuNumber,
     regions: variant.regions,
   };
-  async function addProduct() {
+  async function addProduct(showToast: (message: string) => void) {
     const region = variant.regions.find((r) => r.regionId === regionId);
     const itemPrice = region?.price ?? 0;
     const itemCode = region?.itemNumber ?? variant.skuNumber;
@@ -157,6 +167,7 @@ function Product({
         onModelLoaded: (model: any) => {
           document.body.style.cursor = "default";
           console.log("Model successfully loaded:", model);
+          showToast(`Item ${model.name} added successfully`)
         },
 
         onModelError: (error: any) => {
@@ -209,7 +220,7 @@ function Product({
         className="catalogue-add"
         aria-label={`Add ${product.name}, ${variant.skuNumber}`}
         onClick={() => {
-          void addProduct();
+          void addProduct(showToast);
         }}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -233,6 +244,8 @@ function Product({
     </div>
   );
 }
+
+
 function CategoryProducts({
   categoryId,
   textureId,
@@ -277,19 +290,22 @@ function CategoryProducts({
     <p className="catalogue-empty">No items available for this colour.</p>
   );
 }
+
+
 export function ItemsSidebar({
   onAdd,
   onSelect,
   selected,
   canCustomise,
   onCustomise,
+  showToast,
   hidden = false,
   active = true,
 }: Props) {
   const regionId = useAppSelector((state) => state.ui.regionId);
   const masterCategories = useGetMasterCategoriesQuery(undefined, { skip: !active });
   const categories = useGetCategoriesQuery(undefined, { skip: !active });
-  
+
   const textures = useGetTexturesQuery(regionId, { skip: !active || !regionId });
   
   const benchtopColours = useGetBenchtopColoursQuery(regionId, {
@@ -307,6 +323,26 @@ export function ItemsSidebar({
   const [getTextureDownloadUrl] = useLazyGetTextureDownloadUrlQuery();
   const pendingTextureId = useRef<string | null>(null);
   const id = useId();
+
+  // showToast when changing texture (Cupboard Colour) selection
+  useEffect(() => {
+    const selectedItem = textures.data?.find((item) => {
+      if (item.id === texture) {
+        return item;
+      };
+    })
+    showToast(`Cupboard Colour set to ${selectedItem?.textureName}`);
+  }, [texture]);
+
+  // showToast when changing (Benchtop Colour) selection
+  useEffect(() => {
+    const selectedItem = benchtopColours.data?.find((item) => {
+      if (item.id === benchtopColour) {
+        return item;
+      };
+    })
+    showToast(`Benchtop Colour ${selectedItem?.benchtopColourName}`);
+  }, [benchtopColour]);
 
   const masterCategoryList = useMemo(() => {
     if (!masterCategories.data?.length) return [];
@@ -555,6 +591,7 @@ export function ItemsSidebar({
                               onModelAddFailed={() => {
                                 pendingTextureId.current = null;
                               }}
+                              showToast={showToast}
                             />
                           )}
                         </div>
@@ -633,6 +670,7 @@ export function ItemsSidebar({
                           onModelAddFailed={() => {
                             pendingTextureId.current = null;
                           }}
+                          showToast={showToast}
                         />
                       )}
                     </div>
